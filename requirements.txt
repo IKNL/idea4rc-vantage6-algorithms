@@ -1,0 +1,11 @@
+vantage6-algorithm-tools==4.9.1
+pandas
+pyarrow
+formulaic
+statsmodels
+numpy
+pandas
+scipy
+pyarrow
+git+https://github.com/vantage6/v6-summary-py.git
+git+https://github.com/vantage6/v6-kaplan-meier-py.git
