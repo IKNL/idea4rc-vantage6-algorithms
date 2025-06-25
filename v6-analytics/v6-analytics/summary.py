@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 
 from vantage6.algorithm.tools.util import info
-from vantage6.algorithm.tools.decorators import algorithm_client
+from vantage6.algorithm.decorator import algorithm_client, dataframes
 from vantage6.algorithm.tools.exceptions import AlgorithmExecutionError, InputError
 from vantage6.algorithm.client import AlgorithmClient
 
@@ -248,10 +248,12 @@ def _add_sd_to_results(
 
 
 # Do not provide the columns as we want all columns to be included
-@new_data_decorator
+@dataframes
 def summary_per_data_station(
-    dfs: list[pd.DataFrame], cohort_names: list[str], *args, **kwargs
+    dataframes: dict[str, pd.DataFrame], *args, **kwargs
 ) -> dict:
+    dfs = dataframes.values()
+    cohort_names = dataframes.keys()
     results = {}
     for df, name in zip(dfs, cohort_names):
         results[name] = _summary.partial_summary._summary_per_data_station(
@@ -266,14 +268,15 @@ def summary_per_data_station(
     return results
 
 
-@new_data_decorator
+@dataframes
 def variance_per_data_station(
-    dfs: list[pd.DataFrame],
-    cohort_names: list[str],
+    dataframes: dict[str, pd.DataFrame],
     means: dict[list[float]],
     *args,
     **kwargs,
 ) -> dict:
+    dfs = dataframes.values()
+    cohort_names = dataframes.keys()
     results = {}
     info(kwargs)
     info(means)
