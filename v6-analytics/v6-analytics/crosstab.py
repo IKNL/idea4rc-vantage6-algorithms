@@ -13,20 +13,18 @@ import pandas as pd
 import scipy
 
 from vantage6.algorithm.tools.util import info
-from vantage6.algorithm.tools.decorators import algorithm_client
+from vantage6.algorithm.decorator import algorithm_client, dataframes
 from vantage6.algorithm.client import AlgorithmClient
 
-from .decorator import new_data_decorator
 
-
-@new_data_decorator
+@dataframes
 def partial_crosstab(
-    dfs: list[pd.DataFrame],
-    cohort_names: list[str],
+    dataframes: dict[str, pd.DataFrame],
     results_col: str,
     group_cols: list[str],
 ) -> str:
-    # multi cohort
+    dfs = dataframes.values()
+    cohort_names = dataframes.keys()
     results = {}
     for df, name in zip(dfs, cohort_names):
         results[name] = _partial_crosstab(df, results_col, group_cols)
