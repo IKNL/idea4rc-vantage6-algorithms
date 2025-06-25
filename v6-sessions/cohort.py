@@ -34,8 +34,7 @@ def create_cohort(
         A dataframe with the cohort data.
     """
 
-    info("Making connection to database")
-    database_connector.create_connection_details()
+    info("Setting up connection to database")
     connection = database_connector.connect(
         connection_string=connection_details["uri"],
         user=connection_details["user"],
@@ -75,7 +74,12 @@ def __create_cohort_dataframe(
     info("-->  Done")
 
     info("Injecting patient IDs into SQL")
-    rendered_sql = sqlrender.render(raw_sql, patient_ids=patient_ids)
+    try:
+        rendered_sql = sqlrender.render(raw_sql, patient_ids=patient_ids)
+    except Exception as e:
+        error(f"Failed to render SQL: {e}")
+        traceback.print_exc()
+        raise e
     info("-->  Done")
 
     # In IDEA4RC we only use PostgreSQL, so we do not need to translate the SQL
