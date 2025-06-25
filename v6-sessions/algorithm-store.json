@@ -1,0 +1,39 @@
+{
+    "name": "v6-idea4rc-sessions",
+    "code_url": "https://github.com/idea4rc/v6-sessions",
+    "description": "This algorithm extracts a cohort from the OMOP database.",
+    "reviews": [],
+    "vantage6_version": "5.0.0a19",
+    "partitioning": "horizontal",
+    "functions": [
+        {
+            "name": "create_cohort",
+            "display_name": "Create cohort",
+            "standalone": true,
+            "description": "Extract a cohort from the OMOP database",
+            "ui_visualizations": [],
+            "step_type": "data_extraction",
+            "arguments": [
+                {
+                    "has_default_value": false,
+                    "conditional_value": null,
+                    "name": "patient_ids",
+                    "display_name": "Patient IDs",
+                    "conditional_operator": null,
+                    "description": "List of patient IDs to extract",
+                    "type": "integer_list",
+                    "default_value": "",
+                    "is_frontend_only": false
+                }
+            ],
+            "databases": [
+                {
+                    "name": "database",
+                    "description": "The OMOP database"
+                }
+            ]
+        }
+    ],
+    "documentation_url": "https://github.com/idea4rc/v6-sessions",
+    "image": "harbor2.vantage6.ai/idea4rc/sessions"
+}
