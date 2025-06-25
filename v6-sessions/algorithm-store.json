@@ -24,6 +24,17 @@
                     "type": "integer_list",
                     "default_value": "",
                     "is_frontend_only": false
+                },
+                {
+                    "has_default_value": false,
+                    "conditional_value": null,
+                    "name": "features",
+                    "display_name": "Features",
+                    "conditional_operator": null,
+                    "description": "Which features to extract. Options: sarcoma, head_neck",
+                    "type": "string",
+                    "default_value": "sarcoma",
+                    "is_frontend_only": false
                 }
             ],
             "databases": [
