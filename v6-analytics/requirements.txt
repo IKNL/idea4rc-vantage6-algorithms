@@ -1,0 +1,9 @@
+vantage6-algorithm-tools==5.0.0a19
+pandas
+pyarrow
+parquet-tools
+rpy2
+numpy==1.26.4
+ohdsi-common
+ohdsi-database-connector
+ohdsi-sqlrender

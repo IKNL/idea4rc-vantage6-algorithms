@@ -5,7 +5,7 @@ import pandas.api.types as ptypes
 from scipy.stats import t
 
 from vantage6.algorithm.tools.util import info
-from vantage6.algorithm.tools.decorators import algorithm_client
+from vantage6.algorithm.decorator import algorithm_client, data
 from vantage6.algorithm.client import AlgorithmClient
 
 
@@ -109,7 +109,7 @@ def t_test_central(
     return final_result
 
 
-@new_data_decorator
+@data(2)
 def t_test_partial(dfs: list[pd.DataFrame], cohort_names: list[str]) -> dict:
     results = {}
     for df, cohort_name in zip(dfs, cohort_names):
