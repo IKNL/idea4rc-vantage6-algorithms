@@ -1,0 +1,123 @@
+{
+    "name": "v6-idea4rc-analytics",
+    "reviews": [],
+    "partitioning": "horizontal",
+    "image": "harbor2.vantage6.ai/idea4rc/analytics",
+    "documentation_url": "https://github.com/idea4rc/v6-analytics",
+    "description": "This algorithm computes summary statistics for a set of cohorts",
+    "vantage6_version": "5.0.0a22",
+    "functions": [
+      {
+        "name": "summary",
+        "display_name": "Summary statistics",
+        "ui_visualizations": [],
+        "arguments": [
+          {
+            "conditional_value": null,
+            "conditional_operator": null,
+            "is_frontend_only": false,
+            "name": "columns",
+            "display_name": "Columns",
+            "default_value": "",
+            "type": "column_list",
+            "description": "List of columns to compute the summary statistics for",
+            "has_default_value": false
+          },
+          {
+            "conditional_value": null,
+            "conditional_operator": null,
+            "is_frontend_only": false,
+            "name": "organizations_to_include",
+            "display_name": "Organizations to include",
+            "default_value": null,
+            "type": "organization_list",
+            "description": "The organizations to include in the task. If not given, all organizations in the collaboration are included.",
+            "has_default_value": true
+          }
+        ],
+        "description": "Compute summary statistics for a set of cohorts",
+        "step_type": "central_compute",
+        "databases": [
+          {
+            "multiple": true,
+            "description": "The cohorts to compute the summary statistics for",
+            "name": "cohorts"
+          }
+        ],
+        "standalone": true
+      },
+      {
+        "name": "crosstab",
+        "display_name": "Crosstab statistics",
+        "ui_visualizations": [],
+        "arguments": [
+          {
+            "conditional_value": null,
+            "conditional_operator": null,
+            "is_frontend_only": false,
+            "name": "results_col",
+            "display_name": "Results column",
+            "default_value": "",
+            "type": "column_list",
+            "description": "The column to compute the crosstab statistics for",
+            "has_default_value": false
+          },
+          {
+            "conditional_value": null,
+            "conditional_operator": null,
+            "is_frontend_only": false,
+            "name": "group_cols",
+            "display_name": "Group columns",
+            "default_value": "",
+            "type": "column_list",
+            "description": "The columns to group the data by",
+            "has_default_value": false
+          },
+          {
+            "conditional_value": null,
+            "conditional_operator": null,
+            "is_frontend_only": false,
+            "name": "organizations_to_include",
+            "display_name": "Organizations to include",
+            "default_value": null,
+            "type": "organization_list",
+            "description": "The organizations to include in the task. If not given, all organizations in the collaboration are included.",
+            "has_default_value": true
+          },
+          {
+            "conditional_value": null,
+            "conditional_operator": null,
+            "is_frontend_only": false,
+            "name": "include_chi2",
+            "display_name": "Include Chi2 statistic",
+            "default_value": "true",
+            "type": "boolean",
+            "description": "Whether to include the results of a chi-squared statistic test in the results or not. By default, it is included.",
+            "has_default_value": true
+          },
+          {
+            "conditional_value": null,
+            "conditional_operator": null,
+            "is_frontend_only": false,
+            "name": "include_totals",
+            "display_name": "Include totals",
+            "default_value": "true",
+            "type": "boolean",
+            "description": "Whether to include the sums of the rows and columns or not. By default, they are included.",
+            "has_default_value": true
+          }
+        ],
+        "description": "Compute crosstab statistics for a set of cohorts",
+        "step_type": "central_compute",
+        "databases": [
+          {
+            "multiple": true,
+            "description": "The cohorts to compute the crosstab statistics for",
+            "name": "cohorts"
+          }
+        ],
+        "standalone": true
+      }
+    ],
+    "code_url": "https://github.com/idea4rc/v6-analytics"
+  }
