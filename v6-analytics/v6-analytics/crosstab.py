@@ -1,7 +1,6 @@
 import pandas as pd
 
 from vantage6.algorithm.tools.util import info
-from vantage6.algorithm.tools.decorators import data
 from vantage6.algorithm.tools.util import get_env_var
 from vantage6.algorithm.tools.exceptions import (
     EnvironmentVariableError,

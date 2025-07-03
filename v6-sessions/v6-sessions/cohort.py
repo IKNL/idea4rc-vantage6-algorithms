@@ -39,6 +39,7 @@ def create_cohort(
         connection_string=connection_details["uri"],
         user=connection_details["user"],
         password=connection_details["password"],
+        dbms="postgresql",
     )
 
     info(f"Retrieving variables for cohort: {patient_ids}")
@@ -75,7 +76,10 @@ def __create_cohort_dataframe(
 
     info("Injecting patient IDs into SQL")
     try:
-        rendered_sql = sqlrender.render(raw_sql, patient_ids=patient_ids)
+        # Manually construct the VALUES clause for patient IDs
+        values_clause = ", ".join([f"({pid})" for pid in patient_ids])
+        raw_sql = tuple(raw_sql)[0]
+        rendered_sql = raw_sql.replace("{@patient_ids}", values_clause)
     except Exception as e:
         error(f"Failed to render SQL: {e}")
         traceback.print_exc()

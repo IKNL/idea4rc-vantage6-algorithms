@@ -1,24 +1,47 @@
 from typing import Any
 from importlib import import_module
+from enum import Enum
 
 import pandas as pd
 import numpy as np
 
-from vantage6.algorithm.tools.util import info
+from vantage6.algorithm.tools.util import info, warn, get_env_var, error
 from vantage6.algorithm.decorator import algorithm_client, dataframes
 from vantage6.algorithm.tools.exceptions import AlgorithmExecutionError, InputError
 from vantage6.algorithm.client import AlgorithmClient
+from vantage6.algorithm.tools.exceptions import (
+    PrivacyThresholdViolation,
+    NodePermissionException,
+)
 
-from .decorator import new_data_decorator
+
+# names of environment variables
+## minimum number of rows in the dataframe
+ENVVAR_MINIMUM_ROWS = "SUMMARY_MINIMUM_ROWS"
+## whitelist of columns allowed to be requested
+ENVVAR_ALLOWED_COLUMNS = "SUMMARY_ALLOWED_COLUMNS"
+## blacklist of columns not allowed to be requested
+ENVVAR_DISALLOWED_COLUMNS = "SUMMARY_DISALLOWED_COLUMNS"
+## privacy threshold for count of a unique value in a categorical column
+ENVVAR_PRIVACY_THRESHOLD = "SUMMARY_PRIVACY_THRESHOLD"
 
 
-# Temporary disable some privacy settings that are defined in the v6-summary-py
-_summary = import_module("v6-summary-py")
-_summary.utils.DEFAULT_MINIMUM_ROWS = 0
-_summary.utils.DEFAULT_PRIVACY_THRESHOLD = 0
+class EnvVarsAllowed(Enum):
+    """Environment varible names to allow computation of different variables"""
 
-_summary.partial_summary.DEFAULT_MINIMUM_ROWS = 0
-_summary.partial_summary.DEFAULT_PRIVACY_THRESHOLD = 0
+    ALLOW_MIN = "SUMMARY_ALLOW_MIN"
+    ALLOW_MAX = "SUMMARY_ALLOW_MAX"
+    ALLOW_COUNT = "SUMMARY_ALLOW_COUNT"
+    ALLOW_SUM = "SUMMARY_ALLOW_SUM"
+    ALLOW_MISSING = "SUMMARY_ALLOW_MISSING"
+    ALLOW_VARIANCE = "SUMMARY_ALLOW_VARIANCE"
+    ALLOW_COUNTS_UNIQUE_VALUES = "SUMMARY_ALLOW_COUNTS_UNIQUE_VALUES"
+    ALLOW_NUM_COMPLETE_ROWS = "SUMMARY_ALLOW_NUM_COMPLETE_ROWS"
+
+
+# default values for environment variables
+DEFAULT_MINIMUM_ROWS = 0
+DEFAULT_PRIVACY_THRESHOLD = 0
 
 
 @algorithm_client
@@ -61,16 +84,17 @@ def summary(
     # Define input parameters for a subtask
     info("Defining input parameters")
     input_ = {
-        "method": "summary_per_data_station",
+        # "method": "summary_per_data_station",
         "kwargs": {
             "columns": columns,
-            "is_numeric": is_numeric,
+            "numeric_columns": ["PATIENT_ID", "AGE", "TUMOR_SIZE", "N_CANCER_EPISODES"],
         },
     }
 
     # create a subtask for all organizations in the collaboration.
     info("Creating subtask for all organizations in the collaboration")
     task = client.task.create(
+        method="summary_per_data_station",
         input_=input_,
         organizations=organizations_to_include,
         name="Subtask summary",
@@ -104,10 +128,13 @@ def summary(
     info("debugger")
     info(numerical_columns)
     info(len(means))
+    info(organizations_to_include)
+    info("Datasets per org")
+    info(len(client.datasets_per_org))
 
     task = client.task.create(
+        method="variance_per_data_station",
         input_={
-            "method": "variance_per_data_station",
             "kwargs": {
                 "columns": numerical_columns,
                 "means": means,
@@ -117,6 +144,7 @@ def summary(
         name="Subtask variance",
         description="Compute variance per data station",
     )
+    info("Hello!")
     variance_results = client.wait_for_results(task_id=task.get("id"))
 
     # add the standard deviation to the results
@@ -125,6 +153,7 @@ def summary(
         all_cohort_results[cohort_name] = _add_sd_to_results(
             all_cohort_results[cohort_name], cohort_variance_results, numerical_columns
         )
+    info("Goodbye!")
 
     # return the final results of the algorithm
     return all_cohort_results
@@ -256,9 +285,7 @@ def summary_per_data_station(
     cohort_names = dataframes.keys()
     results = {}
     for df, name in zip(dfs, cohort_names):
-        results[name] = _summary.partial_summary._summary_per_data_station(
-            df, *args, **kwargs
-        )
+        results[name] = _summary_per_data_station(df, *args, **kwargs)
         # Add median and quantiles (0.25, 0.75)
         for var in results[name]["numeric"]:
             results[name]["numeric"][var]["median"] = float(np.nanmedian(df[var]))
@@ -280,12 +307,385 @@ def variance_per_data_station(
     results = {}
     info(kwargs)
     info(means)
+    info("Cake is a lie")
     for df, name in zip(dfs, cohort_names):
-        info("*" * 80)
-        info(name)
-        info(means[name])
-        info("*" * 80)
-        results[name] = _summary.partial_variance._variance_per_data_station(
+        results[name] = _variance_per_data_station(
             df, means=means[name], *args, **kwargs
         )
+    info(results)
     return results
+
+
+def _summary_per_data_station(
+    df: pd.DataFrame,
+    columns: list[str] | None = None,
+    numeric_columns: list[str] | None = None,
+) -> dict:
+    if not columns:
+        columns = df.columns
+
+    # Check that column names exist in the dataframe
+    if not all([col in df.columns for col in columns]):
+        non_existing_columns = [col for col in columns if col not in df.columns]
+        raise InputError(
+            f"Columns {non_existing_columns} do not exist in the dataframe"
+        )
+
+    # filter dataframe to only include the columns of interest
+    df = df[columns]
+
+    # Check privacy settings
+    info("Checking if data complies to privacy settings")
+    check_privacy(df, columns)
+
+    # Split the data in numeric and non-numeric columns
+    inferred_numeric_columns = [df[col].name in [int, float] for col in df.columns]
+    if numeric_columns is None:
+        numeric_columns = inferred_numeric_columns
+    else:
+        df = check_match_inferred_numeric(numeric_columns, inferred_numeric_columns, df)
+
+    # set numeric and non-numeric columns
+    non_numeric_columns = list(set(columns) - set(numeric_columns))
+    df_numeric = df[numeric_columns]
+    df_non_numeric = df[non_numeric_columns]
+
+    # compute data summary for numeric columns
+    summary_numeric = pd.DataFrame()
+    if not df_numeric.empty:
+        summary_numeric = _get_numeric_summary(df_numeric)
+
+    # compute data summary for non-numeric columns. Also compute the counts of the
+    # unique values in the non-numeric columns (if they meet the privacy threshold)
+    summary_categorical = pd.DataFrame()
+    counts_unique_values = {}
+    if not df_non_numeric.empty:
+        summary_categorical = _get_categorical_summary(df_non_numeric)
+        counts_unique_values = _get_counts_unique_values(df_non_numeric)
+
+    # count complete rows without missing values
+    num_complete_rows_per_node = len(df.dropna())
+
+    # filter out the variables that are not allowed to be shared
+    summary_numeric, summary_categorical = _filter_results(
+        summary_numeric, summary_categorical
+    )
+    if not get_env_var(
+        EnvVarsAllowed.ALLOW_NUM_COMPLETE_ROWS.value, default="true", as_type="bool"
+    ):
+        warn(
+            "Removing number of complete rows from summary as policies do not "
+            "allow sharing it."
+        )
+        num_complete_rows_per_node = None
+    if not get_env_var(
+        EnvVarsAllowed.ALLOW_COUNTS_UNIQUE_VALUES.value, default="true", as_type="bool"
+    ):
+        warn(
+            "Removing counts of unique values from summary as policies do not "
+            "allow sharing it."
+        )
+        counts_unique_values = None
+
+    return {
+        "numeric": summary_numeric.to_dict(),
+        "categorical": summary_categorical.to_dict(),
+        "num_complete_rows_per_node": num_complete_rows_per_node,
+        "counts_unique_values": counts_unique_values,
+    }
+
+
+def _get_numeric_summary(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Compute the summary statistics for the numeric columns
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        The data to compute the summary statistics for
+    """
+    summary_numeric = df.describe(include=[int, float], percentiles=[])
+    summary_numeric.loc["missing"] = df.isna().sum()
+    summary_numeric.loc["sum"] = df.sum()
+    summary_numeric.drop(["50%", "mean", "std"], inplace=True)
+    return summary_numeric
+
+
+def _get_categorical_summary(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Compute the summary statistics for the non-numeric columns
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        The data to compute the summary statistics for
+    """
+    # summary for non-numeric columns. Include the NA count and remove the values
+    # that we don't want to share
+    summary_categorical = df.describe(exclude=[int, float])
+    summary_categorical.loc["missing"] = df.isna().sum()
+    summary_categorical.drop(["top", "freq", "unique"], inplace=True)
+    return summary_categorical
+
+
+def _get_counts_unique_values(df: pd.DataFrame) -> dict:
+    """
+    Get the counts of the unique values in categorical columns
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        The data to get the counts of the unique values for
+
+    Returns
+    -------
+    dict
+        The counts of the unique values
+    """
+    counts = {}
+    privacy_threshold = get_env_var(
+        ENVVAR_PRIVACY_THRESHOLD, default=DEFAULT_PRIVACY_THRESHOLD, as_type="int"
+    )
+    for col in df.columns:
+        counts[col] = _mask_privacy(df[col].value_counts(), privacy_threshold, col)
+    return counts
+
+
+def _mask_privacy(counts: pd.Series, privacy_threshold: int, column: str) -> dict:
+    """
+    Mask the values of a pandas series if the frequency is too low
+
+    Parameters
+    ----------
+    counts : pd.Series
+        The counts of the unique values
+    privacy_threshold : int
+        The minimum frequency of a value to be shared
+    column : str
+        The name of the column whose values are counted
+
+    Returns
+    -------
+    pd.Series
+        The masked counts
+    """
+    num_low_counts = counts[counts < privacy_threshold].sum()
+    if num_low_counts > 0:
+        # It may be possible to share ranges of values instead of the actual values,
+        # but we need to be vary careful. E.g. if the dataframe length is 20 and we
+        # have frequencies 2 and 18, masking 2 as 0-5 while sharing 18 and 20 is not
+        # effective. Similarly, if we have frequencies 17 and three times 1, masking 1
+        # as 0-5 thrice and sharing 17 is also not helpful.
+        # Because it is rather difficult to ensure that nothing can be inferred, we
+        # choose not to share anything if one of the frequencies is too low.
+        # TODO how do we make clear to the user that this happened in the central task?
+        warn(
+            f"Value counts for column {column} contain values with low frequency. "
+            "All counts for this column will be masked."
+        )
+        return {}
+    return counts.to_dict()
+
+
+def _filter_results(
+    summary_numeric: pd.DataFrame, summary_categorical: pd.DataFrame
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Filter out the variables that are not allowed to be shared
+
+    Parameters
+    ----------
+    summary_numeric : pd.DataFrame
+        The summary statistics for the numeric columns
+    summary_categorical : pd.DataFrame
+        The summary statistics for the non-numeric columns
+
+    Returns
+    -------
+    tuple[pd.DataFrame, pd.DataFrame]
+        The filtered summary statistics for the numeric and non-numeric columns
+    """
+    if not get_env_var(EnvVarsAllowed.ALLOW_MIN.value, default="true", as_type="bool"):
+        warn("Removing minimum from summary as policies do not allow sharing it.")
+        summary_numeric.drop("min", inplace=True)
+    if not get_env_var(EnvVarsAllowed.ALLOW_MAX.value, default="true", as_type="bool"):
+        warn("Removing maximum from summary as policies do not allow sharing it.")
+        summary_numeric.drop("max", inplace=True)
+    if not get_env_var(
+        EnvVarsAllowed.ALLOW_COUNT.value, default="true", as_type="bool"
+    ):
+        warn("Removing count from summary as policies do not allow sharing it.")
+        summary_numeric.drop("count", inplace=True)
+    if not get_env_var(EnvVarsAllowed.ALLOW_SUM.value, default="true", as_type="bool"):
+        warn("Removing sum from summary as policies do not allow sharing it.")
+        summary_numeric.drop("sum", inplace=True)
+    if not get_env_var(
+        EnvVarsAllowed.ALLOW_MISSING.value, default="true", as_type="bool"
+    ):
+        warn("Removing missing from summary as policies do not allow sharing it.")
+        summary_numeric.drop("missing", inplace=True)
+    return summary_numeric, summary_categorical
+
+
+def check_privacy(df: pd.DataFrame, requested_columns: list[str]) -> None:
+    """
+    Check if the data complies with the privacy settings
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        The data to check
+    requested_columns : list[str]
+        The columns that are requested in the computation
+    """
+    min_rows = get_env_var(
+        ENVVAR_MINIMUM_ROWS, default=DEFAULT_MINIMUM_ROWS, as_type="int"
+    )
+    if len(df) < min_rows:
+        raise PrivacyThresholdViolation(
+            f"Data contains less than {min_rows} rows. Refusing to "
+            "handle this computation, as it may lead to privacy issues."
+        )
+    # check that each column has at least min_rows non-null values
+    for col in df.columns:
+        if df[col].count() < min_rows:
+            raise PrivacyThresholdViolation(
+                f"Column {col} contains less than {min_rows} non-null values. "
+                "Refusing to handle this computation, as it may lead to privacy issues."
+            )
+
+    # Check if requested columns are allowed
+    allowed_columns = get_env_var(ENVVAR_ALLOWED_COLUMNS)
+    if allowed_columns:
+        allowed_columns = allowed_columns.split(",")
+        for col in requested_columns:
+            if col not in allowed_columns:
+                raise NodePermissionException(
+                    f"The node administrator does not allow '{col}' to be requested in "
+                    "this algorithm computation. Please contact the node administrator "
+                    "for more information."
+                )
+    non_allowed_collumns = get_env_var(ENVVAR_DISALLOWED_COLUMNS)
+    if non_allowed_collumns:
+        non_allowed_collumns = non_allowed_collumns.split(",")
+        for col in requested_columns:
+            if col in non_allowed_collumns:
+                raise NodePermissionException(
+                    f"The node administrator does not allow '{col}' to be requested in "
+                    "this algorithm computation. Please contact the node administrator "
+                    "for more information."
+                )
+
+
+def check_match_inferred_numeric(
+    numeric_columns: list[str],
+    inferred_numeric_columns: list[str],
+    df: pd.DataFrame,
+) -> pd.DataFrame:
+    """
+    Check if the provided numeric_columns list matches the inferred numerical columns
+
+    Parameters
+    ----------
+    numeric_columns : list[str]
+        The user-provided list of columns to be treated as numeric. If user did not
+        provide this list, it is equal to the inferred_numeric_columns
+    inferred_numeric_columns : list[str]
+        The inferred list of numerical columns
+    df: pd.DataFrame
+        The original data. The type of the data may be modified if possible
+
+    Returns
+    -------
+    pd.DataFrame
+        The data with the columns cast to numeric if possible
+
+    Raises
+    ------
+    ValueError
+        If the provided numeric_columns list does not match the inferred_numeric_columns
+    """
+    error_msg = ""
+    for col in numeric_columns:
+        if col not in inferred_numeric_columns:
+            try:
+                df = cast_df_to_numeric(df, [col])
+            except ValueError as exc:
+                error_msg += str(exc)
+    if error_msg:
+        raise ValueError(error_msg)
+    return df
+
+
+def cast_df_to_numeric(
+    df: pd.DataFrame, columns: list[str] | None = None
+) -> pd.DataFrame:
+    """
+    Cast the columns in the dataframe to numeric if possible
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        The dataframe to cast
+    columns : list[str] | None
+        The columns to cast. If None, all columns are cast
+
+    Returns
+    -------
+    pd.DataFrame
+        The dataframe with the columns cast to numeric
+    """
+    if columns is None:
+        columns = df.columns
+    for col in columns:
+        try:
+            df[col] = pd.to_numeric(df[col])
+        except ValueError as exc:
+            raise ValueError(f"Column {col} could not be cast to numeric") from exc
+    return df
+
+
+def _variance_per_data_station(
+    df: pd.DataFrame, columns: list[str], means: list[float]
+) -> dict:
+    if not get_env_var(
+        EnvVarsAllowed.ALLOW_VARIANCE.value, default="true", as_type="bool"
+    ):
+        error("Node policies do not allow sharing the variance.")
+        return None
+    # Check that column names exist in the dataframe - note that this check should
+    # not be necessary if a user runs the central task as is has already been checked
+    # in that case
+    if not all([col in df.columns for col in columns]):
+        non_existing_columns = [col for col in columns if col not in df.columns]
+        raise InputError(
+            f"Columns {non_existing_columns} do not exist in the dataframe"
+        )
+    if len(columns) != len(means):
+        raise InputError(
+            "Length of columns list does not match the length of means list"
+        )
+
+    # Filter dataframe to only include the columns of interest
+    df = df[columns]
+
+    # Check privacy settings
+    info("Checking if data complies to privacy settings")
+    check_privacy(df, columns)
+
+    # Cast the columns to numeric
+    try:
+        cast_df_to_numeric(df, columns)
+    except ValueError as exc:
+        error(str(exc))
+        error("Exiting algorithm...")
+        return None
+
+    # Calculate the variance
+    info("Calculating variance")
+    variances = {}
+    for idx, column in enumerate(columns):
+        mean = means[idx]
+        variances[column] = ((df[column].astype(float) - mean) ** 2).sum()
+
+    return variances

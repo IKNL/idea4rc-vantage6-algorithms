@@ -1,9 +1,9 @@
 WITH
     --- Define the list of patient IDs to analyze
     patient_list AS (
-        SELECT unnest(@patient_ids) as person_id
-        -- @patient_ids should be an array of patient IDs
-        -- Example: [12345, 67890, 11111, 22222, 33333]
+        SELECT person_id FROM (VALUES {@patient_ids}) AS t(person_id)
+        -- @patient_ids will be expanded as individual values
+        -- Example: (12345), (67890), (11111), (22222), (33333)
     ),
     --- get all patients in the cohort
     person AS (
@@ -26,6 +26,7 @@ WITH
             pl.person_id,
             CAST(CASE WHEN death.death_date IS NOT NULL THEN 1 ELSE 0 END AS BIT) AS censor,
             CASE WHEN death.death_date IS NOT NULL THEN 'DEAD' ELSE 'ALIVE' END AS status,
+            -- TODO how do calculate survival time.
             COALESCE((death.death_date - op.observation_period_start_date),(op.observation_period_end_date - op.observation_period_start_date)
             ) AS survival_days
         FROM
@@ -93,7 +94,9 @@ WITH
             -- surgery_concept.concept_name as surgery
         FROM (
             SELECT
-                *,
+                episode.person_id,
+                episode.episode_id,
+                episode.episode_start_date,
                 ROW_NUMBER() OVER (PARTITION BY episode.person_id ORDER BY episode.episode_start_date) AS rn
             FROM
                 omopcdm.episode episode
@@ -265,7 +268,8 @@ WITH
             all_recurrence.condition_start_date AS recurrence_date
         FROM (
             SELECT
-                *,
+                co.person_id,
+                co.condition_start_date,
                 ROW_NUMBER() OVER (PARTITION BY co.person_id ORDER BY co.condition_start_date) AS rn
             FROM
                 patient_list pl
@@ -277,7 +281,7 @@ WITH
             --     ON pl.person_id = primary_tumor.person_id
             JOIN
                 (SELECT
-                    *
+                    c.concept_id as descendant_concept_id
                 FROM
                     omopcdm.concept c
                 JOIN
@@ -302,7 +306,8 @@ WITH
             all_pre_chemo.episode_start_date as pre_chemo_date
         FROM (
             SELECT
-                    *,
+                    episode.person_id,
+                    episode.episode_start_date,
                     ROW_NUMBER() OVER (PARTITION BY episode.person_id ORDER BY episode.episode_start_date DESC) AS rn
                 FROM
                     omopcdm.episode episode
@@ -346,7 +351,8 @@ WITH
             all_post_chemo.episode_start_date AS post_chemo_date
         FROM (
             SELECT
-                *,
+                episode.person_id,
+                episode.episode_start_date,
                 ROW_NUMBER() OVER (PARTITION BY episode.person_id ORDER BY episode.episode_start_date) AS rn
             FROM
                 omopcdm.episode episode
@@ -394,7 +400,8 @@ WITH
             all_pre_radio.episode_start_date AS pre_radio_date
         FROM (
             SELECT
-                *,
+                episode.person_id,
+                episode.episode_start_date,
                 ROW_NUMBER() OVER (PARTITION BY episode.person_id ORDER BY episode.episode_start_date DESC) AS rn
             FROM
                 omopcdm.episode episode
@@ -420,7 +427,8 @@ WITH
             all_post_radio.episode_start_date as post_radio_date
         FROM (
             SELECT
-                    *,
+                    episode.person_id,
+                    episode.episode_start_date,
                     ROW_NUMBER() OVER (PARTITION BY episode.person_id ORDER BY episode.episode_start_date) AS rn
                 FROM
                     omopcdm.episode episode
