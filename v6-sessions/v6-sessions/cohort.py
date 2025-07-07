@@ -2,12 +2,14 @@ import traceback
 import pkg_resources
 
 import pandas as pd
+import pyarrow as pa
 
 from rpy2.robjects import RS4
 from vantage6.algorithm.tools.util import info, error
 from vantage6.algorithm.decorator import source_database
 from ohdsi import sqlrender
 from ohdsi import database_connector
+from ohdsi import common
 
 
 @source_database
@@ -35,12 +37,13 @@ def create_cohort(
     """
 
     info("Setting up connection to database")
-    connection = database_connector.connect(
+    connection_specs = database_connector.create_connection_details(
         connection_string=connection_details["uri"],
-        user=connection_details["user"],
-        password=connection_details["password"],
+        user=connection_details["USER"],
+        password=connection_details["PASSWORD"],
         dbms="postgresql",
     )
+    connection = database_connector.connect(connection_specs)
 
     info(f"Retrieving variables for cohort: {patient_ids}")
     try:
@@ -97,6 +100,22 @@ def __create_cohort_dataframe(
         error(f"Failed to execute SQL: {e}")
         traceback.print_exc()
         raise e
+
+    info("Converting dataframe to pandas")
+    try:
+        converted_df = common.convert_from_r(df, date_cols=["SURGERY_DATE"])
+    except Exception as e:
+        error(f"Failed to convert dataframe: {e}")
+        traceback.print_exc()
+        raise e
+
+    # Somehow the dataframe is missing some metadata, so we need to create a new
+    # dataframe with the same data and the same columns.
+    clean_df = pd.DataFrame(converted_df.values, columns=converted_df.columns)
+
+    # Copy the dtypes from the original DataFrame
+    # clean_df = clean_df.astype(converted_df.dtypes)
+
     info("-->  Done")
 
-    return df
+    return pa.Table.from_pandas(clean_df)

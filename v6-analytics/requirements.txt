@@ -1,4 +1,4 @@
-vantage6-algorithm-tools==5.0.0a19
+vantage6-algorithm-tools==5.0.0a22
 pandas
 pyarrow
 parquet-tools
@@ -7,3 +7,4 @@ numpy==1.26.4
 ohdsi-common
 ohdsi-database-connector
 ohdsi-sqlrender
+scipy

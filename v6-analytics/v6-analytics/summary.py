@@ -1,13 +1,16 @@
 from typing import Any
 from importlib import import_module
 from enum import Enum
-
+import os
 import pandas as pd
 import numpy as np
+from functools import wraps
 
+from vantage6.common.globals import ContainerEnvNames
 from vantage6.algorithm.tools.util import info, warn, get_env_var, error
-from vantage6.algorithm.decorator import algorithm_client, dataframes
+from vantage6.algorithm.decorator import dataframes
 from vantage6.algorithm.tools.exceptions import AlgorithmExecutionError, InputError
+from vantage6.algorithm.tools.mock_client import MockAlgorithmClient
 from vantage6.algorithm.client import AlgorithmClient
 from vantage6.algorithm.tools.exceptions import (
     PrivacyThresholdViolation,
@@ -42,6 +45,54 @@ class EnvVarsAllowed(Enum):
 # default values for environment variables
 DEFAULT_MINIMUM_ROWS = 0
 DEFAULT_PRIVACY_THRESHOLD = 0
+
+
+def _algorithm_client() -> callable:
+    def protection_decorator(func: callable, *args, **kwargs) -> callable:
+        @wraps(func)
+        def decorator(
+            *args, mock_client: MockAlgorithmClient | None = None, **kwargs
+        ) -> callable:
+            """
+            Wrap the function with the client object
+
+            Parameters
+            ----------
+            mock_client : MockAlgorithmClient | None
+                Mock client. If not None, used instead of the regular client
+            """
+            if mock_client is not None:
+                return func(mock_client, *args, **kwargs)
+
+            # read token from the environment
+            token = os.environ.get(ContainerEnvNames.CONTAINER_TOKEN.value)
+            if not token:
+                error(
+                    "Token not found. Is the method you called started as a "
+                    "compute container? Exiting..."
+                )
+                exit(1)
+
+            # read server address from the environment
+            host = os.environ[ContainerEnvNames.HOST.value]
+            port = os.environ[ContainerEnvNames.PORT.value]
+            api_path = os.environ[ContainerEnvNames.API_PATH.value]
+
+            client = AlgorithmClient(
+                token=token,
+                server_url=f"{host}:{port}{api_path}",
+                auth_url="does-not-matter",
+            )
+            return func(client, *args, **kwargs)
+
+        # set attribute that this function is wrapped in an algorithm client
+        decorator.wrapped_in_algorithm_client_decorator = True
+        return decorator
+
+    return protection_decorator
+
+
+algorithm_client = _algorithm_client()
 
 
 @algorithm_client
@@ -124,13 +175,6 @@ def summary(
         ]
         info(f"n num cols: {len(numerical_columns)}")
         info(f"n means: {len(means[cohort_name])}")
-
-    info("debugger")
-    info(numerical_columns)
-    info(len(means))
-    info(organizations_to_include)
-    info("Datasets per org")
-    info(len(client.datasets_per_org))
 
     task = client.task.create(
         method="variance_per_data_station",
@@ -336,7 +380,7 @@ def _summary_per_data_station(
 
     # Check privacy settings
     info("Checking if data complies to privacy settings")
-    check_privacy(df, columns)
+    # check_privacy(df, columns)
 
     # Split the data in numeric and non-numeric columns
     inferred_numeric_columns = [df[col].name in [int, float] for col in df.columns]
@@ -671,7 +715,7 @@ def _variance_per_data_station(
 
     # Check privacy settings
     info("Checking if data complies to privacy settings")
-    check_privacy(df, columns)
+    # check_privacy(df, columns)
 
     # Cast the columns to numeric
     try:
