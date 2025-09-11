@@ -8,7 +8,7 @@ from functools import wraps
 
 from vantage6.common.globals import ContainerEnvNames
 from vantage6.algorithm.tools.util import info, warn, get_env_var, error
-from vantage6.algorithm.decorator import dataframes
+from vantage6.algorithm.decorator import dataframes, metadata
 from vantage6.algorithm.tools.exceptions import AlgorithmExecutionError, InputError
 from vantage6.algorithm.tools.mock_client import MockAlgorithmClient
 from vantage6.algorithm.client import AlgorithmClient
@@ -99,7 +99,7 @@ algorithm_client = _algorithm_client()
 def summary(
     client: AlgorithmClient,
     columns: list[str] | None = None,
-    is_numeric: list[bool] | None = None,
+    numeric_columns: list[bool] | None = None,
     organizations_to_include: list[int] | None = None,
 ) -> Any:
     """
@@ -112,17 +112,13 @@ def summary(
         The client object used to communicate with the server.
     columns : list[str] | None
         The columns to include in the summary. If not given, all columns are included.
-    is_numeric : list[bool] | None
+    numeric_columns : list[str] | None
         Whether each of the columns is numeric or not. If not given, the algorithm will
         try to infer the type of the columns.
     organizations_to_include : list[int] | None
         The organizations to include in the task. If not given, all organizations
         in the collaboration are included.
     """
-    if is_numeric and len(is_numeric) != len(columns):
-        raise InputError(
-            "Length of is_numeric list does not match the length of columns list"
-        )
 
     # get all organizations (ids) within the collaboration so you can send a
     # task to them.
@@ -138,7 +134,7 @@ def summary(
         # "method": "summary_per_data_station",
         "kwargs": {
             "columns": columns,
-            "numeric_columns": ["PATIENT_ID", "AGE", "TUMOR_SIZE", "N_CANCER_EPISODES"],
+            "numeric_columns": numeric_columns,
         },
     }
 
@@ -163,9 +159,11 @@ def summary(
     means = {}
     cohort_names = results[0].keys()
 
+    lookup_organizations = {org.get('id'): org.get('name') for org in client.organization.list()}
+
     for cohort_name in cohort_names:
         cohort_results = [result[cohort_name] for result in results]
-        all_cohort_results[cohort_name] = _aggregate_partial_summaries(cohort_results)
+        all_cohort_results[cohort_name] = _aggregate_partial_summaries(cohort_results, lookup_organizations)
 
         numerical_columns = list(all_cohort_results[cohort_name]["numeric"].keys())
         # compute the variance now that we have the mean
@@ -203,7 +201,7 @@ def summary(
     return all_cohort_results
 
 
-def _aggregate_partial_summaries(results: list[dict]) -> dict:
+def _aggregate_partial_summaries(results: list[dict], lookup_organizations) -> dict:
     """Aggregate the partial summaries of all nodes.
 
     Parameters
@@ -228,9 +226,7 @@ def _aggregate_partial_summaries(results: list[dict]) -> dict:
                 result["num_complete_rows_per_node"]
             ]
             for column in result["numeric"]:
-                aggregated_summary["numeric"][column]["median"] = [
-                    result["numeric"][column]["median"]
-                ]
+                aggregated_summary["numeric"][column]["median"] = {lookup_organizations[result["organization_id"]]:result["numeric"][column]["median"]}
                 aggregated_summary["numeric"][column]["q_25"] = [
                     result["numeric"][column]["q_25"]
                 ]
@@ -254,7 +250,7 @@ def _aggregate_partial_summaries(results: list[dict]) -> dict:
             )
             aggregated_dict["missing"] += result["numeric"][column]["missing"]
             aggregated_dict["sum"] += result["numeric"][column]["sum"]
-            aggregated_dict["median"].append(result["numeric"][column]["median"])
+            aggregated_dict["median"][lookup_organizations[result["organization_id"]]] = result["numeric"][column]["median"]
             aggregated_dict["q_25"].append(result["numeric"][column]["q_25"])
             aggregated_dict["q_75"].append(result["numeric"][column]["q_75"])
 
@@ -321,9 +317,10 @@ def _add_sd_to_results(
 
 
 # Do not provide the columns as we want all columns to be included
+@metadata
 @dataframes
 def summary_per_data_station(
-    dataframes: dict[str, pd.DataFrame], *args, **kwargs
+    dataframes: dict[str, pd.DataFrame], metadata, *args, **kwargs
 ) -> dict:
     dfs = dataframes.values()
     cohort_names = dataframes.keys()
@@ -335,7 +332,7 @@ def summary_per_data_station(
             results[name]["numeric"][var]["median"] = float(np.nanmedian(df[var]))
             results[name]["numeric"][var]["q_25"] = float(np.nanquantile(df[var], 0.25))
             results[name]["numeric"][var]["q_75"] = float(np.nanquantile(df[var], 0.75))
-
+            results[name]["organization_id"] = metadata.organization_id
     return results
 
 
@@ -466,7 +463,7 @@ def _get_categorical_summary(df: pd.DataFrame) -> pd.DataFrame:
     """
     # summary for non-numeric columns. Include the NA count and remove the values
     # that we don't want to share
-    summary_categorical = df.describe(exclude=[int, float])
+    summary_categorical = df.astype(object).describe()
     summary_categorical.loc["missing"] = df.isna().sum()
     summary_categorical.drop(["top", "freq", "unique"], inplace=True)
     return summary_categorical
