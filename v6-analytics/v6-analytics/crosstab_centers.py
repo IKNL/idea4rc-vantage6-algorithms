@@ -187,7 +187,7 @@ def combine_center_results(
         results, columns=["Cohort", "Variable", "Chi-squared", "P-value"]
     ).sort_values(["Cohort", "Variable"])
 
-    return combined_df.to_json(), chi_squared_df.to_json()
+    return combined_df.to_dict(), chi_squared_df.to_dict()
 
 
 @metadata
