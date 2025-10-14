@@ -1,11 +1,62 @@
-import pandas as pd
+import os
+from functools import wraps
 
+import pandas as pd
 from scipy import stats
 
 from vantage6.algorithm.client import AlgorithmClient
-from vantage6.algorithm.tools.decorators import algorithm_client, metadata, RunMetaData
+from vantage6.algorithm.decorator import metadata, dataframes
+from vantage6.algorithm.decorator.metadata import RunMetaData
+from vantage6.algorithm.tools.mock_client import MockAlgorithmClient
+from vantage6.algorithm.tools.util import error
+from vantage6.common.globals import ContainerEnvNames
 
-from .decorator import new_data_decorator
+def _algorithm_client() -> callable:
+    def protection_decorator(func: callable, *args, **kwargs) -> callable:
+        @wraps(func)
+        def decorator(
+            *args, mock_client: MockAlgorithmClient | None = None, **kwargs
+        ) -> callable:
+            """
+            Wrap the function with the client object
+
+            Parameters
+            ----------
+            mock_client : MockAlgorithmClient | None
+                Mock client. If not None, used instead of the regular client
+            """
+            if mock_client is not None:
+                return func(mock_client, *args, **kwargs)
+
+            # read token from the environment
+            token = os.environ.get(ContainerEnvNames.CONTAINER_TOKEN.value)
+            if not token:
+                error(
+                    "Token not found. Is the method you called started as a "
+                    "compute container? Exiting..."
+                )
+                exit(1)
+
+            # read server address from the environment
+            host = os.environ[ContainerEnvNames.HOST.value]
+            port = os.environ[ContainerEnvNames.PORT.value]
+            api_path = os.environ[ContainerEnvNames.API_PATH.value]
+
+            client = AlgorithmClient(
+                token=token,
+                server_url=f"{host}:{port}{api_path}",
+                auth_url="does-not-matter",
+            )
+            return func(client, *args, **kwargs)
+
+        # set attribute that this function is wrapped in an algorithm client
+        decorator.wrapped_in_algorithm_client_decorator = True
+        return decorator
+
+    return protection_decorator
+
+
+algorithm_client = _algorithm_client()
 
 
 @algorithm_client
@@ -26,8 +77,8 @@ def crosstab_centers(
             "method": "compute_local_counts",
         },
         organizations=organizations_to_include,
-        name="Crosstab centers subtask",
-        description=f"Subtask to compute crosstab centers",
+        name="Cross tabulation centers subtask",
+        description="Subtask to compute cross tabulation centers",
     )
 
     # Wait for the task to finish
@@ -143,21 +194,19 @@ def combine_center_results(
 
 
 @metadata
-@new_data_decorator
+@dataframes
 def compute_local_counts(
-    dfs: list[pd.DataFrame], cohort_names: list[str], meta: RunMetaData
+    dataframes: dict[str, pd.DataFrame], metadata, meta: RunMetaData
 ) -> dict[str, list[dict[str, dict[str, int]]]]:
     """
     Compute local categorical value counts for each variable for multiple dataframes.
 
     Parameters
     ----------
-    dfs : list[pandas.DataFrame]
+    dataframes : dict[str, pandas.DataFrame]
         One or more dataframes containing the data
     meta : RunMetaData
         Metadata about the run, including organization information
-    cohort_names : list[str]
-        Names of the cohorts corresponding to each dataframe
 
     Returns
     -------
@@ -186,15 +235,12 @@ def compute_local_counts(
         }
         ```
     """
-    if len(dfs) != len(cohort_names):
-        raise ValueError("Number of dataframes must match number of cohort names")
-
     results = {}
     results["meta"] = {
         "node_id": meta.node_id,
         "organization_id": meta.organization_id,
     }
-    for df, cohort in zip(dfs, cohort_names):
+    for cohort, df in dataframes.items():
         variables = df.select_dtypes(include=["category"]).columns
         results[cohort] = {}
         for var in variables:
