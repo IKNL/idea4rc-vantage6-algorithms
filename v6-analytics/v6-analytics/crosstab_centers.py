@@ -73,9 +73,8 @@ def crosstab_centers(
 
     # Get the data from the centers
     task = client.task.create(
-        input_={
-            "method": "compute_local_counts",
-        },
+        method="compute_local_counts",
+        input_={},
         organizations=organizations_to_include,
         name="Cross tabulation centers subtask",
         description="Subtask to compute cross tabulation centers",
@@ -196,7 +195,7 @@ def combine_center_results(
 @metadata
 @dataframes
 def compute_local_counts(
-    dataframes: dict[str, pd.DataFrame], metadata, meta: RunMetaData
+    dataframes: dict[str, pd.DataFrame], meta: RunMetaData
 ) -> dict[str, list[dict[str, dict[str, int]]]]:
     """
     Compute local categorical value counts for each variable for multiple dataframes.
