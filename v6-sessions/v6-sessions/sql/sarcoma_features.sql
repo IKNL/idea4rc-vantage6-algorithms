@@ -82,8 +82,8 @@ WITH
         LEFT JOIN
         	omopcdm.concept diagnosis_concept
         	ON episode.episode_object_concept_id = diagnosis_concept.concept_id
-    --     WHERE
-    --         episode.episode_concept_id = 32533 --- Disease Episode (overarching episode)
+         WHERE
+             episode.episode_concept_id = 32533 --- Disease Episode (overarching episode)
     ),
     --- histology group
     histo_group AS (
