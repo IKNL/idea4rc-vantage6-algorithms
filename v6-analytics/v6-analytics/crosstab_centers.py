@@ -130,8 +130,6 @@ def combine_center_results(
 
         variable_names = [key for key in center_results[0][cohort].keys()]
         for var in variable_names:
-            var_dict = center_results[0][cohort][var]
-
             all_levels = {
                 level
                 for center in center_results
@@ -240,7 +238,7 @@ def compute_local_counts(
         "organization_id": meta.organization_id,
     }
     for cohort, df in dataframes.items():
-        variables = df.select_dtypes(include=["category"]).columns
+        variables = df.select_dtypes(include=["category", "object"]).columns
         results[cohort] = {}
         for var in variables:
             results[cohort][var] = df[var].value_counts().to_dict()
