@@ -4,8 +4,7 @@ from .summary import (
     variance_per_data_station,
 )  # noqa: F401
 from .crosstab import crosstab, partial_crosstab  # noqa: F401
-
-# from .crosstab_centers import crosstab_centers, compute_local_counts  # noqa: F401
+from .crosstab_centers import crosstab_centers, compute_local_counts  # noqa: F401
 # from .kaplan_meier import (
 #     kaplan_meier_central,
 #     get_km_event_table,
