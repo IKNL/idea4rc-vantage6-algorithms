@@ -101,6 +101,7 @@ def summary(
     columns: list[str] | None = None,
     numeric_columns: list[bool] | None = None,
     organizations_to_include: list[int] | None = None,
+    stratification_column: str | None = None,
 ) -> Any:
     """
     Send task to each node participating in the task to compute a local summary,
@@ -118,6 +119,8 @@ def summary(
     organizations_to_include : list[int] | None
         The organizations to include in the task. If not given, all organizations
         in the collaboration are included.
+    stratification_column: str | None
+        The column to use for stratification. If not given, no stratification is done.
     """
 
     # get all organizations (ids) within the collaboration so you can send a
@@ -135,6 +138,7 @@ def summary(
         "kwargs": {
             "columns": columns,
             "numeric_columns": numeric_columns,
+            "stratification_column": stratification_column,
         },
     }
 
@@ -320,13 +324,23 @@ def _add_sd_to_results(
 @metadata
 @dataframes
 def summary_per_data_station(
-    dataframes: dict[str, pd.DataFrame], metadata, *args, **kwargs
+    dataframes: dict[str, pd.DataFrame],
+    metadata,
+    stratification_column: str | None = None,
+    *args,
+    **kwargs,
 ) -> dict:
     dfs = dataframes.values()
     cohort_names = dataframes.keys()
     results = {}
     for df, name in zip(dfs, cohort_names):
-        results[name] = _summary_per_data_station(df, *args, **kwargs)
+        if stratification_column:
+            for value in df[stratification_column].unique():
+                df_stratified = df[df[stratification_column] == value]
+                results[f"{name}_{stratification_column}=={value}"] = \
+                    _summary_per_data_station(df_stratified, *args, **kwargs)
+        else:
+            results[name] = _summary_per_data_station(df, *args, **kwargs)
         # Add median and quantiles (0.25, 0.75)
         for var in results[name]["numeric"]:
             results[name]["numeric"][var]["median"] = float(np.nanmedian(df[var]))
@@ -360,7 +374,7 @@ def variance_per_data_station(
 def _summary_per_data_station(
     df: pd.DataFrame,
     columns: list[str] | None = None,
-    numeric_columns: list[str] | None = None,
+    numeric_columns: list[str] | None = None
 ) -> dict:
     if not columns:
         columns = df.columns
