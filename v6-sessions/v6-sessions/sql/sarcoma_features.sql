@@ -38,22 +38,6 @@ WITH
             omopcdm.observation_period op
             ON pl.person_id = op.person_id
     ),
-    --- histology group
-    histo_group AS (
-    	SELECT
-	    	primary_tumor.person_id,
-	    	CASE
-                WHEN primary_tumor.diagnosis_concept IN (36529541,36532543,36540557,36547895,36550930,36565259,36716490,44500609,44501363,44502347,44502555) THEN '1004/1007 Liposarcoma'
-                -- WHEN primary_tumor.diagnosis_concept IN (36529541,36532543,36540557,36547895,36550930,36565259,36716490,44500609,44501363,44502347,44502555) THEN '1007 Dedifferentiated liposarcoma'
-                WHEN primary_tumor.diagnosis_concept IN (36517959,36519685,36527462,36528858,36542197,36548944,36567690,36717566,44500548) THEN '1010 Leiomyosarcoma'
-                WHEN primary_tumor.diagnosis_concept IN (36564558,44500681) THEN '1013 Solitary fibrous tumour'
-                WHEN primary_tumor.diagnosis_concept IN (36518164,36539077,36542266,36545198,36564186,36565777,36567910,36567978) THEN '1016 MPNST'
-                WHEN primary_tumor.diagnosis_concept IN (36517265,36536317,36539821,36557573,36563675,36717542,44500743,44501448,44501970,44502968,44505249) THEN '1019 UPS'
-                WHEN primary_tumor.diagnosis_concept IN (36517688,36520993,36521675,36521767,36522306,36522587,36523615,36523729,36526673,36527934,36528528,36528553,36529241,36529898,36529914,36530213,36530702,36532061,36533385,36534511,36534836,36535692,36536209,36536483,36538083,36539258,36539942,36540600,36542848,36543361,36543793,36544017,36544331,36544801,36545011,36545492,36548018,36548485,36550322,36553275,36553366,36553716,36554396,36555105,36555193,36555344,36556092,36556544,36557446,36557554,36559526,36559764,36560560,36560902,36561436,36561836,36561934,36562510,36562642,36562881,36563318,36563461,36563534,36565276,36566540,36567178,42511689,42512026,42512136,42512235,42512243,42512454,42512487,42512587,42512696,42512826,42512845,42512942,44499454,44500553,44500656,44500745,44500820,44501225,44501226,44501367,44501368,44502560,44502563) THEN '1022 Other sarcomas'
-                ELSE 'N/A'
-	        END AS histology
-	    FROM primary_tumor
-    ),
     --- get tumor grade (if grade after surgery is available, otherwise grade at diagnosis)
     tumor_grade AS (
         SELECT
@@ -81,26 +65,42 @@ WITH
     )
     ,
     --- get primary diagnosis for all patients in the cohort (the date is the reference for some of the other variables)
-    -- primary_tumor AS (
-    --     SELECT
-    --         episode.person_id,
-    --         episode.episode_id,
-    --         episode.episode_concept_id,
-    --         episode.episode_start_date as diagnosis_date,
-    --         episode.episode_end_date as diagnosis_end_date,
-    --         episode.episode_object_concept_id as diagnosis_concept,
-    --         diagnosis_concept.concept_name as diagnosis
-    --     FROM
-    --         patient_list pl
-    --     LEFT JOIN
-    --         omopcdm.episode episode
-    --         ON pl.person_id = episode.person_id
-    --     LEFT JOIN
-    --     	omopcdm.concept diagnosis_concept
-    --     	ON episode.episode_object_concept_id = diagnosis_concept.concept_id
+    primary_tumor AS (
+        SELECT
+            episode.person_id,
+            episode.episode_id,
+            episode.episode_concept_id,
+            episode.episode_start_date as diagnosis_date,
+            episode.episode_end_date as diagnosis_end_date,
+            episode.episode_object_concept_id as diagnosis_concept,
+            diagnosis_concept.concept_name as diagnosis
+        FROM
+            patient_list pl
+        LEFT JOIN
+            omopcdm.episode episode
+            ON pl.person_id = episode.person_id
+        LEFT JOIN
+        	omopcdm.concept diagnosis_concept
+        	ON episode.episode_object_concept_id = diagnosis_concept.concept_id
     --     WHERE
     --         episode.episode_concept_id = 32533 --- Disease Episode (overarching episode)
     -- ),
+    --- histology group
+    histo_group AS (
+    	SELECT
+	    	primary_tumor.person_id,
+	    	CASE
+                WHEN primary_tumor.diagnosis_concept IN (36529541,36532543,36540557,36547895,36550930,36565259,36716490,44500609,44501363,44502347,44502555) THEN '1004/1007 Liposarcoma'
+                -- WHEN primary_tumor.diagnosis_concept IN (36529541,36532543,36540557,36547895,36550930,36565259,36716490,44500609,44501363,44502347,44502555) THEN '1007 Dedifferentiated liposarcoma'
+                WHEN primary_tumor.diagnosis_concept IN (36517959,36519685,36527462,36528858,36542197,36548944,36567690,36717566,44500548) THEN '1010 Leiomyosarcoma'
+                WHEN primary_tumor.diagnosis_concept IN (36564558,44500681) THEN '1013 Solitary fibrous tumour'
+                WHEN primary_tumor.diagnosis_concept IN (36518164,36539077,36542266,36545198,36564186,36565777,36567910,36567978) THEN '1016 MPNST'
+                WHEN primary_tumor.diagnosis_concept IN (36517265,36536317,36539821,36557573,36563675,36717542,44500743,44501448,44501970,44502968,44505249) THEN '1019 UPS'
+                WHEN primary_tumor.diagnosis_concept IN (36517688,36520993,36521675,36521767,36522306,36522587,36523615,36523729,36526673,36527934,36528528,36528553,36529241,36529898,36529914,36530213,36530702,36532061,36533385,36534511,36534836,36535692,36536209,36536483,36538083,36539258,36539942,36540600,36542848,36543361,36543793,36544017,36544331,36544801,36545011,36545492,36548018,36548485,36550322,36553275,36553366,36553716,36554396,36555105,36555193,36555344,36556092,36556544,36557446,36557554,36559526,36559764,36560560,36560902,36561436,36561836,36561934,36562510,36562642,36562881,36563318,36563461,36563534,36565276,36566540,36567178,42511689,42512026,42512136,42512235,42512243,42512454,42512487,42512587,42512696,42512826,42512845,42512942,44499454,44500553,44500656,44500745,44500820,44501225,44501226,44501367,44501368,44502560,44502563) THEN '1022 Other sarcomas'
+                ELSE 'N/A'
+	        END AS histology
+	    FROM primary_tumor
+    ),
     --- get main surgery information
     surgery AS (
         SELECT
