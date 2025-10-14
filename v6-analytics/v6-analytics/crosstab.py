@@ -1,28 +1,19 @@
-import pandas as pd
+import os
+from functools import wraps
+from io import StringIO
+from typing import Any
 
-from vantage6.algorithm.tools.util import info
-from vantage6.algorithm.tools.util import get_env_var
+import pandas as pd
+import scipy
+from vantage6.algorithm.client import AlgorithmClient
+from vantage6.algorithm.decorator import dataframes
 from vantage6.algorithm.tools.exceptions import (
     EnvironmentVariableError,
     PrivacyThresholdViolation,
 )
-from typing import Any
-from io import StringIO
-import pandas as pd
-import scipy
-
-from vantage6.algorithm.tools.util import info
-from vantage6.algorithm.decorator import dataframes
-from vantage6.algorithm.client import AlgorithmClient
-
-from typing import Any
-import os
-from functools import wraps
-
-from vantage6.common.globals import ContainerEnvNames
-from vantage6.algorithm.tools.util import error
 from vantage6.algorithm.tools.mock_client import MockAlgorithmClient
-from vantage6.algorithm.client import AlgorithmClient
+from vantage6.algorithm.tools.util import error, get_env_var, info
+from vantage6.common.globals import ContainerEnvNames
 
 
 def _algorithm_client() -> callable:
