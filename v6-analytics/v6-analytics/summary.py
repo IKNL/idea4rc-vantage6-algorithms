@@ -161,12 +161,12 @@ def summary(
     all_cohort_results = {}
 
     means = {}
-    cohort_names = results[0].keys()
+    cohort_names = list(set([item for sublist in [result.keys() for result in results] for item in sublist]))
 
     lookup_organizations = {org.get('id'): org.get('name') for org in client.organization.list()}
 
     for cohort_name in cohort_names:
-        cohort_results = [result[cohort_name] for result in results]
+        cohort_results = [result.get(cohort_name) for result in results]
         all_cohort_results[cohort_name] = _aggregate_partial_summaries(cohort_results, lookup_organizations)
 
         numerical_columns = list(all_cohort_results[cohort_name]["numeric"].keys())
@@ -184,6 +184,7 @@ def summary(
             "kwargs": {
                 "columns": numerical_columns,
                 "means": means,
+                "stratification_column": stratification_column
             },
         },
         organizations=organizations_to_include,
@@ -195,7 +196,7 @@ def summary(
 
     # add the standard deviation to the results
     for cohort_name in cohort_names:
-        cohort_variance_results = [result[cohort_name] for result in variance_results]
+        cohort_variance_results = [result.get(cohort_name) for result in variance_results]
         all_cohort_results[cohort_name] = _add_sd_to_results(
             all_cohort_results[cohort_name], cohort_variance_results, numerical_columns
         )
@@ -218,10 +219,13 @@ def _aggregate_partial_summaries(results: list[dict], lookup_organizations) -> d
     is_first = True
     for result in results:
         if result is None:
-            raise AlgorithmExecutionError(
-                "At least one of the nodes returned invalid result. Please check the "
-                "logs."
-            )
+            # raise AlgorithmExecutionError(
+            #     "At least one of the nodes returned invalid result. Please check the "
+            #     "logs."
+            # )
+            warn("node did not have results for a certain cohort")
+            continue
+
         if is_first:
             # copy results. Only convert num complete rows per node to a list so that
             # we can add the other nodes to it later
@@ -290,7 +294,7 @@ def _aggregate_partial_summaries(results: list[dict], lookup_organizations) -> d
 
 
 def _add_sd_to_results(
-    results: dict, variance_results: list[dict], numerical_columns: list[str]
+    results: dict, variance_results: list[dict] | None, numerical_columns: list[str]
 ) -> dict:
     """Add the variance to the results.
 
@@ -311,6 +315,8 @@ def _add_sd_to_results(
     for column in numerical_columns:
         sum_variance = 0
         for node_results in variance_results:
+            if not node_results:
+                continue
             sum_variance += node_results[column]
         if results["numeric"][column]["count"] > 1:
             variance = sum_variance / (results["numeric"][column]["count"] - 1)
@@ -338,22 +344,31 @@ def summary_per_data_station(
             for value in df[stratification_column].unique():
                 df_stratified = df[df[stratification_column] == value]
                 results[f"{name}_{stratification_column}=={value}"] = \
-                    _summary_per_data_station(df_stratified, *args, **kwargs)
+                    structure_summary_per_data_station_output(
+                        df_stratified, 
+                        _summary_per_data_station(df_stratified, *args, **kwargs),
+                        metadata
+                    )
         else:
-            results[name] = _summary_per_data_station(df, *args, **kwargs)
+            results[name] = structure_summary_per_data_station_output(
+                df, _summary_per_data_station(df, *args, **kwargs), metadata
+            )
         # Add median and quantiles (0.25, 0.75)
-        for var in results[name]["numeric"]:
-            results[name]["numeric"][var]["median"] = float(np.nanmedian(df[var]))
-            results[name]["numeric"][var]["q_25"] = float(np.nanquantile(df[var], 0.25))
-            results[name]["numeric"][var]["q_75"] = float(np.nanquantile(df[var], 0.75))
-            results[name]["organization_id"] = metadata.organization_id
     return results
 
+def structure_summary_per_data_station_output(df, results, metadata):
+    for var in results["numeric"]:
+            results["numeric"][var]["median"] = float(np.nanmedian(df[var]))
+            results["numeric"][var]["q_25"] = float(np.nanquantile(df[var], 0.25))
+            results["numeric"][var]["q_75"] = float(np.nanquantile(df[var], 0.75))
+            results["organization_id"] = metadata.organization_id
+    return results
 
 @dataframes
 def variance_per_data_station(
     dataframes: dict[str, pd.DataFrame],
     means: dict[list[float]],
+    stratification_column = None,
     *args,
     **kwargs,
 ) -> dict:
@@ -364,9 +379,21 @@ def variance_per_data_station(
     info(means)
     info("Cake is a lie")
     for df, name in zip(dfs, cohort_names):
-        results[name] = _variance_per_data_station(
-            df, means=means[name], *args, **kwargs
-        )
+        if stratification_column:
+            strata = df[stratification_column].unique()
+            for stratum in strata:
+                df_strata = df[df[stratification_column]==stratum]
+                name_stratum = f"{name}_{stratification_column}=={stratum}"
+                if means.get(name_stratum):
+                    results[name] = _variance_per_data_station(
+                        df_strata, means=means[name_stratum], *args, **kwargs
+                    )
+                else:
+                    results[name] = None
+        else:
+            results[name] = _variance_per_data_station(
+                df, means=means[name], *args, **kwargs
+            )
     info(results)
     return results
 
