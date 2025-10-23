@@ -161,13 +161,25 @@ def summary(
     all_cohort_results = {}
 
     means = {}
-    cohort_names = list(set([item for sublist in [result.keys() for result in results] for item in sublist]))
+    cohort_names = list(
+        set(
+            [
+                item
+                for sublist in [result.keys() for result in results]
+                for item in sublist
+            ]
+        )
+    )
 
-    lookup_organizations = {org.get('id'): org.get('name') for org in client.organization.list()}
+    lookup_organizations = {
+        org.get("id"): org.get("name") for org in client.organization.list()
+    }
 
     for cohort_name in cohort_names:
         cohort_results = [result.get(cohort_name) for result in results]
-        all_cohort_results[cohort_name] = _aggregate_partial_summaries(cohort_results, lookup_organizations)
+        all_cohort_results[cohort_name] = _aggregate_partial_summaries(
+            cohort_results, lookup_organizations
+        )
 
         numerical_columns = list(all_cohort_results[cohort_name]["numeric"].keys())
         # compute the variance now that we have the mean
@@ -184,7 +196,7 @@ def summary(
             "kwargs": {
                 "columns": numerical_columns,
                 "means": means,
-                "stratification_column": stratification_column
+                "stratification_column": stratification_column,
             },
         },
         organizations=organizations_to_include,
@@ -196,7 +208,9 @@ def summary(
 
     # add the standard deviation to the results
     for cohort_name in cohort_names:
-        cohort_variance_results = [result.get(cohort_name) for result in variance_results]
+        cohort_variance_results = [
+            result.get(cohort_name) for result in variance_results
+        ]
         all_cohort_results[cohort_name] = _add_sd_to_results(
             all_cohort_results[cohort_name], cohort_variance_results, numerical_columns
         )
@@ -215,7 +229,7 @@ def _aggregate_partial_summaries(results: list[dict], lookup_organizations) -> d
         The partial summaries of all nodes.
     """
     info("Aggregating partial summaries")
-    aggregated_summary = {}
+    aggregate = {}
     is_first = True
     for result in results:
         if result is None:
@@ -226,71 +240,82 @@ def _aggregate_partial_summaries(results: list[dict], lookup_organizations) -> d
             warn("node did not have results for a certain cohort")
             continue
 
+        organization_name = lookup_organizations[result["organization_id"]]
         if is_first:
             # copy results. Only convert num complete rows per node to a list so that
             # we can add the other nodes to it later
-            aggregated_summary = result
-            aggregated_summary["num_complete_rows_per_node"] = [
-                result["num_complete_rows_per_node"]
-            ]
+            aggregate = result
+            aggregate["num_complete_rows_per_node"] = {
+                organization_name: result["num_complete_rows_per_node"]
+            }
+
             for column in result["numeric"]:
-                aggregated_summary["numeric"][column]["median"] = {lookup_organizations[result["organization_id"]]:result["numeric"][column]["median"]}
-                aggregated_summary["numeric"][column]["q_25"] = [
-                    result["numeric"][column]["q_25"]
-                ]
-                aggregated_summary["numeric"][column]["q_75"] = [
-                    result["numeric"][column]["q_75"]
-                ]
+                aggregate["numeric"][column]["median"] = {
+                    organization_name: result["numeric"][column]["median"]
+                }
+                aggregate["numeric"][column]["q_25"] = {
+                    organization_name: result["numeric"][column]["q_25"]
+                }
+                aggregate["numeric"][column]["q_75"] = {
+                    organization_name: result["numeric"][column]["q_75"]
+                }
+
             is_first = False
             continue
 
         # aggregate data for numeric columns
         for column in result["numeric"]:
-            aggregated_dict = aggregated_summary["numeric"][column]
+            aggregated_dict = aggregate["numeric"][column]
             aggregated_dict["count"] += result["numeric"][column]["count"]
             aggregated_dict["min"] = min(
-                aggregated_summary["numeric"][column]["min"],
+                aggregate["numeric"][column]["min"],
                 result["numeric"][column]["min"],
             )
             aggregated_dict["max"] = max(
-                aggregated_summary["numeric"][column]["max"],
+                aggregate["numeric"][column]["max"],
                 result["numeric"][column]["max"],
             )
             aggregated_dict["missing"] += result["numeric"][column]["missing"]
             aggregated_dict["sum"] += result["numeric"][column]["sum"]
-            aggregated_dict["median"][lookup_organizations[result["organization_id"]]] = result["numeric"][column]["median"]
-            aggregated_dict["q_25"].append(result["numeric"][column]["q_25"])
-            aggregated_dict["q_75"].append(result["numeric"][column]["q_75"])
+            aggregated_dict["median"][organization_name] = result["numeric"][column][
+                "median"
+            ]
+            aggregated_dict["q_25"][organization_name] = result["numeric"][column][
+                "q_25"
+            ]
+            aggregated_dict["q_75"][organization_name] = result["numeric"][column][
+                "q_75"
+            ]
 
         # aggregate data for categorical columns
         for column in result["categorical"]:
-            aggregated_dict = aggregated_summary["categorical"][column]
+            aggregated_dict = aggregate["categorical"][column]
             aggregated_dict["count"] += result["categorical"][column]["count"]
             aggregated_dict["missing"] += result["categorical"][column]["missing"]
 
         # add the number of complete rows for this node
-        aggregated_summary["num_complete_rows_per_node"].append(
-            result["num_complete_rows_per_node"]
-        )
+        aggregate["num_complete_rows_per_node"][organization_name] = result[
+            "num_complete_rows_per_node"
+        ]
 
         # add the unique values
         for column in result["counts_unique_values"]:
-            if column not in aggregated_summary["counts_unique_values"]:
-                aggregated_summary["counts_unique_values"][column] = {}
+            if column not in aggregate["counts_unique_values"]:
+                aggregate["counts_unique_values"][column] = {}
             for value, count in result["counts_unique_values"][column].items():
-                if value not in aggregated_summary["counts_unique_values"][column]:
-                    aggregated_summary["counts_unique_values"][column][value] = 0
-                aggregated_summary["counts_unique_values"][column][value] += count
+                if value not in aggregate["counts_unique_values"][column]:
+                    aggregate["counts_unique_values"][column][value] = 0
+                aggregate["counts_unique_values"][column][value] += count
 
     # now that all data is aggregated, we can compute the mean
-    for column in aggregated_summary["numeric"]:
-        aggregated_dict = aggregated_summary["numeric"][column]
+    for column in aggregate["numeric"]:
+        aggregated_dict = aggregate["numeric"][column]
         if aggregated_dict["count"]:
             aggregated_dict["mean"] = aggregated_dict["sum"] / aggregated_dict["count"]
         else:
             aggregated_dict["mean"] = 0  # TODO this is terrible, we should not do this
 
-    return aggregated_summary
+    return aggregate
 
 
 def _add_sd_to_results(
@@ -343,12 +368,13 @@ def summary_per_data_station(
         if stratification_column:
             for value in df[stratification_column].unique():
                 df_stratified = df[df[stratification_column] == value]
-                results[f"{name}_{stratification_column}=={value}"] = \
+                results[f"{name}_{stratification_column}=={value}"] = (
                     structure_summary_per_data_station_output(
-                        df_stratified, 
+                        df_stratified,
                         _summary_per_data_station(df_stratified, *args, **kwargs),
-                        metadata
+                        metadata,
                     )
+                )
         else:
             results[name] = structure_summary_per_data_station_output(
                 df, _summary_per_data_station(df, *args, **kwargs), metadata
@@ -356,19 +382,21 @@ def summary_per_data_station(
         # Add median and quantiles (0.25, 0.75)
     return results
 
+
 def structure_summary_per_data_station_output(df, results, metadata):
     for var in results["numeric"]:
-            results["numeric"][var]["median"] = float(np.nanmedian(df[var]))
-            results["numeric"][var]["q_25"] = float(np.nanquantile(df[var], 0.25))
-            results["numeric"][var]["q_75"] = float(np.nanquantile(df[var], 0.75))
-            results["organization_id"] = metadata.organization_id
+        results["numeric"][var]["median"] = float(np.nanmedian(df[var]))
+        results["numeric"][var]["q_25"] = float(np.nanquantile(df[var], 0.25))
+        results["numeric"][var]["q_75"] = float(np.nanquantile(df[var], 0.75))
+        results["organization_id"] = metadata.organization_id
     return results
+
 
 @dataframes
 def variance_per_data_station(
     dataframes: dict[str, pd.DataFrame],
     means: dict[list[float]],
-    stratification_column = None,
+    stratification_column=None,
     *args,
     **kwargs,
 ) -> dict:
@@ -382,7 +410,7 @@ def variance_per_data_station(
         if stratification_column:
             strata = df[stratification_column].unique()
             for stratum in strata:
-                df_strata = df[df[stratification_column]==stratum]
+                df_strata = df[df[stratification_column] == stratum]
                 name_stratum = f"{name}_{stratification_column}=={stratum}"
                 if means.get(name_stratum):
                     results[name] = _variance_per_data_station(
@@ -401,7 +429,7 @@ def variance_per_data_station(
 def _summary_per_data_station(
     df: pd.DataFrame,
     columns: list[str] | None = None,
-    numeric_columns: list[str] | None = None
+    numeric_columns: list[str] | None = None,
 ) -> dict:
     if not columns:
         columns = df.columns
