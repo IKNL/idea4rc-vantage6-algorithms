@@ -1,18 +1,15 @@
 import traceback
-import pkg_resources
 
 import pandas as pd
+import pkg_resources
 import pyarrow as pa
-
+from ohdsi import common, database_connector, sqlrender
 from rpy2.robjects import RS4
-from vantage6.algorithm.tools.util import info, error
-from vantage6.algorithm.decorator import source_database
-from ohdsi import sqlrender
-from ohdsi import database_connector
-from ohdsi import common
+from vantage6.algorithm.decorator import data_extraction
+from vantage6.algorithm.tools.util import error, info
 
 
-@source_database
+@data_extraction
 def create_cohort(
     connection_details: dict, patient_ids: list[int], features: str
 ) -> pd.DataFrame:
@@ -37,13 +34,12 @@ def create_cohort(
     """
 
     info("Setting up connection to database")
-    connection_specs = database_connector.create_connection_details(
+    connection = database_connector.connect(
+        dbms="postgresql",
         connection_string=connection_details["uri"],
         user=connection_details["USER"],
         password=connection_details["PASSWORD"],
-        dbms="postgresql",
     )
-    connection = database_connector.connect(connection_specs)
 
     info(f"Retrieving variables for cohort: {patient_ids}")
     try:
