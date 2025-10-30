@@ -5,7 +5,7 @@
     "image": "harbor2.vantage6.ai/idea4rc/analytics",
     "documentation_url": "https://github.com/idea4rc/v6-analytics",
     "description": "This algorithm computes summary statistics for a set of cohorts",
-    "vantage6_version": "5.0.0a22",
+    "vantage6_version": "5.0.0a41",
     "functions": [
       {
         "name": "summary",
@@ -58,7 +58,7 @@
             "name": "results_col",
             "display_name": "Results column",
             "default_value": "",
-            "type": "column_list",
+            "type": "column",
             "description": "The column to compute the crosstab statistics for",
             "has_default_value": false
           },

@@ -1,69 +1,20 @@
-import os
-from functools import wraps
+from pandas.core.frame import DataFrame
+
+
 from io import StringIO
-from typing import Any
 
 import pandas as pd
 import scipy
 from vantage6.algorithm.client import AlgorithmClient
-from vantage6.algorithm.decorator import dataframes
+from vantage6.algorithm.decorator import algorithm_client, dataframes, central, federated
 from vantage6.algorithm.tools.exceptions import (
     EnvironmentVariableError,
     PrivacyThresholdViolation,
 )
-from vantage6.algorithm.tools.mock_client import MockAlgorithmClient
-from vantage6.algorithm.tools.util import error, get_env_var, info
-from vantage6.common.globals import ContainerEnvNames
 
+from vantage6.algorithm.tools.util import get_env_var, info
 
-def _algorithm_client() -> callable:
-    def protection_decorator(func: callable, *args, **kwargs) -> callable:
-        @wraps(func)
-        def decorator(
-            *args, mock_client: MockAlgorithmClient | None = None, **kwargs
-        ) -> callable:
-            """
-            Wrap the function with the client object
-
-            Parameters
-            ----------
-            mock_client : MockAlgorithmClient | None
-                Mock client. If not None, used instead of the regular client
-            """
-            if mock_client is not None:
-                return func(mock_client, *args, **kwargs)
-
-            # read token from the environment
-            token = os.environ.get(ContainerEnvNames.CONTAINER_TOKEN.value)
-            if not token:
-                error(
-                    "Token not found. Is the method you called started as a "
-                    "compute container? Exiting..."
-                )
-                exit(1)
-
-            # read server address from the environment
-            host = os.environ[ContainerEnvNames.HOST.value]
-            port = os.environ[ContainerEnvNames.PORT.value]
-            api_path = os.environ[ContainerEnvNames.API_PATH.value]
-
-            client = AlgorithmClient(
-                token=token,
-                server_url=f"{host}:{port}{api_path}",
-                auth_url="does-not-matter",
-            )
-            return func(client, *args, **kwargs)
-
-        # set attribute that this function is wrapped in an algorithm client
-        decorator.wrapped_in_algorithm_client_decorator = True
-        return decorator
-
-    return protection_decorator
-
-
-algorithm_client = _algorithm_client()
-
-
+@federated
 @dataframes
 def partial_crosstab(
     dataframes: dict[str, pd.DataFrame],
@@ -78,6 +29,7 @@ def partial_crosstab(
     return results
 
 
+@central
 @algorithm_client
 def crosstab(
     client: AlgorithmClient,
@@ -109,25 +61,20 @@ def crosstab(
     # get all organizations (ids) within the collaboration so you can send a
     # task to them.
     if not organizations_to_include:
+        info("Collecting organizations that are part of the collaboration")
         organizations = client.organization.list()
         organizations_to_include = [
             organization.get("id") for organization in organizations
         ]
 
-    # Define input parameters for a subtask
-    info("Defining input parameters")
-    input_ = {
-        "kwargs": {
-            "results_col": results_col,
-            "group_cols": group_cols,
-        },
-    }
-
     # create a subtask for all organizations in the collaboration.
     info("Creating subtask to compute partial contingency tables")
     task = client.task.create(
         method="partial_crosstab",
-        input_=input_,
+        arguments={
+            "results_col": results_col,
+            "group_cols": group_cols,
+        },
         organizations=organizations_to_include,
         name="Partial crosstabulation",
         description="Contingency table for each organization",
