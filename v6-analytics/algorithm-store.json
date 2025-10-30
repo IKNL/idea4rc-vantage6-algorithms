@@ -27,6 +27,17 @@
             "conditional_value": null,
             "conditional_operator": null,
             "is_frontend_only": false,
+            "name": "numeric_columns",
+            "display_name": "Numeric columns",
+            "default_value": null,
+            "type": "column_list",
+            "description": "List of numeric columns to compute the summary statistics for",
+            "has_default_value": true
+          },
+          {
+            "conditional_value": null,
+            "conditional_operator": null,
+            "is_frontend_only": false,
             "name": "organizations_to_include",
             "display_name": "Organizations to include",
             "default_value": null,
