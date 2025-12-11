@@ -1,22 +1,16 @@
-from typing import Any
-from importlib import import_module
 from enum import Enum
-import os
-import pandas as pd
+from typing import Any
+
 import numpy as np
-from functools import wraps
-
-from vantage6.common.globals import ContainerEnvNames
-from vantage6.algorithm.tools.util import info, warn, get_env_var, error
-from vantage6.algorithm.decorator import dataframes, metadata
-from vantage6.algorithm.tools.exceptions import AlgorithmExecutionError, InputError
-from vantage6.algorithm.tools.mock_client import MockAlgorithmClient
+import pandas as pd
 from vantage6.algorithm.client import AlgorithmClient
+from vantage6.algorithm.decorator import algorithm_client, central, dataframes, metadata, federated
 from vantage6.algorithm.tools.exceptions import (
-    PrivacyThresholdViolation,
+    InputError,
     NodePermissionException,
+    PrivacyThresholdViolation,
 )
-
+from vantage6.algorithm.tools.util import error, get_env_var, info, warn
 
 # names of environment variables
 ## minimum number of rows in the dataframe
@@ -46,55 +40,7 @@ class EnvVarsAllowed(Enum):
 DEFAULT_MINIMUM_ROWS = 0
 DEFAULT_PRIVACY_THRESHOLD = 0
 
-
-def _algorithm_client() -> callable:
-    def protection_decorator(func: callable, *args, **kwargs) -> callable:
-        @wraps(func)
-        def decorator(
-            *args, mock_client: MockAlgorithmClient | None = None, **kwargs
-        ) -> callable:
-            """
-            Wrap the function with the client object
-
-            Parameters
-            ----------
-            mock_client : MockAlgorithmClient | None
-                Mock client. If not None, used instead of the regular client
-            """
-            if mock_client is not None:
-                return func(mock_client, *args, **kwargs)
-
-            # read token from the environment
-            token = os.environ.get(ContainerEnvNames.CONTAINER_TOKEN.value)
-            if not token:
-                error(
-                    "Token not found. Is the method you called started as a "
-                    "compute container? Exiting..."
-                )
-                exit(1)
-
-            # read server address from the environment
-            host = os.environ[ContainerEnvNames.HOST.value]
-            port = os.environ[ContainerEnvNames.PORT.value]
-            api_path = os.environ[ContainerEnvNames.API_PATH.value]
-
-            client = AlgorithmClient(
-                token=token,
-                server_url=f"{host}:{port}{api_path}",
-                auth_url="does-not-matter",
-            )
-            return func(client, *args, **kwargs)
-
-        # set attribute that this function is wrapped in an algorithm client
-        decorator.wrapped_in_algorithm_client_decorator = True
-        return decorator
-
-    return protection_decorator
-
-
-algorithm_client = _algorithm_client()
-
-
+@central
 @algorithm_client
 def summary(
     client: AlgorithmClient,
@@ -131,22 +77,15 @@ def summary(
             organization.get("id") for organization in organizations
         ]
 
-    # Define input parameters for a subtask
-    info("Defining input parameters")
-    input_ = {
-        # "method": "summary_per_data_station",
-        "kwargs": {
-            "columns": columns,
-            "numeric_columns": numeric_columns,
-            "stratification_column": stratification_column,
-        },
-    }
-
     # create a subtask for all organizations in the collaboration.
     info("Creating subtask for all organizations in the collaboration")
     task = client.task.create(
         method="summary_per_data_station",
-        input_=input_,
+        arguments={
+            "columns": columns,
+            "numeric_columns": numeric_columns,
+            "stratification_column": stratification_column,
+        },
         organizations=organizations_to_include,
         name="Subtask summary",
         description="Compute summary per data station",
@@ -172,7 +111,7 @@ def summary(
     )
 
     lookup_organizations = {
-        org.get("id"): org.get("name") for org in client.organization.list()
+        str(org.get("id")): org.get("name") for org in client.organization.list()
     }
 
     for cohort_name in cohort_names:
@@ -192,18 +131,16 @@ def summary(
 
     task = client.task.create(
         method="variance_per_data_station",
-        input_={
-            "kwargs": {
-                "columns": numerical_columns,
-                "means": means,
-                "stratification_column": stratification_column,
-            },
+        arguments={
+            "columns": numerical_columns,
+            "means": means,
+            "stratification_column": stratification_column,
         },
         organizations=organizations_to_include,
         name="Subtask variance",
         description="Compute variance per data station",
     )
-    info("Hello!")
+
     variance_results = client.wait_for_results(task_id=task.get("id"))
 
     # add the standard deviation to the results
@@ -214,7 +151,6 @@ def summary(
         all_cohort_results[cohort_name] = _add_sd_to_results(
             all_cohort_results[cohort_name], cohort_variance_results, numerical_columns
         )
-    info("Goodbye!")
 
     # return the final results of the algorithm
     return all_cohort_results
@@ -240,7 +176,7 @@ def _aggregate_partial_summaries(results: list[dict], lookup_organizations) -> d
             warn("node did not have results for a certain cohort")
             continue
 
-        organization_name = lookup_organizations[result["organization_id"]]
+        organization_name = lookup_organizations[str(result["organization_id"])]
         if is_first:
             # copy results. Only convert num complete rows per node to a list so that
             # we can add the other nodes to it later
@@ -352,6 +288,7 @@ def _add_sd_to_results(
 
 
 # Do not provide the columns as we want all columns to be included
+@federated
 @metadata
 @dataframes
 def summary_per_data_station(
@@ -388,10 +325,11 @@ def structure_summary_per_data_station_output(df, results, metadata):
         results["numeric"][var]["median"] = float(np.nanmedian(df[var]))
         results["numeric"][var]["q_25"] = float(np.nanquantile(df[var], 0.25))
         results["numeric"][var]["q_75"] = float(np.nanquantile(df[var], 0.75))
-        results["organization_id"] = metadata.organization_id
+        results["organization_id"] = metadata.organization_id or 0
     return results
 
 
+@federated
 @dataframes
 def variance_per_data_station(
     dataframes: dict[str, pd.DataFrame],

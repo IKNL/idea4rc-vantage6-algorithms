@@ -20,7 +20,7 @@ setup(
     packages=find_packages(),
     python_requires=">=3.10",
     install_requires=[
-        "vantage6-algorithm-tools==5.0.0a22",
+        "vantage6-algorithm-tools==5.0.0a41",
         "pandas",
         "pyarrow",
         "parquet-tools",
@@ -30,6 +30,5 @@ setup(
         "ohdsi-database-connector",
         "ohdsi-sqlrender",
         "scipy",
-    ],
-    package_data={"v6-sessions": ["sql/*.sql"]},
+    ]
 )

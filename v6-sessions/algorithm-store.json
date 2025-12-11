@@ -12,7 +12,7 @@
                 }
             ],
             "display_name": "Create cohort",
-            "step_type": "data extraction",
+            "step_type": "data_extraction",
             "description": "Extract a cohort from the OMOP database",
             "standalone": true,
             "name": "create_cohort",

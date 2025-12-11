@@ -21,9 +21,9 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/idea4rc/v6-sessions",
     packages=find_packages(),
-    python_requires=">=3.10",
+    python_requires=">=3.13",
     install_requires=[
-        "vantage6-algorithm-tools==5.0.0a22",
+        "vantage6-algorithm-tools==5.0.0a41",
         "pandas",
         "pyarrow",
         "parquet-tools",
@@ -32,6 +32,7 @@ setup(
         "ohdsi-common",
         "ohdsi-database-connector",
         "ohdsi-sqlrender",
+        "setuptools",
     ],
     package_data={"v6-sessions": ["sql/*.sql"]},
 )

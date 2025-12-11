@@ -1,0 +1,14 @@
+vantage6-algorithm-tools==5.0.0a41
+vantage6-node==5.0.0a41
+flask
+pandas
+pyarrow
+parquet-tools
+rpy2
+numpy==1.26.4
+ohdsi-common==0.4.1
+ohdsi-database-connector==0.4.1
+ohdsi-sqlrender==0.4.1
+scipy
+matplotlib
+setuptools
