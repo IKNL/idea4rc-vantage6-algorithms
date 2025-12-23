@@ -4,7 +4,13 @@ from typing import Any
 import numpy as np
 import pandas as pd
 from vantage6.algorithm.client import AlgorithmClient
-from vantage6.algorithm.decorator import algorithm_client, central, dataframes, metadata, federated
+from vantage6.algorithm.decorator import (
+    algorithm_client,
+    central,
+    dataframes,
+    federated,
+    metadata,
+)
 from vantage6.algorithm.tools.exceptions import (
     InputError,
     NodePermissionException,
