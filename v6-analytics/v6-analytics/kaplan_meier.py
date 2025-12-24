@@ -1,25 +1,22 @@
 import re
-import pandas as pd
-import numpy as np
-
-import pandas as pd
-
-from typing import Dict, List, Union
-from scipy import stats
-from vantage6.algorithm.client import AlgorithmClient
-from vantage6.algorithm.tools.util import info, error
-from vantage6.algorithm.tools.decorators import algorithm_client
-from vantage6.algorithm.tools.exceptions import PrivacyThresholdViolation
-
-from typing import List
-from vantage6.algorithm.tools.util import get_env_var, info, warn, error
-from vantage6.algorithm.tools.decorators import data
-from vantage6.algorithm.tools.exceptions import InputError, EnvironmentVariableError
-
 from enum import Enum
-from vantage6.algorithm.tools.util import get_env_var
+from typing import Dict, List, Union
 
-from .decorator import new_data_decorator
+import numpy as np
+import pandas as pd
+from vantage6.algorithm.client import AlgorithmClient
+from vantage6.algorithm.decorator import (
+    algorithm_client,
+    central,
+    dataframes,
+    federated,
+)
+from vantage6.algorithm.tools.exceptions import (
+    EnvironmentVariableError,
+    InputError,
+    PrivacyThresholdViolation,
+)
+from vantage6.algorithm.tools.util import get_env_var, info, warn
 
 # The following global variables are algorithm settings. They can be overwritten by
 # the node admin by setting the corresponding environment variables.
@@ -45,15 +42,15 @@ class NoiseType(str, Enum):
     POISSON = "POISSON"
 
 
-@new_data_decorator
+@federated
+@dataframes
 def get_unique_event_times(
-    dfs: list[pd.DataFrame],
-    cohort_names: list[str],
+    dataframes: dict[str, pd.DataFrame],
     time_column_name: str,
     strata_column_name: str | None = None,
-) -> List[List[str]]:
+) -> dict[str, List[str]]:
     results = {}
-    for df, name in zip(dfs, cohort_names):
+    for name, df in dataframes.items():
         unique_event_times = _get_unique_event_times(
             df, time_column_name, strata_column_name
         )
@@ -63,17 +60,17 @@ def get_unique_event_times(
     return results
 
 
-@new_data_decorator
+@federated
+@dataframes
 def get_km_event_table(
-    dfs: list[pd.DataFrame],
-    cohort_names: list[str],
+    dataframes: dict[str, pd.DataFrame],
     time_column_name: str,
     censor_column_name: str,
     unique_event_times: List[List[int | float]],
     strata_column_name: str | None = None,
 ) -> List[str]:
     results = {}
-    for df, name in zip(dfs, cohort_names):
+    for name, df in dataframes.items():
 
         kms = _get_km_event_table(
             df,
@@ -91,6 +88,7 @@ def get_km_event_table(
     return results
 
 
+@central
 @algorithm_client
 def kaplan_meier_central(
     client: AlgorithmClient,
@@ -269,7 +267,8 @@ def _start_partial_and_collect_results(
     """
     info(f"Including {len(organizations_to_include)} organizations in the analysis")
     task = client.task.create(
-        input_={"method": method, "kwargs": kwargs},
+        method=method,
+        arguments=kwargs,
         organizations=organizations_to_include,
     )
 
@@ -387,6 +386,7 @@ def _get_unique_event_times(
     InputError
         If the time column is not found in the DataFrame.
     """
+    df = _remove_negative_event_times(df, time_column_name)
     info("Getting unique event times.")
     info(f"Time column name: {time_column_name}.")
     info("Checking privacy guards.")
@@ -437,8 +437,10 @@ def _get_km_event_table(
     str
         The Kaplan-Meier event table in JSON format.
     """
-    info("Checking privacy guards.")
+    info("Removing negative event times.")
+    df = _remove_negative_event_times(df, time_column_name)
 
+    info("Checking privacy guards.")
     # TODO we should also check the strata column
     _privacy_gaurds(df, time_column_name)
     df = _add_noise_to_event_times(df, time_column_name)
@@ -516,6 +518,13 @@ def _calculate_km_event_table(
 
     return km_df
 
+def _remove_negative_event_times(df: pd.DataFrame, time_column_name: str) -> pd.DataFrame:
+    """
+    Remove negative event times from a DataFrame.
+    """
+    negative_event_times = df[df[time_column_name] < 0]
+    info(f"Removed {negative_event_times.shape[0]} negative event times.")
+    return df[df[time_column_name] >= 0]
 
 def _privacy_gaurds(df: pd.DataFrame, time_column_name: str) -> pd.DataFrame:
     """
@@ -636,10 +645,8 @@ def __apply_poisson_noise(df: pd.DataFrame, time_column_name: str) -> pd.DataFra
     """
     __fix_random_seed()
 
-    # we can only apply noise to numerical values
-    df.loc[df[time_column_name].notnull(), time_column_name] = np.random.poisson(
-        df.loc[df[time_column_name].notnull(), time_column_name]
-    )
+    mask = df[time_column_name].notnull()
+    df.loc[mask, time_column_name] = np.random.poisson(df.loc[mask, time_column_name])
 
     return df
 
