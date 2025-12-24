@@ -4,7 +4,13 @@ from typing import Any
 import numpy as np
 import pandas as pd
 from vantage6.algorithm.client import AlgorithmClient
-from vantage6.algorithm.decorator import algorithm_client, central, dataframes, metadata, federated
+from vantage6.algorithm.decorator import (
+    algorithm_client,
+    central,
+    dataframes,
+    federated,
+    metadata,
+)
 from vantage6.algorithm.tools.exceptions import (
     InputError,
     NodePermissionException,
@@ -387,16 +393,18 @@ def _summary_per_data_station(
     # check_privacy(df, columns)
 
     # Split the data in numeric and non-numeric columns
-    inferred_numeric_columns = [df[col].name in [int, float] for col in df.columns]
+    inferred_numeric_columns = df.select_dtypes(include='number').columns.tolist()
     if numeric_columns is None:
         numeric_columns = inferred_numeric_columns
+        info(f"Inferred numeric columns: {inferred_numeric_columns}")
     else:
         df = check_match_inferred_numeric(numeric_columns, inferred_numeric_columns, df)
 
     # set numeric and non-numeric columns
-    non_numeric_columns = list(set(columns) - set(numeric_columns))
+    # non_numeric_columns = list(set(columns) - set(numeric_columns))
+    categorical_columns = df.select_dtypes(include=['object', 'category', 'bool']).columns.tolist()
     df_numeric = df[numeric_columns]
-    df_non_numeric = df[non_numeric_columns]
+    df_non_numeric = df[categorical_columns]
 
     # compute data summary for numeric columns
     summary_numeric = pd.DataFrame()

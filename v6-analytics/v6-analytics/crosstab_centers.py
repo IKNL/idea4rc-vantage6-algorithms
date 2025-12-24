@@ -1,62 +1,10 @@
-import os
-from functools import wraps
-
 import pandas as pd
 from scipy import stats
 
 from vantage6.algorithm.client import AlgorithmClient
 from vantage6.algorithm.decorator import metadata, dataframes
 from vantage6.algorithm.decorator.metadata import RunMetaData
-from vantage6.algorithm.tools.mock_client import MockAlgorithmClient
-from vantage6.algorithm.tools.util import error
-from vantage6.common.globals import ContainerEnvNames
-
-def _algorithm_client() -> callable:
-    def protection_decorator(func: callable, *args, **kwargs) -> callable:
-        @wraps(func)
-        def decorator(
-            *args, mock_client: MockAlgorithmClient | None = None, **kwargs
-        ) -> callable:
-            """
-            Wrap the function with the client object
-
-            Parameters
-            ----------
-            mock_client : MockAlgorithmClient | None
-                Mock client. If not None, used instead of the regular client
-            """
-            if mock_client is not None:
-                return func(mock_client, *args, **kwargs)
-
-            # read token from the environment
-            token = os.environ.get(ContainerEnvNames.CONTAINER_TOKEN.value)
-            if not token:
-                error(
-                    "Token not found. Is the method you called started as a "
-                    "compute container? Exiting..."
-                )
-                exit(1)
-
-            # read server address from the environment
-            host = os.environ[ContainerEnvNames.HOST.value]
-            port = os.environ[ContainerEnvNames.PORT.value]
-            api_path = os.environ[ContainerEnvNames.API_PATH.value]
-
-            client = AlgorithmClient(
-                token=token,
-                server_url=f"{host}:{port}{api_path}",
-                auth_url="does-not-matter",
-            )
-            return func(client, *args, **kwargs)
-
-        # set attribute that this function is wrapped in an algorithm client
-        decorator.wrapped_in_algorithm_client_decorator = True
-        return decorator
-
-    return protection_decorator
-
-
-algorithm_client = _algorithm_client()
+from vantage6.algorithm.decorator import algorithm_client
 
 
 @algorithm_client
