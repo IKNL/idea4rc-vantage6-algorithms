@@ -73,12 +73,6 @@ The status of the session algorithm is:
 - `v6-sessions/cohort.py:create_cohort` is working with the mock client
 
 > [!NOTE]
-> To install the python environment:
-> uv venv --python 3.13
-> uv pip install -r requirements.txt
-> uv pip install -e ./v6-analytics
-> uv pip install -e ./v6-sessions
-> 
 > In order to run the `create_cohort` function from `v6-session` locally you need
 > install the OHDSI R packages: [SqlRender](https://ohdsi.github.io/SqlRender/),
 > [DatabaseConnector](https://ohdsi.github.io/DatabaseConnector/) and
@@ -95,7 +89,12 @@ The status of the session algorithm is:
 > `drat::addRepo("OHDSI")`
 > `install.packages("FeatureExtraction")`
 > 
-
+> To install the python environment:
+> `uv venv --python 3.13`
+> `uv pip install -r requirements.txt`
+> `uv pip install -e ./v6-analytics`
+> `uv pip install -e ./v6-sessions`
+> 
 
 I use the `make image PUSH_REG=true` to build and push the image to the
 `harbor2.vantage6.ai/idea4rc` registry. (So no build pipelines yet).
