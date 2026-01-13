@@ -14,6 +14,8 @@ The workflow from a vantage6 point of view is as follows:
 ```mermaid
 flowchart LR
 
+classDef task stroke:#f00
+
 start@{ shape: sm-circ, label: "Start" }
 stop@{ shape: framed-circle, label: "Stop" }
 authentication@{label: "Authenticate"}
@@ -27,8 +29,9 @@ glm@{label: "GLM"}
 crosstabs@{label: "Crosstabs & Chi-Squared"}
 t-test@{label: "T-test"}
 other@{label: "Other analytics"}
-
 variable@{label: "New variable"}
+
+class variable,summary,cohort,crosstabs,glm,t-test,other,table1,km task
 
 start --> authentication
 authentication --> Preparation
