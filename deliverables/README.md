@@ -212,12 +212,12 @@ brief look at the swimlane diagram in the [Security and Privacy documentation](.
 
 The input parameters are as follows:
 
-|Argument|Required|Type|Description|
-|---|---|--|---|
-|`columns`|No|`list[str]`| List of variable names to compute the summary for. If omnitted, what should be the case in IDEA4RC, all variables available in the dataframe are analysed.
-|`numeric_colums`|No|`list[str]`| List of variables that are numerical, should be a subset of the `columns` and the column type should be numerical. If omnitted, what should be the case in IDEA4RC, types are inferred.|
-|`organizations_to_include` |No| `list[int]` | List of vantage6 organization IDs that need to be included in the analysis|
-|`stratification_column`|No|`str`| Name of the variable that the results should be stratified to. In case of the data preperation this should be omnitted. In case of the table1 analysis this should be an optional parameter that the user can specify. **The stratification variable should be of type `categorical`**.|
+|Argument|Required|Display as argument|Type|Description|
+|---|---|---|---|---|
+|`columns`|No|No|`list[str]`| List of variable names to compute the summary for. If omnitted, what should be the case in IDEA4RC, all variables available in the dataframe are analysed.
+|`numeric_colums`|No|No|`list[str]`| List of variables that are numerical, should be a subset of the `columns` and the column type should be numerical. If omnitted, what should be the case in IDEA4RC, types are inferred.|
+|`organizations_to_include` |No|No| `list[int]` | List of vantage6 organization IDs that need to be included in the analysis|
+|`stratification_column`|No|Yes|`str`| Name of the variable that the results should be stratified to. In case of the data preperation this should be omnitted. In case of the table1 analysis this should be an optional parameter that the user can specify. **The stratification variable should be of type `categorical`**.|
 
 ### Crosstabs & Chi-Square (Contingency table)
 The crosstabs algorithm computes the contingency table of two or more categorical
@@ -225,13 +225,13 @@ variables. I suggest to have a brief look at the swimlane diagram in the [Securi
 
 The input parameters are as follows:
 
-|Argument|Required|Type|Description|
-|---|---|--|---|
-|`results_col`| Yes | `str` | The variable for which counts are calculated. **The variable should be of type `categorical`**.
-| `groups_col` | Yes | `list[str]` | List of variables to group the data by. **Each of the variables in the list should be of type `categorical`**
-| `organizations_to_include` |No| `list[int]` | List of vantage6 organization IDs that need to be included in the analysis|
-| `include_chi2` | No | `bool` | Do not supply as this is by default `True` | 
-| `include_totals` | No | `bool` | Do no supply as this is by default `True` | 
+|Argument|Required|Display as argument|Type|Description|
+|---|---|---|---|---|
+|`results_col`| Yes |Yes| `str` | The variable for which counts are calculated. **The variable should be of type `categorical`**.
+| `groups_col` | Yes |Yes| `list[str]` | List of variables to group the data by. **Each of the variables in the list should be of type `categorical`**
+| `organizations_to_include` |No|No| `list[int]` | List of vantage6 organization IDs that need to be included in the analysis|
+| `include_chi2` | No |No| `bool` | Do not supply as this is by default `True` | 
+| `include_totals` | No |No| `bool` | Do no supply as this is by default `True` | 
 
 ### T-test
 The T test algorithm computes a t-test for two (or more) samples. I suggest to have a brief look at the swimlane diagram in the [Security and Privacy documentation](./security-and-privacy/Security%20&%20Privacy%20t-test.pdf) to have a good overview of the different steps in the algorithm.
@@ -240,16 +240,16 @@ The t-test will automatically use all available variables of the type *numeric*,
 
 The input parameters are as follows:
 
-|Argument|Required|Type|Description|
-|---|---|--|---|
-| `organizations_to_include` |No| `list[int]` | List of vantage6 organization IDs that need to be included in the analysis. **In the case of the t-test we need this to be exactly two organizations!** |
+|Argument|Required|Display as argument|Type|Description|
+|---|---|---|---|---|
+| `organizations_to_include` |No|Yes(!)| `list[int]` | List of vantage6 organization IDs that need to be included in the analysis. **In the case of the t-test we need this to be exactly two organizations!** |
 
 ### Kaplan Meier and Log Rank
 The Kaplan Meier algorithm computes a Kaplan Meier estimate for the survival function. I suggest to have a brief look at the swimlane diagram in the [Security and Privacy documentation](./security-and-privacy/Security%20&%20Privacy%20Kaplan-Meier.pdf) to have a good overview of the different steps in the algorithm.
 
-|Argument|Required|Type|Description|
-|---|---|--|---|
-|`time_column_name`|Yes|`str`| The variable name which contains the (survival) time. **This variable needs to be of type `numeric`**.
-|`censor_column_name`|Yes|`str`|The variable name which contains the (survival) time. **This variable needs to be of type `bool`**.
-|`organizations_to_include`|No|`list[int]`|List of vantage6 organization IDs that need to be included in the analysis.|
-|`strata_column_name`|No|`str`| The variable name to which you want to stratify. **This variable needs to be of the type `categorical`**|
+|Argument|Required|Display as argument|Type|Description|
+|---|---|---|---|---|
+|`time_column_name`|Yes|Yes|`str`| The variable name which contains the (survival) time. **This variable needs to be of type `numeric`**.
+|`censor_column_name`|Yes|Yes|`str`|The variable name which contains the (survival) time. **This variable needs to be of type `bool`**.
+|`organizations_to_include`|No|No|`list[int]`|List of vantage6 organization IDs that need to be included in the analysis.|
+|`strata_column_name`|No|Yes|`str`| The variable name to which you want to stratify. **This variable needs to be of the type `categorical`**|
