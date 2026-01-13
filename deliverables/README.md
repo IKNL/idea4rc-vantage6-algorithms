@@ -61,6 +61,30 @@ Analytics --> stop
 
 ```
 
+## Task creation 
+In the flow described above all the `Create cohorts`, `Data preperation`, `Analysis` and `New variable` require a vantage6 task. To create these a single vantage6 endpoint is used in which the payload of the POST request differs for each tasks. The exact payload is given in the notebooks, for example the [data preparation](raven-api-documentation/3-data-preparation.ipynb). The flow is however always the same:
+
+```mermaid
+flowchart LR
+
+start@{ shape: sm-circ, label: "Start" }
+stop@{ shape: framed-circle, label: "Stop" }
+payload@{ shape: lean-r, label: "Analytics payload"}
+authorization@{ shape: lean-r, label: "Authorization Header"}
+task@{label: "POST task\n**payload**"}
+status@{label: "GET status\n*poll if ready*"}
+results@{label: "GET results"}
+
+payload --> task
+authorization --> task
+task --> status
+status --> status
+status -- "when ready" --> results
+start --> task
+results --> stop
+
+```
+
 
 ## Data types 
 Vantage6 loads the data from the OMOP database. When it does so, it assigns specific numpy/pandas types to all extracted variables. This helps us: 
