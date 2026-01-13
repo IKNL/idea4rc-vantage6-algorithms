@@ -1,5 +1,52 @@
 # IDEA4RC Deliverables
 
+This folder contains all documentation required for the vantage6 components to be integrated into the IDEA4RC ecosystem.
+
+**Contents**
+- [Workflow](#workflow)
+- [Task creation](#task-creation)
+- [Data types](#data-types)
+- [Authentication](#authentication)
+- [Algorithms](#algorithms)
+  - [Summary](#summary)
+  - [Crosstabs & Chi-Square (Contingency table)](#crosstabs--chi-square-contingency-table)
+  - [T-test](#t-test)
+  - [Kaplan Meier and Log Rank](#kaplan-meier-and-log-rank)
+
+**Folder structure**
+
+```bash
+deliverables/
+├── algorithm-tests/ # Local testing of the algorithms used by IKNL team
+│   ├── data/ # local test data
+│   │   ├── ETL_from_omop.ipynb
+│   │   ├── pelvis_cohort.parquet
+│   │   ├── rps_cohort.parquet
+│   │   └── rps_pelvis_cohort.parquet
+│   ├── crosstabs-and-chisq.ipynb
+│   ├── glm.ipynb
+│   ├── kaplan-meier.ipynb
+│   ├── summary.ipynb
+│   └── t-test.ipynb
+├── raven-api-documentation/ # Documentation for integrating vantage6 into RAVEN
+│   ├── 0-new-workspace.ipynb
+│   ├── 1-new-analysis.ipynb
+│   ├── 2-new-cohort.ipynb
+│   ├── 3-data-preparation.ipynb
+│   ├── 4-analytics-crosstabs-and-chisquared.ipynb
+│   ├── 6-analytics-t-test.ipynb
+│   ├── 7-analytics-kaplan-meier-and-log-rank.ipynb
+│   ├── 8-analytics.ipynb
+│   └── token.txt # used for authentication in the 0-X notebooks
+├── security-and-privacy/ # Security analysis per algorithm required by the CoEs
+│   ├── Security & Privacy Crosstab.pdf
+│   ├── Security & Privacy GLM.pdf
+│   ├── Security & Privacy Kaplan-Meier.pdf
+│   └── Security & Privacy t-test.pdf
+└── README.md
+```
+
+
 This folder contains the deliverables required for the integration with the RAVEN UI.
 Each algorithm has its own folder, containing the following files:
 
@@ -205,4 +252,4 @@ The Kaplan Meier algorithm computes a Kaplan Meier estimate for the survival fun
 |`time_column_name`|Yes|`str`| The variable name which contains the (survival) time. **This variable needs to be of type `numeric`**.
 |`censor_column_name`|Yes|`str`|The variable name which contains the (survival) time. **This variable needs to be of type `bool`**.
 |`organizations_to_include`|No|`list[int]`|List of vantage6 organization IDs that need to be included in the analysis.|
-|`strata_column_name`|No|`str`| The variable name to which you want to stratify. **This variable needs to be of the type `categorical`**.
+|`strata_column_name`|No|`str`| The variable name to which you want to stratify. **This variable needs to be of the type `categorical`**|
