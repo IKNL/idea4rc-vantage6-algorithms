@@ -7,8 +7,59 @@ Each algorithm has its own folder, containing the following files:
 - API documentation for the lifecycle of the algorithm
 - Visualization documentation for the analytics
 
-## Algorithms
-.. TODO basic algorithm docs ..
+
+## Workflow
+The workflow from a vantage6 point of view is as follows:
+
+```mermaid
+flowchart LR
+
+start@{ shape: sm-circ, label: "Start" }
+stop@{ shape: framed-circle, label: "Stop" }
+authentication@{label: "Authenticate"}
+study@{label: "Create Study\n*Raven:new workspace*"}
+session@{label: "Create Session\n*Raven:new analysis*"}
+cohort@{label: "Create cohort(s)"}
+summary@{label: "Data preparation"}
+table1@{label: "Table1"}
+km@{label: "Kaplan Meier & Log Rank"}
+glm@{label: "GLM"}
+crosstabs@{label: "Crosstabs & Chi-Squared"}
+t-test@{label: "T-test"}
+other@{label: "Other analytics"}
+
+variable@{label: "New variable"}
+
+start --> authentication
+authentication --> Preparation
+subgraph Preparation
+ study -- "can have multiple" --> session
+ session -- "can have multiple" --> cohort
+end
+authentication --> summary
+Preparation --> summary
+
+summary --> variable
+variable --> summary
+
+subgraph Analytics
+    table1
+    km
+    glm
+    crosstabs
+    t-test
+    other
+end
+summary --> table1 
+summary --> km
+summary --> glm
+summary --> crosstabs
+summary --> t-test
+summary --> other
+
+Analytics --> stop
+
+```
 
 
 ## Data types 
@@ -24,3 +75,5 @@ We accept the following (numpy) types:
 * cate
 * [datetime64[ns, tz] (numpy)](https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.datetime64)
 * [CategoricalDtype (pandas)](https://pandas.pydata.org/docs/reference/api/pandas.CategoricalDtype.html#pandas.CategoricalDtype)
+
+
