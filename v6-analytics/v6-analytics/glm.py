@@ -20,11 +20,11 @@ from vantage6.algorithm.tools.exceptions import (
 )
 
 from vantage6.algorithm.tools.util import info, get_env_var
-from vantage6.algorithm.tools.decorators import algorithm_client
 from vantage6.algorithm.tools.util import info, warn, get_env_var
 from vantage6.algorithm.client import AlgorithmClient
-
-from .decorator import new_data_decorator
+from vantage6.algorithm.decorator.action import central, federated
+from vantage6.algorithm.decorator.data import dataframes
+from vantage6.algorithm.decorator.algorithm_client import algorithm_client
 
 
 # Constants for main function arguments
@@ -51,22 +51,23 @@ DEFAULT_MINIMUM_ORGANIZATIONS = 1
 DEFAULT_MAX_PCT_PARAMS_VS_OBS = 100
 
 
+# TODO FM 13-01-2026: we need to convert all IDEA4RC types of variables to their correct types.
 def _temp_fix_to_convert_vars_to_int(dfs: list[pd.DataFrame]) -> list[pd.DataFrame]:
     """
     This is a temporary fix to convert the variables to int.
     """
-    for df in dfs:
-        for i in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]:
-            df[f"SURVIVAL_{i}YR"] = df[f"SURVIVAL_{i}YR"].astype(int)
-            df[f"DEATH_{i}YR"] = df[f"DEATH_{i}YR"].astype(int)
+    # for df in dfs:
+    #     for i in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]:
+    #         df[f"SURVIVAL_{i}YR"] = df[f"SURVIVAL_{i}YR"].astype(int)
+    #         df[f"DEATH_{i}YR"] = df[f"DEATH_{i}YR"].astype(int)
 
     return dfs
 
 
-@new_data_decorator
+@federated
+@dataframes
 def compute_local_betas(
-    dfs: list[pd.DataFrame],
-    cohort_names: list[str],
+    dataframes: dict[str, pd.DataFrame],
     use_cohort_names: list[str],
     formula: str,
     family: str,
@@ -78,6 +79,8 @@ def compute_local_betas(
     """
     Compute the local betas for the cohorts in use_cohort_names.
     """
+    dfs = dataframes.values()
+    cohort_names = dataframes.keys()
     local_betas = {}
 
     # filter dfs and cohort_names to only include the ones in use_cohort_names
@@ -112,10 +115,10 @@ def compute_local_betas(
     return local_betas
 
 
-@new_data_decorator
+@central
+@dataframes
 def compute_local_deviance(
-    dfs: list[pd.DataFrame],
-    cohort_names: list[str],
+    dataframes: dict[str, pd.DataFrame],
     use_cohort_names: list[str],
     formula: str,
     family: str,
@@ -126,6 +129,9 @@ def compute_local_deviance(
     categorical_predictors: list[str] | None = None,
     survival_sensor_column: str | None = None,
 ) -> dict:
+    dfs = dataframes.values()
+    cohort_names = dataframes.keys()
+
     # filter dfs and cohort_names to only include the ones in use_cohort_names
     if use_cohort_names:
         dfs, cohort_names = _filter_df_on_cohort_names(
@@ -169,7 +175,7 @@ def compute_local_deviance(
 
     return local_deviance
 
-
+@central
 @algorithm_client
 def glm(
     client: AlgorithmClient,
@@ -620,26 +626,25 @@ def _compute_local_betas_task(
         The results of the subtask
     """
     info("Defining input parameters")
-    input_ = {
-        "method": "compute_local_betas",
-        "kwargs": {
-            "use_cohort_names": use_cohort_names,
-            "formula": formula,
-            "family": family,
-            "is_first_iteration": iter_num == 1,
-        },
+    kwargs =  {
+        "use_cohort_names": use_cohort_names,
+        "formula": formula,
+        "family": family,
+        "is_first_iteration": iter_num == 1,
     }
+
     if categorical_predictors:
-        input_["kwargs"]["categorical_predictors"] = categorical_predictors
+        kwargs["categorical_predictors"] = categorical_predictors
     if survival_sensor_column:
-        input_["kwargs"]["survival_sensor_column"] = survival_sensor_column
+        kwargs["survival_sensor_column"] = survival_sensor_column
     if betas:
-        input_["kwargs"]["beta_coefficients"] = betas
+        kwargs["beta_coefficients"] = betas
 
     # create a subtask for all organizations in the collaboration.
     info("Creating subtask for all organizations in the collaboration")
     task = client.task.create(
-        input_=input_,
+        method="compute_local_betas",
+        arguments=kwargs,
         organizations=organizations_to_include,
         name="Partial betas subtask",
         description=f"Subtask to compute partial betas - iteration {iter_num}",
@@ -707,28 +712,27 @@ def _compute_partial_deviance(
         The results of the subtask
     """
     info("Defining input parameters")
-    input_ = {
-        "method": "compute_local_deviance",
-        "kwargs": {
-            "formula": formula,
-            "family": family,
-            "is_first_iteration": iter_num == 1,
-            "beta_coefficients": beta_estimates,
-            "global_average_outcome_var": global_average_outcome_var,
-            "use_cohort_names": use_cohort_names,
-        },
+    kwargs = {
+        "formula": formula,
+        "family": family,
+        "is_first_iteration": iter_num == 1,
+        "beta_coefficients": beta_estimates,
+        "global_average_outcome_var": global_average_outcome_var,
+        "use_cohort_names": use_cohort_names,
     }
+    
     if categorical_predictors:
-        input_["kwargs"]["categorical_predictors"] = categorical_predictors
+        kwargs["categorical_predictors"] = categorical_predictors
     if survival_sensor_column:
-        input_["kwargs"]["survival_sensor_column"] = survival_sensor_column
+        kwargs["survival_sensor_column"] = survival_sensor_column
     if beta_estimates_previous:
-        input_["kwargs"]["beta_coefficients_previous"] = beta_estimates_previous
+        kwargs["beta_coefficients_previous"] = beta_estimates_previous
 
     # create a subtask for all organizations in the collaboration.
     info("Creating subtask for all organizations in the collaboration")
     task = client.task.create(
-        input_=input_,
+        method="compute_local_deviance",
+        arguments=kwargs,
         organizations=organizations_to_include,
         name="Partial deviance subtask",
         description=f"Subtask to compute partial deviance - iteration {iter_num}",
