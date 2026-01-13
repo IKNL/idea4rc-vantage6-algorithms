@@ -99,8 +99,57 @@ We accept the following (numpy) types:
 
 * [numeric (numpy)](https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.number)
 * [bool (numpy)](https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.bool_)
-* cate
 * [datetime64[ns, tz] (numpy)](https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.datetime64)
 * [CategoricalDtype (pandas)](https://pandas.pydata.org/docs/reference/api/pandas.CategoricalDtype.html#pandas.CategoricalDtype)
 
 
+## Authentication
+Vantage6 uses its own Keycloak instance which is linked to the CERTH keycloak instance. Authentication process will be as follows (handled by RAVEN and the keycloak instances):
+
+```mermaid
+
+flowchart TB
+
+new_user@{shape: circle, label: "New\nuser"}
+register@{shape: rounded, label: "User is\nregistered\nin CERTH\nkeycloak"}
+stop@{ shape: framed-circle, label: "Stop" }
+
+new_user --> register
+register --> stop
+
+login@{shape: circle, label: "RAVEN\nlogin"}
+exists_raven_q@{shape: diam, label: "Username\nexists in\nRAVEN"}
+raven_db@{shape: cyl, label: "RAVEN\nDB"}
+exists_v6_q@{shape: diam, label: "Username\nexists in\nRAVEN"}
+register_v6@{label: "Register user\nin vantage6"}
+v6_db@{shape: cyl, label: "vantage6\ndatabase"}
+v6_kc_registration@{label: "vantage6\nKeycloak\nregistration"}
+v6_kc_db@{shape: cyl, label: "vantage6\nkeycloak\nDB"}
+is_linked@{shape: diam, label: "Is vantage6\nKeycloak user\nlinked to\nCERTH user"}
+kc_linking@{label: "Keycloak\nlinking process\nbased on email"}
+logged_in@{shape: rounded, label: "Logged in"}
+
+subgraph RAVEN
+    login
+    exists_raven_q
+    raven_db
+    register_v6
+    exists_v6_q
+end
+
+login --> exists_raven_q
+exists_raven_q -- "No" --> raven_db
+raven_db --> exists_v6_q
+exists_raven_q -- "Yes" --> exists_v6_q
+exists_v6_q -- "No" --> register_v6
+register_v6 -.-> v6_db
+
+register_v6 --> v6_kc_registration
+v6_kc_registration -.-> v6_kc_db
+v6_kc_registration --> is_linked
+
+exists_v6_q -- "Yes" --> is_linked
+is_linked -- "No" --> kc_linking
+is_linked -- "Yes" --> logged_in
+kc_linking --> logged_in
+```
