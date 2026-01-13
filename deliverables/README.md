@@ -108,7 +108,7 @@ Vantage6 uses its own Keycloak instance which is linked to the CERTH keycloak in
 
 ```mermaid
 
-flowchart TB
+flowchart LR
 
 new_user@{shape: circle, label: "New\nuser"}
 register@{shape: rounded, label: "User is\nregistered\nin CERTH\nkeycloak"}
