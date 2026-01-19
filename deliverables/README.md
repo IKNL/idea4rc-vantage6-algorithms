@@ -12,6 +12,7 @@ This folder contains all documentation required for the vantage6 components to b
   - [Crosstabs & Chi-Square (Contingency table)](#crosstabs--chi-square-contingency-table)
   - [T-test](#t-test)
   - [Kaplan Meier and Log Rank](#kaplan-meier-and-log-rank)
+  - [GLM](#glm)
 
 **Folder structure**
 
@@ -262,13 +263,13 @@ A GLM (Generalized Linear Model) lets you model relationships between variables 
 
 |Argument|Required|Display as argument|Type|Description|
 |---|---|---|---|---|
-|family|Yes|Yes|`str`|The exponential family to use for computing the GLM. The available families are `Gaussian`, `Poisson`, `Binomial`, and `Survival`. Depening on which family you select the type of the `outcome_variable` should be different, see the table bellow|
-|outcome_variable|Yes|Yes|`str`| The variable name of the outcome variable. Not that the type of this variable is dependent on the `family` argument. To see this relationship see the table bellow.|
-|predictor_variables|Yes|Yes|`list[str]`| The variable names of the predictor variables. The only type that is not allowed here is `datetime[ns, tz]`. `numeric`, `bool` and `category` are accepted.|
-|formula|No|No|`str`|A text based formula for extra flexibility, I recommend hiding this at least for now|
-|categorical_predictors|No|No|`list[str]`|The column names of the predictor variables that are categorical. In IDEA4RC we do not supply this as the types are clearly defined in the local datasets, so the algorithm can infer them.
-|category_reference_values|No|Yes|`dict[str, str]`|A dictonairy that contains variable names as keys and the reference value as the value. *For now we do not know which levels each category has, thus the values need to be able to specify as a free text field*. The variable names that are supplied as keys, need to be of type `category`.|
-|survival_sensor_column|No*|No*|`str`|The variable name of the survival censor. *Required if the `family` is set to `Survival`. The type of the variable should be `bool`.
-|tolerance_level|No|No|`numeric`|Do not supply as the default value should be used for now|
-|max_iterations|No|No|`numeric`|Do not supply as the default value should be used for now|
+|`family`|Yes|Yes|`str`|The exponential family to use for computing the GLM. The available families are `Gaussian`, `Poisson`, `Binomial`, and `Survival`. Depening on which family you select the type of the `outcome_variable` should be different, see the table bellow|
+|`outcome_variable`|Yes|Yes|`str`| The variable name of the outcome variable. Not that the type of this variable is dependent on the `family` argument. To see this relationship see the table bellow.|
+|`predictor_variables`|Yes|Yes|`list[str]`| The variable names of the predictor variables. The only type that is not allowed here is `datetime[ns, tz]`. `numeric`, `bool` and `category` are accepted.|
+|`formula`|No|No|`str`|A text based formula for extra flexibility, I recommend hiding this at least for now|
+|`categorical_predictors`|No|No|`list[str]`|The column names of the predictor variables that are categorical. In IDEA4RC we do not supply this as the types are clearly defined in the local datasets, so the algorithm can infer them.
+|`category_reference_values`|No|Yes|`dict[str, str]`|A dictonairy that contains variable names as keys and the reference value as the value. *For now we do not know which levels each category has, thus the values need to be able to specify as a free text field*. The variable names that are supplied as keys, need to be of type `category`.|
+|`survival_sensor_column`|No*|No*|`str`|The variable name of the survival censor. *Required if the `family` is set to `Survival`. The type of the variable should be `bool`.
+|`tolerance_level`|No|No|`numeric`|Do not supply as the default value should be used for now|
+|`max_iterations`|No|No|`numeric`|Do not supply as the default value should be used for now|
 | `organizations_to_include` |No|No| `list[int]` | List of vantage6 organization IDs that need to be included in the analysis|
