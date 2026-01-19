@@ -190,6 +190,9 @@ def _aggregate_partial_summaries(results: list[dict], lookup_organizations) -> d
             aggregate["num_complete_rows_per_node"] = {
                 organization_name: result["num_complete_rows_per_node"]
             }
+            aggregate["num_rows_per_node"] = {
+                organization_name: result["num_rows_per_node"]
+            }
 
             for column in result["numeric"]:
                 aggregate["numeric"][column]["median"] = {
@@ -240,6 +243,9 @@ def _aggregate_partial_summaries(results: list[dict], lookup_organizations) -> d
             "num_complete_rows_per_node"
         ]
 
+        # add the number of rows for this node
+        aggregate["num_rows_per_node"][organization_name] = result["num_rows_per_node"]
+
         # add the unique values
         for column in result["counts_unique_values"]:
             if column not in aggregate["counts_unique_values"]:
@@ -248,6 +254,8 @@ def _aggregate_partial_summaries(results: list[dict], lookup_organizations) -> d
                 if value not in aggregate["counts_unique_values"][column]:
                     aggregate["counts_unique_values"][column][value] = 0
                 aggregate["counts_unique_values"][column][value] += count
+
+        aggregate["num_rows"] = sum(aggregate["num_rows_per_node"].values())
 
     # now that all data is aggregated, we can compute the mean
     for column in aggregate["numeric"]:
@@ -420,6 +428,7 @@ def _summary_per_data_station(
         counts_unique_values = _get_counts_unique_values(df_non_numeric)
 
     # count complete rows without missing values
+    num_rows_per_node = len(df)
     num_complete_rows_per_node = len(df.dropna())
 
     # filter out the variables that are not allowed to be shared
@@ -447,6 +456,7 @@ def _summary_per_data_station(
         "numeric": summary_numeric.to_dict(),
         "categorical": summary_categorical.to_dict(),
         "num_complete_rows_per_node": num_complete_rows_per_node,
+        "num_rows_per_node": num_rows_per_node,
         "counts_unique_values": counts_unique_values,
     }
 
