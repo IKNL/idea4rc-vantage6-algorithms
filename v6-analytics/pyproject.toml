@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "vantage6-algorithm-tools==5.0.0b1",
-    "pandas",
+    "pandas==2.3.3",
     "pyarrow",
     "parquet-tools",
     "rpy2",
