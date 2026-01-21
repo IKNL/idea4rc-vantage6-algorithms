@@ -9,7 +9,7 @@ This folder contains all documentation required for the vantage6 components to b
 - [Data types](#data-types)
 - [Authentication](#authentication)
 - [Algorithms](#algorithms)
-  - [Summary](#summary)
+  - [Summary & Table1](#summary-and-table1)
   - [Crosstabs & Chi-Square (Contingency table)](#crosstabs--chi-square-contingency-table)
   - [T-test](#t-test)
   - [Kaplan Meier and Log Rank](#kaplan-meier-and-log-rank)
@@ -276,7 +276,7 @@ kc_linking --> logged_in
 
 ## Algorithms 
 
-### Summary
+### Summary and Table1
 The summary algorithm computes a lot of descriptive statistics. I suggest to have a
 brief look at the swimlane diagram in the [Security and Privacy documentation](./security-and-privacy/summary.pdf).
 
