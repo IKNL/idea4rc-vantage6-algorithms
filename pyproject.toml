@@ -1,0 +1,28 @@
+[tool.uv.workspace]
+members = [
+    "v6-analytics",
+    "v6-sessions",
+    "v6-preprocessing",
+]
+
+[tool.uv.sources]
+v6-analytics = { workspace = true }
+v6-sessions = { workspace = true }
+v6-preprocessing = { workspace = true }
+
+[tool.uv]
+prerelease = "allow"
+
+[dependency-groups]
+dev = [
+    "ipykernel",
+    "jupyter",
+    "matplotlib",
+    "seaborn",
+    "flask",
+    "vantage6-node==5.0.0b1",
+]
+
+[build-system]
+requires = ["uv_build>=0.9.26,<0.10.0"]
+build-backend = "uv_build"

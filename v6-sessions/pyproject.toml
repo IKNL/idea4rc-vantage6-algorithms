@@ -1,0 +1,26 @@
+[project]
+name = "v6-sessions"
+version = "1.0.0"
+description = "This will extract a dataset from a set of patient IDs from the OMOP database and returns a dataframe used by vantage6 to create a dataframe."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "vantage6-algorithm-tools==5.0.0b1",
+    "pandas",
+    "pyarrow",
+    "parquet-tools",
+    "rpy2",
+    "numpy==1.26.4",
+    "ohdsi-common",
+    "ohdsi-database-connector",
+    "ohdsi-sqlrender",
+    "setuptools",
+]
+
+[tool.setuptools]
+packages = ["v6-sessions"]
+include-package-data = true
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
