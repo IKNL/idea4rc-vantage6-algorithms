@@ -90,10 +90,7 @@ The status of the session algorithm is:
 > `install.packages("FeatureExtraction")`
 > 
 > To install the python environment:
-> `uv venv --python 3.13`
-> `uv pip install -r requirements.txt`
-> `uv pip install -e ./v6-analytics`
-> `uv pip install -e ./v6-sessions`
+> `uv sync`
 > 
 
 I use the `make image PUSH_REG=true` to build and push the image to the
