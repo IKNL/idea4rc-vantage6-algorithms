@@ -104,3 +104,10 @@ venv.bak/
 .mypy_cache/
 
 .vscode/
+
+token.txt
+
+.DS_Store
+
+deliverables/vantage6-configuration/orchestrator-deployment/*.yaml
+deliverables/vantage6-configuration/orchestrator-deployment/*.yml
