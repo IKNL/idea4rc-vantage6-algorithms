@@ -3,7 +3,8 @@
 This folder contains all documentation required for the vantage6 components to be integrated into the IDEA4RC ecosystem.
 
 **Contents**
-- [Workflow](#workflow)
+- [Introduction](#introduction)
+- [User workflow](#user-workflow)
 - [Task creation](#task-creation)
 - [Data types](#data-types)
 - [Authentication](#authentication)
@@ -13,6 +14,9 @@ This folder contains all documentation required for the vantage6 components to b
   - [T-test](#t-test)
   - [Kaplan Meier and Log Rank](#kaplan-meier-and-log-rank)
   - [GLM](#glm)
+
+## Introduction
+This folder collects all documentation and files required to support the integration and validation of vantage6 components in the IDEA4RC project. Here you will find materials and guides for algorithm testing, integrating with the RAVEN UI, security and privacy reviews, and deployment configuration for orchestrator and capsule environments. Use this folder as the starting point for understanding how vantage6 fits within the IDEA4RC infrastructure and to access all technical resources necessary for local and federated analytics development, testing, and deployment.
 
 **Folder structure**
 
@@ -27,6 +31,7 @@ deliverables/
 │   ├── crosstabs-and-chisq.ipynb
 │   ├── glm.ipynb
 │   ├── kaplan-meier.ipynb
+│   ├── preprocessing_timedelta.ipynb
 │   ├── summary.ipynb
 │   └── t-test.ipynb
 ├── raven-api-documentation/ # Documentation for integrating vantage6 into RAVEN
@@ -37,26 +42,70 @@ deliverables/
 │   ├── 4-analytics-crosstabs-and-chisquared.ipynb
 │   ├── 6-analytics-t-test.ipynb
 │   ├── 7-analytics-kaplan-meier-and-log-rank.ipynb
-│   ├── 8-analytics.ipynb
-│   └── token.txt # used for authentication in the 0-X notebooks
+│   ├── 8-analytics-glm.ipynb
+│   ├── 9-preprocessing-time-delta.ipynb
+│   └── token.txt # used for authentication in the 0-X notebooks, not in the repo. Create yourself.
 ├── security-and-privacy/ # Security analysis per algorithm required by the CoEs
-│   ├── Security & Privacy Crosstab.pdf
+│   ├── Security & Privacy Summary.pdf      
+│   ├── Security & Privacy Crosstab.pdf     
 │   ├── Security & Privacy GLM.pdf
 │   ├── Security & Privacy Kaplan-Meier.pdf
 │   └── Security & Privacy t-test.pdf
+├── vantage6-configuration/ # Configurations of the deployment
+│   └── orchestrator-deployment/ # Helm files used for the deployment at the orchestrator
+│       ├── keycloak-values.yaml     # Example Helm values for server deployment
+│       ├── server-values.yaml       # Example Helm values for server deployment
+│       └── store-values.yaml        # Example Helm values for capsule deployment
 └── README.md
 ```
 
+## Vantage6 Architecture for IDEA4RC
+Several changes have been made in the vantage6 infrastucture at core level to support the IDEA4RC usecases:
 
-This folder contains the deliverables required for the integration with the RAVEN UI.
-Each algorithm has its own folder, containing the following files:
+- The vantage6 node no longer uses the `docker.sock` but connect to the Kubernetes API. This change does not change anything from the users perpective but has great impact on the deployment. In IDEA4RC the capsules architecture is based on Kubernetes which did not support exposing the `docker.sock` to the containers. To see all the changes that have been made, see [this](https://github.com/vantage6/vantage6/issues/248) issue. The same process has been performed for the orchestrator components. The Helm configuration files that have been used in the UPM orchestrator and in the capsules can be found in the [/vantage6-configuration](./vantage6-configuration/orchestrator-deployment/) folder.
+- The data extraction job is seperated from the analytics. This had multiple advantages: 
+    - Extracting data from an OMOP source, especially when complex querries are needed, is expensive. Doing this for every algorithm and for every step in the algorithm is a waste of time. This was especially important for iterative algorithms like the GLM and CoxPH. 
+    - If you have a tabular data frame (the result of the data extraction job) before you do your analytics you can profide the user with more guidance as you have the variables (column names), their types and possibly some other metadata.
+    - Algorithms are no longer specific to a specific database type as all analytics expect a tabular data frame which has been profided by the data extraction job
+  
+  
+```mermaid
 
-- Security an Privacy document
-- API documentation for the lifecycle of the algorithm
-- Visualization documentation for the analytics
+flowchart LR
+
+subgraph vantage6
+
+  extraction
+  parquet@{shape: win-pane}
+  analytics@{shape: procs}
+  preprocessing
+
+end
+
+subgraph DATABASES 
+  direction TB
+  FHIR@{shape: cyl, label: "FHIR DB"}
+  OMOP@{shape: cyl, label: "OMOP DB"}
+  IDEA4RC@{shape: cyl, label: "IDEA4RC DB"}
+end
 
 
-## Workflow
+FHIR <--> IDEA4RC
+IDEA4RC <--> OMOP
+
+
+OMOP --> extraction
+extraction --> parquet
+parquet --> preprocessing
+preprocessing --> parquet
+parquet --> analytics
+
+parquet ~~~ A@{ shape: comment, label: "The parquet files are stored in the vantage6 session."}
+```
+
+
+
+## User Workflow
 The workflow from a vantage6 point of view is as follows:
 
 ```mermaid
@@ -109,8 +158,24 @@ summary --> t-test
 summary --> other
 
 Analytics --> stop
-
 ```
+
+The connection to RAVEN and the database is as follows:
+
+* For a new workspace (RAVEN) we create a new study in vantage6.
+* For a new analysis (RAVEN) we create a new session in vantage6.
+* For a new cohort (RAVEN) we create a new dataframe in the vantage6 session.
+
+So each session can contain multiple dataframes (cohorts). Each cohort is either a sarcoma or head and neck cohort. This determines which variables are extracted from the database. All cohorts in each (RAVEN) analysis have in this instance the same variables. This is important because vantage6 algorithms can run on multiple cohorts at the same time. This obviously works only when these cohorts have the same data available. See the section on [data extraction](#data-extraction) for more details on the extraction process.
+
+Users in RAVEN are also allowed to create new variables. Since we need to keep the dataframes (cohorts) in sync in terms of variables (columns) we need to apply every preprocessing step to all dataframes so to keep the data aligned.
+
+>[!NOTE]
+> In case a preprocessing step fails, vantage6 wont allow any analytics to be run because it can not verify that all nodes have the same data at that point. A dataframe in vantage6 is a *federated* dataframe, thus modifying a single dataframe in practice means that we need to visit all data stations to apply it. In case one of the centers fails, the dataframe becomes out of sync between the centers. To avoid that vantage6 blocks the dataframe, all preprocessing steps will pass (using `try-except` style catching). However that will put pressure on us to write preprocessing algorithms that never fail.
+
+In order to limit the possibilites of preprocessing and analytics we only allow certain data types, see [data-types](#data-types). This makes the environment way more controlled.
+
+
 
 ## Task creation 
 In the flow described above all the `Create cohorts`, `Data preperation`, `Analysis` and `New variable` require a vantage6 task. To create these a single vantage6 endpoint is used in which the payload of the POST request differs for each tasks. The exact payload is given in the notebooks, for example the [data preparation](raven-api-documentation/3-data-preparation.ipynb). The flow is however always the same:
@@ -152,7 +217,11 @@ We accept the following (numpy) types:
 
 
 ## Data Extraction
-Todo
+TODO
+
+* Head and Neck querry
+* Sarcoma Query
+* Types conversion
 
 ## Authentication
 Vantage6 uses its own Keycloak instance which is linked to the CERTH keycloak instance. Authentication process will be as follows (handled by RAVEN and the keycloak instances):
