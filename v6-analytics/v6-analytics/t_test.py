@@ -41,12 +41,16 @@ def t_test_central(
     info("Creating subtask for all organizations in the collaboration")
     task = client.task.create(
         method="t_test_partial",
-        arguments={},
+        arguments=None,
         organizations=organizations_to_include,
         name="Subtask mean and sample variance",
         description="Compute mean and sample variance per data station.",
     )
 
+    info(f"Task: {task}")
+    if not task.get("id"):
+        raise Exception(f"Task creation failed: {task}")
+        
     # wait for node to return results of the subtask.
     info("Waiting for results")
     results = client.wait_for_results(task_id=task.get("id"))

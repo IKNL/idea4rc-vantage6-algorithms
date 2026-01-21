@@ -1,6 +1,6 @@
 {
     "reviews": [],
-    "vantage6_version": "5.0.0a19",
+    "vantage6_version": "5.0.0a41",
     "image": "harbor2.vantage6.ai/idea4rc/sessions",
     "partitioning": "horizontal",
     "functions": [
@@ -33,7 +33,7 @@
                     "conditional_operator": null,
                     "conditional_value": null,
                     "display_name": "Features",
-                    "description": "Which features to extract. Options: sarcoma, head_neck",
+                    "description": "Which features to extract. Options: sarcoma, head_neck or int",
                     "type": "string",
                     "name": "features",
                     "is_frontend_only": false,

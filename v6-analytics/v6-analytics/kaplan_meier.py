@@ -1,9 +1,14 @@
 import re
+import itertools
+
 from enum import Enum
 from typing import Dict, List, Union
 
 import numpy as np
 import pandas as pd
+
+from scipy.stats import logrank
+
 from vantage6.algorithm.client import AlgorithmClient
 from vantage6.algorithm.decorator import (
     algorithm_client,
@@ -236,10 +241,20 @@ def kaplan_meier_central(
         # Unzip the confidence intervals into separate lower and upper bounds
         km["ci_lower"], km["ci_upper"] = zip(*ci_bounds)
 
-        kaplan_meier_results[cohort_name] = km.to_json()
+        km["cohort"] = cohort_name
+        kaplan_meier_results[cohort_name] = km
 
+    log_rank_results = _compute_log_rank_p_value_matrix(*kaplan_meier_results.values())
+
+    # Convert to dict for transport
+    for cohort_name in cohort_names:
+        kaplan_meier_results[cohort_name] = kaplan_meier_results[cohort_name].to_dict()
+        
     info("Kaplan-Meier curve computed for all cohorts")
-    return kaplan_meier_results
+    return {
+        "kaplan_meier": kaplan_meier_results,
+        "log_rank": log_rank_results.to_dict(),
+    }
 
 
 def _start_partial_and_collect_results(
@@ -668,3 +683,68 @@ def __fix_random_seed():
             "testing."
         )
     np.random.seed(random_seed)
+
+
+
+def _compute_log_rank_from_km_multiple(
+    *dfs: pd.DataFrame,
+) -> tuple[float, float, pd.DataFrame]:
+    """
+    Compute log rank test from N Kaplan-Meier tables
+    """
+    # x = [df[time_column_name].values for df in dfs]
+    y = [df["observed"].values for df in dfs]
+    LG = logrank(*y)
+    p_value = LG.pvalue
+
+    return p_value, LG
+
+
+def _compute_log_rank_p_value_matrix(
+    *dfs: pd.DataFrame
+) -> pd.DataFrame:
+    """
+    Compute the p-value matrix for the log-rank test between multiple groups.
+
+    Parameters
+    ----------
+    *dfs : list of tuples
+        Variable number of tuples, each containing a group name and a pandas.DataFrame
+        - group name : str
+            The name of the group
+        - pd.DataFrame
+            The DataFrame containing the Kaplan-Meier table for the group
+            The DataFrame must contain the following columns:
+            - 'cohort'
+                The name of the group
+            - time_column_name
+                The event time column name. Note that `time_column_name` is not the
+                column name but the actual column in the DataFrame containing event times
+            - 'observed'
+                Number of events at each time point
+            - 'at_risk'
+                Number at risk at each time point
+            - 'censored'
+                Number of censored events at each time point
+    time_column_name : str
+        Name of the column containing event times in each DataFrame
+
+    Returns
+    -------
+    p_value_matrix : pd.DataFrame
+        A matrix of p-values for the log-rank test between each pair of groups
+    """
+    # Compute permutation of 2 groups at a time
+    groups = list(itertools.permutations(dfs, 2))
+    print(len(dfs))
+    cohorts = [df["cohort"].iloc[0] for df in dfs]
+    p_value_matrix = pd.DataFrame(columns=cohorts, index=cohorts)
+    for group in groups:
+        p_value, _ = _compute_log_rank_from_km_multiple(
+            *group
+        )
+        p_value_matrix.loc[group[0]["cohort"].iloc[0], group[1]["cohort"].iloc[0]] = (
+            p_value
+        )
+
+    return p_value_matrix

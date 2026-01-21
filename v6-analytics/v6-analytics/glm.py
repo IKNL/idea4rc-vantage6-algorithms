@@ -115,7 +115,7 @@ def compute_local_betas(
     return local_betas
 
 
-@central
+@federated
 @dataframes
 def compute_local_deviance(
     dataframes: dict[str, pd.DataFrame],
