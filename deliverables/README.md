@@ -262,7 +262,7 @@ end
 login --> exists_raven_q
 exists_raven_q -- "No" --> raven_db
 raven_db --> exists_v6_q
-exists_raven_q -- "Yes" --> exists_v6_q
+exists_raven_q -- "✅" --> exists_v6_q
 exists_v6_q -- "No" --> register_v6
 register_v6 -.-> v6_db
 
@@ -270,9 +270,9 @@ register_v6 --> v6_kc_registration
 v6_kc_registration -.-> v6_kc_db
 v6_kc_registration --> is_linked
 
-exists_v6_q -- "Yes" --> is_linked
+exists_v6_q -- "✅" --> is_linked
 is_linked -- "No" --> kc_linking
-is_linked -- "Yes" --> logged_in
+is_linked -- "✅" --> logged_in
 kc_linking --> logged_in
 ```
 
@@ -288,10 +288,10 @@ The input parameters are as follows:
 
 |Argument|Required|Display as argument|Type|Description|
 |---|---|---|---|---|
-|`column`|Yes|Yes|`str`|The column name that contains the start date. This should be of type `datetime64`.
-|`output_column`|Yes|Yes|`str`|The new variable column name.
-|`to_date_column`|No|Yes|`str`|The column containin the end date. If not provided the `to_date` argument will be used.
-|`to_date`|No|Yes|`str`|The reference date to use `yyyy-mm-dd`. If not supplied, today will be used.
+|`column`|✅|✅|`str`|The column name that contains the start date. This should be of type `datetime64`.
+|`output_column`|✅|✅|`str`|The new variable column name.
+|`to_date_column`|No|✅|`str`|The column containin the end date. If not provided the `to_date` argument will be used.
+|`to_date`|No|✅|`str`|The reference date to use `yyyy-mm-dd`. If not supplied, today will be used.
 
 ### Merge categories
 Merging/grouping categories. E.g. a column has levels (=categories) `A`, `B` and `C`, but I want to group `B` and `C` into a new category `D` so that I get a new column with only categories `A` and `D`.
@@ -300,9 +300,9 @@ The input parameters are as follows:
 
 |Argument|Required|Display as argument|Type|Description|
 |---|---|---|---|---|
-|`column`|Yes|Yes|`str`|The column name to merge categories from. This should be of type `str` or `category`.|
-|`output_column`|Yes|Yes|`str`|The new variable column name which will contain the merged categories.|
-|`mapping`|Yes|Yes|`dict[str, list[str]]`|A dictionary specifying how to group the levels. **Keys** are the new merged category names; **values** are lists of the original category names to merge into each new category.|
+|`column`|✅|✅|`str`|The column name to merge categories from. This should be of type `str` or `category`.|
+|`output_column`|✅|✅|`str`|The new variable column name which will contain the merged categories.|
+|`mapping`|✅|✅|`dict[str, list[str]]`|A dictionary specifying how to group the levels. **Keys** are the new merged category names; **values** are lists of the original category names to merge into each new category.|
 
 > **Example:**  
 > Suppose you have a column `color` with possible values: `red`, `blue`, `green`, `yellow`. You want to group `blue` and `green` as `cool`, and keep `red` and `yellow` as their own categories.  
@@ -310,7 +310,58 @@ The input parameters are as follows:
 > `mapping = {"cool": ["blue", "green"]}`  
 > This will create a new column where `blue` and `green` are replaced by `cool`, and `red` and `yellow` remain unchanged.
 
+### One hot encoding
+Expand a single categorical column into several columns containing the category name and a boolean value. For example if we have
 
+|var|
+|--|
+|A|
+|B|
+|C|
+|B|
+
+After one hot encoding you will get:
+
+|var|A|B|C|
+|--|--|--|--|
+|A|`True`|`False`|`False`|
+|B|`False`|`True`|`False`|
+|C|`False`|`False`|`True`|
+|B|`False`|`True`|`False`|
+
+
+The input parameters are as follows:
+
+|Argument|Required|Display as argument|Type|Description|
+|---|---|---|---|---|
+|column|✅|✅|`str`|The column to one-hot encode|
+|categories|✅|✅|`list[str]`|List of categories. In case there are categories present in the local data that are not in this list they will be added to the `unknown_category` group.
+|unknown_category|❌|✅|`str`|The column/variable name for categories which are present in the date but not in argument list of `categories`|
+|prefix|❌|✅|`str`|Prefix for the new one-hot encoded columns|
+|drop
+
+### Merge variables
+Combine two categorical variables into one. For example combine columns `A` and `B` into a new column `C`:
+
+A|B
+--|--
+Q1|G2
+Q3|G4
+
+becomes:
+
+|A|B|C|
+--|--|--
+Q1|G2|Q1_G2
+Q3|G4|Q3_G4
+
+The input parameters are as follows:
+
+|Argument|Required|Display as argument|Type|Description|
+|---|---|---|---|---|
+|column1|✅|✅|`str`|The first variable to use in the merge
+|column2|✅|✅|`str`|The second variable to use in the merge
+|output_column|✅|✅|`str`|The name of the new variable
 
 ## Analytics Algorithms 
 
@@ -328,7 +379,7 @@ The input parameters are as follows:
 |`columns`|No|No|`list[str]`| List of variable names to compute the summary for. If omnitted, what should be the case in IDEA4RC, all variables available in the dataframe are analysed.
 |`numeric_colums`|No|No|`list[str]`| List of variables that are numerical, should be a subset of the `columns` and the column type should be numerical. If omnitted, what should be the case in IDEA4RC, types are inferred.|
 |`organizations_to_include` |No|No| `list[int]` | List of vantage6 organization IDs that need to be included in the analysis|
-|`stratification_column`|No|Yes|`str`| Name of the variable that the results should be stratified to. In case of the data preperation this should be omnitted. In case of the table1 analysis this should be an optional parameter that the user can specify. **The stratification variable should be of type `categorical`**.|
+|`stratification_column`|No|✅|`str`| Name of the variable that the results should be stratified to. In case of the data preperation this should be omnitted. In case of the table1 analysis this should be an optional parameter that the user can specify. **The stratification variable should be of type `categorical`**.|
 
 ### Crosstabs & Chi-Square (Contingency table)
 The crosstabs algorithm computes the contingency table of two or more categorical
@@ -338,8 +389,8 @@ The input parameters are as follows:
 
 |Argument|Required|Display as argument|Type|Description|
 |---|---|---|---|---|
-|`results_col`| Yes |Yes| `str` | The variable for which counts are calculated. **The variable should be of type `categorical`**.
-| `groups_col` | Yes |Yes| `list[str]` | List of variables to group the data by. **Each of the variables in the list should be of type `categorical`**
+|`results_col`| ✅ |✅| `str` | The variable for which counts are calculated. **The variable should be of type `categorical`**.
+| `groups_col` | ✅ |✅| `list[str]` | List of variables to group the data by. **Each of the variables in the list should be of type `categorical`**
 | `organizations_to_include` |No|No| `list[int]` | List of vantage6 organization IDs that need to be included in the analysis|
 | `include_chi2` | No |No| `bool` | Do not supply as this is by default `True` | 
 | `include_totals` | No |No| `bool` | Do no supply as this is by default `True` | 
@@ -353,29 +404,29 @@ The input parameters are as follows:
 
 |Argument|Required|Display as argument|Type|Description|
 |---|---|---|---|---|
-| `organizations_to_include` |No|Yes(!)| `list[int]` | List of vantage6 organization IDs that need to be included in the analysis. **In the case of the t-test we need this to be exactly two organizations!** |
+| `organizations_to_include` |No|✅(!)| `list[int]` | List of vantage6 organization IDs that need to be included in the analysis. **In the case of the t-test we need this to be exactly two organizations!** |
 
 ### Kaplan Meier and Log Rank
 The Kaplan Meier algorithm computes a Kaplan Meier estimate for the survival function. I suggest to have a brief look at the swimlane diagram in the [Security and Privacy documentation](./security-and-privacy/Security%20&%20Privacy%20Kaplan-Meier.pdf) to have a good overview of the different steps in the algorithm.
 
 |Argument|Required|Display as argument|Type|Description|
 |---|---|---|---|---|
-|`time_column_name`|Yes|Yes|`str`| The variable name which contains the (survival) time. **This variable needs to be of type `numeric`**.
-|`censor_column_name`|Yes|Yes|`str`|The variable name which contains the (survival) time. **This variable needs to be of type `bool`**.
+|`time_column_name`|✅|✅|`str`| The variable name which contains the (survival) time. **This variable needs to be of type `numeric`**.
+|`censor_column_name`|✅|✅|`str`|The variable name which contains the (survival) time. **This variable needs to be of type `bool`**.
 |`organizations_to_include`|No|No|`list[int]`|List of vantage6 organization IDs that need to be included in the analysis.|
-|`strata_column_name`|No|Yes|`str`| The variable name to which you want to stratify. **This variable needs to be of the type `categorical`**|
+|`strata_column_name`|No|✅|`str`| The variable name to which you want to stratify. **This variable needs to be of the type `categorical`**|
 
 ### GLM 
 A GLM (Generalized Linear Model) lets you model relationships between variables using linear predictors and flexible distributions, enabling regression and classification tasks. I suugest to have a brief look at the swimlane diagram in the [Security and Privacy documentation](./security-and-privacy/Security%20&%20Privacy%20GLM.pdf) to have a goof overview of the different steps in the algorithm.
 
 |Argument|Required|Display as argument|Type|Description|
 |---|---|---|---|---|
-|`family`|Yes|Yes|`str`|The exponential family to use for computing the GLM. The available families are `Gaussian`, `Poisson`, `Binomial`, and `Survival`. Depening on which family you select the type of the `outcome_variable` should be different, see the table bellow|
-|`outcome_variable`|Yes|Yes|`str`| The variable name of the outcome variable. Not that the type of this variable is dependent on the `family` argument. To see this relationship see the table bellow.|
-|`predictor_variables`|Yes|Yes|`list[str]`| The variable names of the predictor variables. The only type that is not allowed here is `datetime[ns, tz]`. `numeric`, `bool` and `category` are accepted.|
+|`family`|✅|✅|`str`|The exponential family to use for computing the GLM. The available families are `Gaussian`, `Poisson`, `Binomial`, and `Survival`. Depening on which family you select the type of the `outcome_variable` should be different, see the table bellow|
+|`outcome_variable`|✅|✅|`str`| The variable name of the outcome variable. Not that the type of this variable is dependent on the `family` argument. To see this relationship see the table bellow.|
+|`predictor_variables`|✅|✅|`list[str]`| The variable names of the predictor variables. The only type that is not allowed here is `datetime[ns, tz]`. `numeric`, `bool` and `category` are accepted.|
 |`formula`|No|No|`str`|A text based formula for extra flexibility, I recommend hiding this at least for now|
 |`categorical_predictors`|No|No|`list[str]`|The column names of the predictor variables that are categorical. In IDEA4RC we do not supply this as the types are clearly defined in the local datasets, so the algorithm can infer them.
-|`category_reference_values`|No|Yes|`dict[str, str]`|A dictonairy that contains variable names as keys and the reference value as the value. *For now we do not know which levels each category has, thus the values need to be able to specify as a free text field*. The variable names that are supplied as keys, need to be of type `category`.|
+|`category_reference_values`|No|✅|`dict[str, str]`|A dictonairy that contains variable names as keys and the reference value as the value. *For now we do not know which levels each category has, thus the values need to be able to specify as a free text field*. The variable names that are supplied as keys, need to be of type `category`.|
 |`survival_sensor_column`|No*|No*|`str`|The variable name of the survival censor. *Required if the `family` is set to `Survival`. The type of the variable should be `bool`.
 |`tolerance_level`|No|No|`numeric`|Do not supply as the default value should be used for now|
 |`max_iterations`|No|No|`numeric`|Do not supply as the default value should be used for now|
