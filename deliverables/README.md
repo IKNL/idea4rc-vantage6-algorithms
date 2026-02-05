@@ -16,6 +16,10 @@ This folder contains all documentation required for the vantage6 components to b
   - [GLM](#glm)
 - [Preprocessing Algorithms](#preprocessing-algorithms)
   - [Timedelta](#timedelta)
+  - [Merge categories](#merge-categories)
+  - [One hot encoding](#one-hot-encoding)
+  - [Merge variables](#merge-variables)
+  
 
 ## Introduction
 This folder collects all documentation and files required to support the integration and validation of vantage6 components in the IDEA4RC project. Here you will find materials and guides for algorithm testing, integrating with the RAVEN UI, security and privacy reviews, and deployment configuration for orchestrator and capsule environments. Use this folder as the starting point for understanding how vantage6 fits within the IDEA4RC infrastructure and to access all technical resources necessary for local and federated analytics development, testing, and deployment.
@@ -33,6 +37,9 @@ deliverables/
 │   ├── crosstabs-and-chisq.ipynb
 │   ├── glm.ipynb
 │   ├── kaplan-meier.ipynb
+│   ├── preprocessing_merge_categories.ipynb
+│   ├── preprocessing_merge_variables.ipynb
+│   ├── preprocessing_one_hot_encoding.ipynb
 │   ├── preprocessing_timedelta.ipynb
 │   ├── summary.ipynb
 │   └── t-test.ipynb
@@ -46,6 +53,7 @@ deliverables/
 │   ├── 7-analytics-kaplan-meier-and-log-rank.ipynb
 │   ├── 8-analytics-glm.ipynb
 │   ├── 9-preprocessing-time-delta.ipynb
+│   ├── 10-preprocessing-merge-categories.ipynb
 │   └── token.txt # used for authentication in the 0-X notebooks, not in the repo. Create yourself.
 ├── security-and-privacy/ # Security analysis per algorithm required by the CoEs
 │   ├── Security & Privacy Summary.pdf      
