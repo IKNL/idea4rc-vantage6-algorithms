@@ -1,3 +1,5 @@
+<img src="https://github.com/IKNL/guidelines/blob/master/resources/logos/iknl_nl.png?raw=true" width=200 align="right">
+
 # IDEA4RC Deliverables
 
 This folder contains all documentation required for the vantage6 components to be integrated into the IDEA4RC ecosystem.
