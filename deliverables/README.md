@@ -8,12 +8,14 @@ This folder contains all documentation required for the vantage6 components to b
 - [Task creation](#task-creation)
 - [Data types](#data-types)
 - [Authentication](#authentication)
-- [Algorithms](#algorithms)
+- [Analytics Algorithms](#analytics-algorithms)
   - [Summary & Table1](#summary-and-table1)
   - [Crosstabs & Chi-Square (Contingency table)](#crosstabs--chi-square-contingency-table)
   - [T-test](#t-test)
   - [Kaplan Meier and Log Rank](#kaplan-meier-and-log-rank)
   - [GLM](#glm)
+- [Preprocessing Algorithms](#preprocessing-algorithms)
+  - [Timedelta](#timedelta)
 
 ## Introduction
 This folder collects all documentation and files required to support the integration and validation of vantage6 components in the IDEA4RC project. Here you will find materials and guides for algorithm testing, integrating with the RAVEN UI, security and privacy reviews, and deployment configuration for orchestrator and capsule environments. Use this folder as the starting point for understanding how vantage6 fits within the IDEA4RC infrastructure and to access all technical resources necessary for local and federated analytics development, testing, and deployment.
@@ -274,7 +276,43 @@ is_linked -- "Yes" --> logged_in
 kc_linking --> logged_in
 ```
 
-## Algorithms 
+## Preprocessing Algorithms
+
+> [!IMPORTANT]
+> It is important that every preprocessing algorithm is applied to all dataframes in the same session.
+
+### Timedelta
+Compute the number it days between a `datetime` column and a reference date. The output of the function is an Int.
+
+The input parameters are as follows:
+
+|Argument|Required|Display as argument|Type|Description|
+|---|---|---|---|---|
+|`column`|Yes|Yes|`str`|The column name that contains the start date. This should be of type `datetime64`.
+|`output_column`|Yes|Yes|`str`|The new variable column name.
+|`to_date_column`|No|Yes|`str`|The column containin the end date. If not provided the `to_date` argument will be used.
+|`to_date`|No|Yes|`str`|The reference date to use `yyyy-mm-dd`. If not supplied, today will be used.
+
+### Merge categories
+Merging/grouping categories. E.g. a column has levels (=categories) `A`, `B` and `C`, but I want to group `B` and `C` into a new category `D` so that I get a new column with only categories `A` and `D`.
+
+The input parameters are as follows:
+
+|Argument|Required|Display as argument|Type|Description|
+|---|---|---|---|---|
+|`column`|Yes|Yes|`str`|The column name to merge categories from. This should be of type `str` or `category`.|
+|`output_column`|Yes|Yes|`str`|The new variable column name which will contain the merged categories.|
+|`mapping`|Yes|Yes|`dict[str, list[str]]`|A dictionary specifying how to group the levels. **Keys** are the new merged category names; **values** are lists of the original category names to merge into each new category.|
+
+> **Example:**  
+> Suppose you have a column `color` with possible values: `red`, `blue`, `green`, `yellow`. You want to group `blue` and `green` as `cool`, and keep `red` and `yellow` as their own categories.  
+> Use:  
+> `mapping = {"cool": ["blue", "green"]}`  
+> This will create a new column where `blue` and `green` are replaced by `cool`, and `red` and `yellow` remain unchanged.
+
+
+
+## Analytics Algorithms 
 
 ### Summary and Table1
 The summary algorithm computes a lot of descriptive statistics. I suggest to have a
