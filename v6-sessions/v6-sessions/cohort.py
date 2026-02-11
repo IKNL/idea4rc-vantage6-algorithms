@@ -165,8 +165,8 @@ def convert_base_columns(df: pd.DataFrame) -> pd.DataFrame:
 
     df = _to_category(df, [
         "sex",
-        "histology",
-        "topology",
+        "morphology",
+        "topography",
         "life_status",
         "pathological_stage",
         "clinical_stage"

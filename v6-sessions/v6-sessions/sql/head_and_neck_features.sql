@@ -2,9 +2,12 @@
 -- Head and Neck features
 -- This query is used to extract the features from the Head and Neck dataset.
 
--- VERSION  | AUTHOR        | DATE          | DESCRIPTION
+-- VERSION  | AUTHOR         | DATE          | DESCRIPTION
 -- -------------------------------------------------------------------------------------
--- 1.0      | Frank Martin  | 2026-02-10    | Initial version
+-- 1.0      | F. Martin      | 2026-02-10    | Initial version
+-- -------------------------------------------------------------------------------------
+-- 1.1      | F. Martin      | 2026-02-11    | Update the clinical staging codes and 
+--          | A. van Gestel  |               | fixed some minor issues.
 -- -------------------------------------------------------------------------------------
 
 WITH
@@ -48,11 +51,11 @@ WITH
 -- EPISODE table
 --
 -- Diagnosis date
--- of episode_concept_id of 32533 (always one) look up the date
+-- of episode_concept_id of 32533 Disease Episode (always one) look up the date
 -- 
--- Morphology and histology
+-- Topography and morphology
 -- Extract episode_object_concept_id this contains the omop concept id for the ICDO3 
--- code (for morph and hist). Split later (in Python?) into morphology and histology.
+-- code (for topography and morphology).
 ----------------------------------------------------------------------------------------
 
     -- EPISODE table
@@ -60,8 +63,8 @@ WITH
         SELECT
             pid.person_id,
             episode.episode_start_date as diagnosis_date, -- e.g. 2020-01-01
-            split_part(diagnosis_concept.concept_name, '-', 1) as histology, -- e.g. 8888/8
-            split_part(diagnosis_concept.concept_name, '-', 2) as topology -- e.g. C34.1
+            split_part(diagnosis_concept.concept_name, '-', 1) as morphology, -- e.g. 8888/8
+            split_part(diagnosis_concept.concept_name, '-', 2) as topography -- e.g. C34.1
         FROM
             patient_id_list pid
         LEFT JOIN
@@ -71,13 +74,13 @@ WITH
             @cdm_schema.concept diagnosis_concept
             ON episode.episode_object_concept_id = diagnosis_concept.concept_id
         WHERE
-            episode.episode_concept_id = 32533
+            episode.episode_concept_id = 32533 -- Disease Episode
     ),
 
 ----------------------------------------------------------------------------------------
 -- Observation table
 --
--- Concept_id look for codes of Alive Dead etc (see excel see). Look for latest date. 
+-- Concept_id look for codes of Alive Dead etc (see excel). Look for latest date. 
 -- Translate from the vocabulary (also store the date)
 ----------------------------------------------------------------------------------------
 
@@ -107,13 +110,13 @@ WITH
                 ON observation.observation_concept_id = observation_concept.concept_id
             WHERE
                 observation.observation_concept_id IN ( 	
-                    2000100071,     -- Alive, No Evidence of Disease (NED) - 4230556
-                    4230556,        -- Alive - 
-                    2000100072,     -- Dead of Disease (DOD) - 
-                    2000100073,     -- Dead of Other Cause (DOC) - 
-                    2000100074,     -- Dead of Unknown Cause (DUC) - 
-                    2000100075,     -- Alive With Disease (AWD) - 
-                    4163894,        -- Lost to follow-up - 
+                    2000100071,     -- Alive, No Evidence of Disease (NED) 
+                    4230556,        -- Alive 
+                    2000100072,     -- Dead of Disease (DOD) 
+                    2000100073,     -- Dead of Other Cause (DOC) 
+                    2000100074,     -- Dead of Unknown Cause (DUC) 
+                    2000100075,     -- Alive With Disease (AWD) 
+                    4163894,        -- Lost to follow-up 
                 )
         ) AS all_observations
         WHERE all_observations.observation_position = 1 -- get last observation
@@ -197,60 +200,50 @@ WITH
         WHERE
             measurement.measurement_concept_id IN (
                 -- Clinical
-                1635104,        -- AJCC/UICC 6th clinical NX Category
-                1633679,        -- AJCC/UICC 7th clinical NX Category
-                1634797,        -- AJCC/UICC 8th clinical NX Category
+                1635842, -- AJCC/UICC 6th clinical Stage 0
+                1633828, -- AJCC/UICC 7th clinical Stage 0
+                1635824, -- AJCC/UICC 8th clinical Stage 0
 
-                1633315,        -- AJCC/UICC 6th clinical N0 Category
-                1633942,        -- AJCC/UICC 7th clinical N0 Category
-                1634070,        -- AJCC/UICC 8th clinical N0 Category
+                1633905, -- AJCC/UICC 6th clinical Stage 1
+                1634457, -- AJCC/UICC 7th clinical Stage 1
+                1635758, -- AJCC/UICC 8th clinical Stage 1
 
-                1635697,        -- AJCC/UICC 6th clinical N1 Category
-                1634139,        -- AJCC/UICC 7th clinical N1 Category
-                1633651,        -- AJCC/UICC 8th clinical N1 Category
+                1634718, -- AJCC/UICC 6th clinical Stage 2
+                1635182, -- AJCC/UICC 7th clinical Stage 2
+                1635217, -- AJCC/UICC 8th clinical Stage 2
 
-                1635470,        -- AJCC/UICC 6th clinical N2 Category
-                1635634,        -- AJCC/UICC 7th clinical N2 Category
-                1633763,        -- AJCC/UICC 8th clinical N2 Category
+                1635848, -- AJCC/UICC 6th clinical Stage 3
+                1635125, -- AJCC/UICC 7th clinical Stage 3
+                1634596, -- AJCC/UICC 8th clinical Stage 3
 
-                1634143,        -- AJCC/UICC 6th clinical N2a Category
-                1635739,        -- AJCC/UICC 7th clinical N2a Category
-                1633788,        -- AJCC/UICC 8th clinical N2a Category
+                1634307, -- AJCC/UICC 6th clinical Stage 4
+                1634766, -- AJCC/UICC 7th clinical Stage 4
+                1635029, -- AJCC/UICC 8th clinical Stage 4
 
-                1633433,        -- AJCC/UICC 6th clinical N2b Category
-                1635677,        -- AJCC/UICC 7th clinical N2b Category
-                1633323,        -- AJCC/UICC 8th clinical N2b Category
+                1635535, -- AJCC/UICC 6th clinical Stage 4A
+                1634451, -- AJCC/UICC 7th clinical Stage 4A
+                1634810, -- AJCC/UICC 8th clinical Stage 4A
 
-                1634678,        -- AJCC/UICC 6th clinical N2c Category
-                1634727,        -- AJCC/UICC 7th clinical N2c Category
-                1633271,        -- AJCC/UICC 8th clinical N2c Category
+                1633922, -- AJCC/UICC 6th clinical Stage 4B
+                1635757, -- AJCC/UICC 7th clinical Stage 4B
+                1635708, -- AJCC/UICC 8th clinical Stage 4B
 
-                1635605,        -- AJCC/UICC 6th clinical N3 Category
-                1634037,        -- AJCC/UICC 7th clinical N3 Category
-                1633854,        -- AJCC/UICC 8th clinical N3 Category
-
-                1633434,        -- AJCC/UICC 6th clinical N3a Category
-                1635004,        -- AJCC/UICC 7th clinical N3a Category
-                1635496,        -- AJCC/UICC 8th clinical N3a Category
-
-                1635283,        -- AJCC/UICC 6th clinical N3b Category
-                1635084,        -- AJCC/UICC 7th clinical N3b Category
-                1635828,        -- AJCC/UICC 8th clinical N3b Category
+                1633270, -- AJCC/UICC 6th clinical Stage 4C
+                1634614, -- AJCC/UICC 7th clinical Stage 4C
+                1635006, -- AJCC/UICC 8th clinical Stage 4C
             )
     )
 
 ----------------------------------------------------------------------------------------
 -- Construct final table
---
---
 ----------------------------------------------------------------------------------------
 SELECT
 
     person.sex                      as sex,
     person.year_of_birth            as year_of_birth,
     primary_tumor.diagnosis_date    as diagnosis_date,
-    primary_tumor.histology         as histology,
-    primary_tumor.topology          as topology,
+    primary_tumor.morphology        as morphology,
+    primary_tumor.topography        as topography,
     person_status.status            as life_status,
     person_status.date              as life_status_date,
     pathological_staging.stage      as pathological_stage,
