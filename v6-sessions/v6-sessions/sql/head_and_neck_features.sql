@@ -60,7 +60,8 @@ WITH
         SELECT
             pid.person_id,
             episode.episode_start_date as diagnosis_date, -- e.g. 2020-01-01
-            diagnosis_concept.concept_name as diagnosis_concept -- e.g. "???? (split))"
+            split_part(diagnosis_concept.concept_name, '-', 1) as histology, -- e.g. 8888/8
+            split_part(diagnosis_concept.concept_name, '-', 2) as topology -- e.g. C34.1
         FROM
             patient_id_list pid
         LEFT JOIN
@@ -121,8 +122,13 @@ WITH
 ----------------------------------------------------------------------------------------
 -- Measurement table
 --
--- measurement_concept_id look up the code from Clinical Staging (see excel) in the 
--- Pathological and Clinical tabs.
+-- 
+-- Pathological staging
+-- Measurement_concept_id look up the code from pathological staging
+-- 
+-- Clinical staging
+-- Measurement_concept_id look up the code from clinical staging
+-- 
 ----------------------------------------------------------------------------------------
 
     -- MEASUREMENT table
@@ -243,7 +249,8 @@ SELECT
     person.sex                      as sex,
     person.year_of_birth            as year_of_birth,
     primary_tumor.diagnosis_date    as diagnosis_date,
-    primary_tumor.diagnosis_concept as morph_and_topo, -- to be split
+    primary_tumor.histology         as histology,
+    primary_tumor.topology          as topology,
     person_status.status            as life_status,
     person_status.date              as life_status_date,
     pathological_staging.stage      as pathological_stage,
