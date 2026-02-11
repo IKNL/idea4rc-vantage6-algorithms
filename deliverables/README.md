@@ -229,11 +229,29 @@ We accept the following (numpy) types:
 
 
 ## Data Extraction
-TODO
 
-* Head and Neck querry
-* Sarcoma Query
-* Types conversion
+To see the logic to extract the variables from the OMOP CDM see [h&n query](../v6-sessions/v6-sessions/sql/head_and_neck_features.sql).
+
+### Basic variables
+
+Variable|Type
+--|--
+sex|`CategoricalDtype`
+year_of_birth|`Int64`
+diagnosis_date|`datetime64[ns, tz]`
+morphology|`CategoricalDtype`
+topography|`CategoricalDtype`
+life_status|`CategoricalDtype`
+life_status_date|`datetime64[ns, tz]`
+
+## Head and Neck variables
+Variable|Type
+--|--
+pathological_stage|`CategoricalDtype`
+clinical_stage|`CategoricalDtype`
+
+## Sarcoma variables
+-
 
 ## Authentication
 Vantage6 uses its own Keycloak instance which is linked to the CERTH keycloak instance. Authentication process will be as follows (handled by RAVEN and the keycloak instances):
