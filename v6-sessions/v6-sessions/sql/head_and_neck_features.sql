@@ -239,15 +239,15 @@ WITH
 ----------------------------------------------------------------------------------------
 SELECT
 
-    person.sex                      as sex,
-    person.year_of_birth            as year_of_birth,
-    primary_tumor.diagnosis_date    as diagnosis_date,
-    primary_tumor.morphology        as morphology,
-    primary_tumor.topography        as topography,
-    person_status.status            as life_status,
-    person_status.date              as life_status_date,
-    pathological_staging.stage      as pathological_stage,
-    clinical_staging.stage          as clinical_stage
+    COALESCE(person.sex, 'N/A')                     as sex,
+    person.year_of_birth                            as year_of_birth,
+    primary_tumor.diagnosis_date                    as diagnosis_date,
+    COALESCE(primary_tumor.morphology, 'N/A')       as morphology,
+    COALESCE(primary_tumor.topography, 'N/A')       as topography,
+    COALESCE(person_status.status, 'N/A')           as life_status,
+    person_status.date                              as life_status_date,
+    COALESCE(pathological_staging.stage, 'N/A')     as pathological_stage,
+    COALESCE(clinical_staging.stage, 'N/A')         as clinical_stage
 
 FROM
     person
