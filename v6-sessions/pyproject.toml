@@ -13,8 +13,7 @@ dependencies = [
     "numpy==1.26.4",
     "ohdsi-common",
     "ohdsi-database-connector",
-    "ohdsi-sqlrender",
-    "setuptools",
+    "ohdsi-sqlrender"
 ]
 
 [tool.setuptools]
