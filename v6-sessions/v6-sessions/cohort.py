@@ -1,8 +1,8 @@
 import traceback
+from importlib.resources import as_file, files
 
 import numpy as np
 import pandas as pd
-import pkg_resources
 import pyarrow as pa
 from ohdsi import common, database_connector, sqlrender
 from rpy2.robjects import RS4
@@ -78,12 +78,10 @@ def __create_cohort_dataframe(
     """
 
     info(f"Loading SQL file: {features}")
-    sql_path = pkg_resources.resource_filename(
-        "v6-sessions",
-        f"sql/{features}_features.sql",
-    )
+    ref = files("v6-sessions").joinpath("sql", f"{features}_features.sql")
     try:
-        raw_sql = sqlrender.read_sql(sql_path)
+        with as_file(ref) as sql_path:
+            raw_sql = sqlrender.read_sql(str(sql_path))
     except Exception as e:
         error(f"Failed to read SQL file: {e}")
         traceback.print_exc()
@@ -149,10 +147,18 @@ def __create_cohort_dataframe(
 
     info("Converting column types")
     # Numeric columns
-    sub_df = convert_base_columns(sub_df)
     # TODO split for head and neck and sarcoma
     # sub_df = convert_head_neck_columns(sub_df)
     # sub_df = convert_sarcoma_columns(sub_df)
+    if features == "head_neck":
+        sub_df = convert_base_columns(sub_df)
+    elif features == "sarcoma":
+        # Note that this is to temporary make the code work while testing in the 
+        # RAVEN UI.
+        sub_df = convert_sarcoma_columns(sub_df)
+    
+    else:
+        raise ValueError(f"Invalid features: {features}")
 
     info("-->  Done")
 
@@ -216,31 +222,37 @@ def _to_float64(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
         df[column] = pd.to_numeric(df[column], errors="coerce").astype("Float64")
     return df
 
-# sub_df["patient_id"] = pd.to_numeric(sub_df["patient_id"], errors="coerce")
-# sub_df["age"] = pd.to_numeric(sub_df["age"], errors="coerce")
-# sub_df["survival_days"] = pd.to_numeric(sub_df["survival_days"], errors="coerce")
-# sub_df["tumor_size"] = pd.to_numeric(sub_df["tumor_size"], errors="coerce")
-# sub_df["surgery_concept"] = pd.to_numeric(sub_df["surgery_concept"], errors="coerce")
-# sub_df["completeness_of_resection_concept_id"] = pd.to_numeric(sub_df["completeness_of_resection_concept_id"], errors="coerce")
-# sub_df["n_cancer_episodes"] = pd.to_numeric(sub_df["n_cancer_episodes"], errors="coerce")
+def convert_sarcoma_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    This function converts the sarcoma columns of the dataframe to the correct types.
+    """
+    df["patient_id"] = pd.to_numeric(df["patient_id"], errors="coerce")
+    df["age"] = pd.to_numeric(df["age"], errors="coerce")
+    df["survival_days"] = pd.to_numeric(df["survival_days"], errors="coerce")
+    df["tumor_size"] = pd.to_numeric(df["tumor_size"], errors="coerce")
+    df["surgery_concept"] = pd.to_numeric(df["surgery_concept"], errors="coerce")
+    df["completeness_of_resection_concept_id"] = pd.to_numeric(df["completeness_of_resection_concept_id"], errors="coerce")
+    df["n_cancer_episodes"] = pd.to_numeric(df["n_cancer_episodes"], errors="coerce")
 
-# # Boolean columns (CASE statements that return 1/0)
-# sub_df["censor"] = sub_df["censor"].astype("bool")
-# sub_df["tumor_rupture"] = sub_df["tumor_rupture"].astype("bool")
-# sub_df["pre_operative_chemo"] = sub_df["pre_operative_chemo"].astype("bool")
-# sub_df["post_operative_chemo"] = sub_df["post_operative_chemo"].astype("bool")
-# sub_df["pre_operative_radio"] = sub_df["pre_operative_radio"].astype("bool")
-# sub_df["post_operative_radio"] = sub_df["post_operative_radio"].astype("bool")
-# sub_df["local_recurrence"] = sub_df["local_recurrence"].astype("bool")
-# sub_df["distant_metastasis"] = sub_df["distant_metastasis"].astype("bool")
+    # Boolean columns (CASE statements that return 1/0)
+    df["censor"] = df["censor"].astype("bool")
+    df["tumor_rupture"] = df["tumor_rupture"].astype("bool")
+    df["pre_operative_chemo"] = df["pre_operative_chemo"].astype("bool")
+    df["post_operative_chemo"] = df["post_operative_chemo"].astype("bool")
+    df["pre_operative_radio"] = df["pre_operative_radio"].astype("bool")
+    df["post_operative_radio"] = df["post_operative_radio"].astype("bool")
+    df["local_recurrence"] = df["local_recurrence"].astype("bool")
+    df["distant_metastasis"] = df["distant_metastasis"].astype("bool")
 
-# # Category columns
-# sub_df["sex"] = sub_df["sex"].astype("category")
-# sub_df["status"] = sub_df["status"].astype("category")
-# sub_df["histology"] = sub_df["histology"].astype("category")
-# sub_df["fnclcc_grade"] = sub_df["fnclcc_grade"].astype("category")
-# sub_df["multifocality"] = sub_df["multifocality"].astype("category")
-# sub_df["completeness_of_resection"] = sub_df["completeness_of_resection"].astype("category")
+    # Category columns
+    df["sex"] = df["sex"].astype("category")
+    df["status"] = df["status"].astype("category")
+    df["histology"] = df["histology"].astype("category")
+    df["fnclcc_grade"] = df["fnclcc_grade"].astype("category")
+    df["multifocality"] = df["multifocality"].astype("category")
+    df["completeness_of_resection"] = df["completeness_of_resection"].astype("category")
 
-# # Datetime columns
-# sub_df["surgery_date"] = pd.to_datetime(sub_df["surgery_date"], errors="coerce", utc=True).dt.normalize()
+    # Datetime columns
+    df["surgery_date"] = pd.to_datetime(df["surgery_date"], errors="coerce", utc=True).dt.normalize()
+
+    return df
