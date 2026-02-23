@@ -116,7 +116,7 @@ WITH
                     2000100073,     -- Dead of Other Cause (DOC) 
                     2000100074,     -- Dead of Unknown Cause (DUC) 
                     2000100075,     -- Alive With Disease (AWD) 
-                    4163894,        -- Lost to follow-up 
+                    4163894         -- Lost to follow-up 
                 )
         ) AS all_observations
         WHERE all_observations.observation_position = 1 -- get last observation
@@ -138,7 +138,7 @@ WITH
     pathological_staging AS (
         SELECT
             pid.person_id,
-            measurement_concept.concept_name as stage,
+            measurement_concept.concept_name as stage
         FROM 
             patient_id_list pid
         LEFT JOIN
@@ -180,7 +180,7 @@ WITH
 
                 1635893,        -- AJCC/UICC 6th pathological Stage 4C
                 1634492,        -- AJCC/UICC 7th pathological Stage 4C
-                1634551,        -- AJCC/UICC 8th pathological Stage 4C
+                1634551         -- AJCC/UICC 8th pathological Stage 4C
             )
     ),
 
@@ -188,7 +188,7 @@ WITH
     clinical_staging AS (
         SELECT
             pid.person_id,
-            measurement_concept.concept_name as stage,
+            measurement_concept.concept_name as stage
         FROM 
             patient_id_list pid
         LEFT JOIN
@@ -230,7 +230,7 @@ WITH
 
                 1633270, -- AJCC/UICC 6th clinical Stage 4C
                 1634614, -- AJCC/UICC 7th clinical Stage 4C
-                1635006, -- AJCC/UICC 8th clinical Stage 4C
+                1635006  -- AJCC/UICC 8th clinical Stage 4C
             )
     )
 
@@ -239,6 +239,7 @@ WITH
 ----------------------------------------------------------------------------------------
 SELECT
 
+    person.person_id                                as patient_id,
     COALESCE(person.sex, 'N/A')                     as sex,
     person.year_of_birth                            as year_of_birth,
     primary_tumor.diagnosis_date                    as diagnosis_date,

@@ -94,7 +94,7 @@ def __create_cohort_dataframe(
         values_clause = ", ".join([f"({pid})" for pid in patient_ids])
         raw_sql = tuple(raw_sql)[0]
         rendered_sql = raw_sql.replace("{@patient_ids}", values_clause)
-        cdm_schema = get_env_var("CDM_SCHEMA", "omopcdm")
+        cdm_schema = get_env_var("CDM_SCHEMA", "cdm_idea")
         rendered_sql = rendered_sql.replace("@cdm_schema", cdm_schema)
     except Exception as e:
         error(f"Failed to render SQL: {e}")
@@ -150,7 +150,7 @@ def __create_cohort_dataframe(
     # TODO split for head and neck and sarcoma
     # sub_df = convert_head_neck_columns(sub_df)
     # sub_df = convert_sarcoma_columns(sub_df)
-    if features == "head_neck":
+    if features == "head_and_neck":
         sub_df = convert_base_columns(sub_df)
     elif features == "sarcoma":
         # Note that this is to temporary make the code work while testing in the 
