@@ -248,10 +248,10 @@ Variable|Type|Status|Notes
 `life_status_date`|`datetime64[ns, tz]`|✅|`observation.observation_date` of the latest observation where `observation.observation_concept_id` is one of `2000100071`, `4230556`, `2000100072`,`2000100073`, `2000100074`, `2000100075`, `4163894`.
 
 ## Head and Neck variables
-Variable|Type|Status
---|--|--
-`pathological_stage`|`CategoricalDtype`|✅
-`clinical_stage`|`CategoricalDtype`|✅
+Variable|Type|Status|Notes
+--|--|--|--
+`pathological_stage`|`CategoricalDtype`|✅|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of  `1634741`, `1635511`, `1634787`, `1635797`, `1635800`, `1634799`, `1633751`, `1634619`, `1635386`, `1633499`, `1634947`, `1634705`, `1634208`, `1635230`, `1633697`, `1634731`, `1635745`, `1634005`, `1635370`, `1634472`, `1634487`, `1635893`, `1634492`, `1634551`. 
+`clinical_stage`|`CategoricalDtype`|✅|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `1635842`,  `1633828`, `1635824`, `1633905`, `1634457`, `1635758`, `1634718`, `1635182`, `1635217`, `1635848`, `1635125`, `1634596`, `1634307`, `1634766`, `1635029`, `1635535`, `1634451`, `1634810`, `1633922`, `1635757`, `1635708`, `1633270`, `1634614`, `1635006` 
 
 ## Sarcoma variables
 Variable|Type|Status
