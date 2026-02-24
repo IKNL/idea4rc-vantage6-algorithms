@@ -254,6 +254,8 @@ Variable|Type|Status
 `clinical_stage`|`CategoricalDtype`|✅
 
 ## Sarcoma variables
+Variable|Type|Status
+--|--|--
 `date_of_biopsy`|`datetime64[ns,tz]`|Planned
 `pathological_stage`|`CategoricalDtype`|Planned
 `clinical_stage`|`CategoricalDtype`|Planned
