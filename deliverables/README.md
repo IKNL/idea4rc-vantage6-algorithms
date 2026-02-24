@@ -6,9 +6,12 @@ This folder contains all documentation required for the vantage6 components to b
 
 **Contents**
 - [Introduction](#introduction)
-- [User workflow](#user-workflow)
-- [Task creation](#task-creation)
-- [Data types](#data-types)
+- [User Workflow](#user-workflow)
+- [Task Creation](#task-creation)
+- [Data Types](#data-types)
+- [Data Extraction](#data-Extraction)
+  - [Head and Neck](#head-and-neck-variables)
+  - [Sarcoma](#sarcoma-variables)
 - [Authentication](#authentication)
 - [Analytics Algorithms](#analytics-algorithms)
   - [Summary & Table1](#summary-and-table1)
@@ -229,29 +232,33 @@ We accept the following (numpy) types:
 
 
 ## Data Extraction
-
 To see the logic to extract the variables from the OMOP CDM see [h&n query](../v6-sessions/v6-sessions/sql/head_and_neck_features.sql).
 
 ### Basic variables
+The variables available in both [Head and Neck](#head-and-neck) and [Sarcoma](#sarcoma).
 
-Variable|Type
---|--
-sex|`CategoricalDtype`
-year_of_birth|`Int64`
-diagnosis_date|`datetime64[ns, tz]`
-morphology|`CategoricalDtype`
-topography|`CategoricalDtype`
-life_status|`CategoricalDtype`
-life_status_date|`datetime64[ns, tz]`
+Variable|Type|Status
+--|--|--
+`sex`|`CategoricalDtype`|✅
+`year_of_birth`|`Int64`|✅
+`diagnosis_date`|`datetime64[ns, tz]`|✅
+`morphology`|`CategoricalDtype`|✅
+`topography`|`CategoricalDtype`|✅
+`life_status`|`CategoricalDtype`|✅
+`life_status_date`|`datetime64[ns, tz]`|✅
 
 ## Head and Neck variables
-Variable|Type
---|--
-pathological_stage|`CategoricalDtype`
-clinical_stage|`CategoricalDtype`
+Variable|Type|Status
+--|--|--
+`pathological_stage`|`CategoricalDtype`|✅
+`clinical_stage`|`CategoricalDtype`|✅
 
 ## Sarcoma variables
--
+`date_of_biopsy`|`datetime64[ns,tz]`|Planned
+`pathological_stage`|`CategoricalDtype`|Planned
+`clinical_stage`|`CategoricalDtype`|Planned
+`macrogrouping_topography`|`CategoricalDtype`|Planned 
+`morphological_grouping`|`CategoricalDtype`|Planned
 
 ## Authentication
 Vantage6 uses its own Keycloak instance which is linked to the CERTH keycloak instance. Authentication process will be as follows (handled by RAVEN and the keycloak instances):
