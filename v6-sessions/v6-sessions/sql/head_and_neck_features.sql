@@ -63,8 +63,8 @@ WITH
         SELECT
             pid.person_id,
             episode.episode_start_date as diagnosis_date, -- e.g. 2020-01-01
-            split_part(diagnosis_concept.concept_name, '-', 1) as morphology, -- e.g. 8888/8
-            split_part(diagnosis_concept.concept_name, '-', 2) as topography -- e.g. C34.1
+            split_part(diagnosis_concept.concept_code, '-', 1) as morphology, -- e.g. 8888/8
+            split_part(diagnosis_concept.concept_code, '-', 2) as topography -- e.g. C34.1
         FROM
             patient_id_list pid
         LEFT JOIN
@@ -90,15 +90,15 @@ WITH
         SELECT 
             person_id,
             status,
-            observation_datetime as date
+            observation_date as date
         FROM (
             SELECT 
                 pid.person_id,
                 observation_concept.concept_name as status,
-                observation.observation_datetime,
+                observation.observation_date,
                 ROW_NUMBER() OVER (
                     PARTITION BY pid.person_id
-                    ORDER BY observation.observation_datetime DESC
+                    ORDER BY observation.observation_date DESC
                 ) AS observation_position
             FROM
                 patient_id_list pid
