@@ -237,15 +237,15 @@ To see the logic to extract the variables from the OMOP CDM see [h&n query](../v
 ### Basic variables
 The variables available in both [Head and Neck](#head-and-neck) and [Sarcoma](#sarcoma).
 
-Variable|Type|Status
---|--|--
-`sex`|`CategoricalDtype`|✅
-`year_of_birth`|`Int64`|✅
-`diagnosis_date`|`datetime64[ns, tz]`|✅
-`morphology`|`CategoricalDtype`|✅
-`topography`|`CategoricalDtype`|✅
-`life_status`|`CategoricalDtype`|✅
-`life_status_date`|`datetime64[ns, tz]`|✅
+Variable|Type|Status|Notes
+--|--|--|--
+`sex`|`CategoricalDtype`|✅|`concept_name` of `person.gender_concept_id`
+`year_of_birth`|`Int64`|✅|`person.year_of_birth`
+`diagnosis_date`|`datetime64[ns, tz]`|✅| `episode.episode_start_date` where `episode.episode_concept_id = 32533`
+`morphology`|`CategoricalDtype`|✅|First part of `concept_code` of `episode.episode_object_concept_id` where `episode.episode_concept_id = 32533`
+`topography`|`CategoricalDtype`|✅|Second part of `concept_code` of `episode.episode_object_concept_id` where `episode.episode_concept_id = 32533`
+`life_status`|`CategoricalDtype`|✅|`concept_name` of latest observation where `observation.observation_concept_id` is one of `2000100071`, `4230556`, `2000100072`,`2000100073`, `2000100074`, `2000100075`, `4163894`.
+`life_status_date`|`datetime64[ns, tz]`|✅|`observation.observation_date` of the latest observation where `observation.observation_concept_id` is one of `2000100071`, `4230556`, `2000100072`,`2000100073`, `2000100074`, `2000100075`, `4163894`.
 
 ## Head and Neck variables
 Variable|Type|Status
