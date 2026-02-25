@@ -7,8 +7,8 @@ from vantage6.algorithm.tools.exceptions import DataError, UserInputError
 def one_hot_encode(
     df: pd.DataFrame,
     column: str,
-    categories: list[str],
-    unknown_category: str | None = "unknown",
+    # categories: list[str],
+    # unknown_category: str | None = "unknown",
     drop_original: bool = False,
     prefix: str | None = None,
 ) -> pd.DataFrame:
@@ -71,20 +71,27 @@ def one_hot_encode(
 
     """
 
-    # Map unseen categories to the unknown_category label
-    df_copy = df.copy()
-    df_copy[column] = df_copy[column].apply(
-        lambda x: x if x in categories else unknown_category
-    )
+    old_df = df.copy()
+    try:
+        # Map unseen categories to the unknown_category label
+        df_copy = df.copy()
+        # df_copy[column] = df_copy[column].apply(
+        #     lambda x: x if x in categories else unknown_category
+        # )
 
-    # Perform one-hot encoding
-    one_hot_df = pd.get_dummies(df_copy[column], prefix=prefix)
+        # Perform one-hot encoding
+        one_hot_df = pd.get_dummies(df_copy[column], prefix=prefix)
 
-    # Merge one-hot encoded DataFrame with the original DataFrame
-    df_out = pd.concat([df, one_hot_df], axis=1)
+        # Merge one-hot encoded DataFrame with the original DataFrame
+        df_out = pd.concat([df, one_hot_df], axis=1)
 
-    # Drop the original column if specified
-    if drop_original:
-        df_out.drop(column, axis=1, inplace=True)
+        # Drop the original column if specified
+        if drop_original:
+            df_out.drop(column, axis=1, inplace=True)
+    except Exception as exc:
+        print("FAILED TO PROCESS ONE HOT ENCODING")
+        print("Cant exit badly as it will render the dataframe unusable")
+        print(exc)
+        return old_df
 
     return df_out
