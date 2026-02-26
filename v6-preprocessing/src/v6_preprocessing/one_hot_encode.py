@@ -94,8 +94,12 @@ def one_hot_encode(
         # Perform one-hot encoding
         one_hot_df = pd.get_dummies(df_copy[column], prefix=prefix)
 
+        # Drop columns from df that will be replaced by one-hot columns (avoids duplicates, one_hot overwrites)
+        cols_replaced = [c for c in one_hot_df.columns if c in df.columns]
+        df_clean = df.drop(columns=cols_replaced)
+
         # Merge one-hot encoded DataFrame with the original DataFrame
-        df_out = pd.concat([df, one_hot_df], axis=1)
+        df_out = pd.concat([df_clean, one_hot_df], axis=1)
 
         # Drop the original column if specified
         if drop_original:
