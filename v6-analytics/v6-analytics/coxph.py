@@ -1,5 +1,3 @@
-import math
-
 import numpy as np
 import pandas as pd
 
@@ -18,18 +16,41 @@ from vantage6.algorithm.decorator import (
 )
 
 
+def _filter_dataframes_on_names(
+    dataframes: dict[str, pd.DataFrame], use_dataframe_names: list[str] | None
+) -> dict[str, pd.DataFrame]:
+    """Filter dataframes to only those in use_dataframe_names, preserving order."""
+    if not use_dataframe_names:
+        return dataframes
+    return {name: dataframes[name] for name in use_dataframe_names if name in dataframes}
+
+
 @federated
 @dataframes
 @metadata
-def get_unique_event_times(dataframes: dict[str, pd.DataFrame], metadata: RunMetaData, time_col: str, outcome_col: str) -> dict[str, pd.DataFrame]:
+def get_unique_event_times(
+    dataframes: dict[str, pd.DataFrame],
+    metadata: RunMetaData,
+    time_col: str,
+    outcome_col: str,
+    use_dataframe_names: list[str] | None = None,
+) -> dict[str, dict]:
+    dataframes = _filter_dataframes_on_names(dataframes, use_dataframe_names)
     results = {}
     for name, df in dataframes.items():
         results[name] = _get_unique_event_times(df, time_col, outcome_col, metadata)
     return results
 
+
 @federated
 @dataframes
-def compute_summed_z(dataframes: dict[str, pd.DataFrame], outcome_col: str, expl_vars: list[str]) -> dict[str, dict]:
+def compute_summed_z(
+    dataframes: dict[str, pd.DataFrame],
+    outcome_col: str,
+    expl_vars: list[str],
+    use_dataframe_names: list[str] | None = None,
+) -> dict[str, dict]:
+    dataframes = _filter_dataframes_on_names(dataframes, use_dataframe_names)
     results = {}
     for name, df in dataframes.items():
         results[name] = _compute_summed_z(df, outcome_col, expl_vars)
@@ -38,10 +59,20 @@ def compute_summed_z(dataframes: dict[str, pd.DataFrame], outcome_col: str, expl
 
 @federated
 @dataframes
-def perform_iteration(dataframes: dict[str, pd.DataFrame], time_col: str, expl_vars: list[str], beta: list[float], unique_time_events: list[float]) -> dict[str, dict]:
+def perform_iteration(
+    dataframes: dict[str, pd.DataFrame],
+    time_col: str,
+    expl_vars: list[str],
+    beta: dict[str, list[float]],
+    unique_time_events: dict[str, list[float]],
+    use_dataframe_names: list[str] | None = None,
+) -> dict[str, dict]:
+    dataframes = _filter_dataframes_on_names(dataframes, use_dataframe_names)
     results = {}
     for name, df in dataframes.items():
-        results[name] = _perform_iteration(df, time_col, expl_vars, beta, unique_time_events)
+        results[name] = _perform_iteration(
+            df, time_col, expl_vars, beta[name], unique_time_events[name]
+        )
     return results
 
 
@@ -150,259 +181,307 @@ def _perform_iteration(df: pd.DataFrame, time_col, expl_vars, beta, unique_time_
 @central
 @algorithm_client
 def central(
-        client: AlgorithmClient, time_col, outcome_col, expl_vars, organization_ids):
+    client: AlgorithmClient, time_col, outcome_col, expl_vars, organization_ids
+):
     """
-    This function is the central part of the algorithm. It performs the main computation and coordination tasks.
-
-    Parameters:
-    client (AlgorithmClient): The client instance used to interact with the vantage6 server.
-    time_col (str): The name of the column in the DataFrame that contains the time data.
-    outcome_col (str): The name of the column in the DataFrame that contains the outcome data.
-    expl_vars (list): A list of explanatory variables to be used in the computation.
-    organization_ids (list): A list of organization IDs that participate in the collaboration.
+    This function is the central part of the algorithm. It performs the main
+    computation and coordination tasks for one or more dataframes (cohorts).
+    Results are unpacked per dataframe and dataframes that have converged are
+    removed from the iteration loop.
 
     Returns:
-    pandas.DataFrame: A DataFrame containing the results of the computation.
+    dict: {"cohorts": {df_name: {...}}, "details": {"iterations": ..., "all_converged": ...}}
     """
 
-    # Collect all organization that participate in this collaboration unless specified
     if not isinstance(organization_ids, list):
         organisations = client.organization.list()
         ids = [organisation.get("id") for organisation in organisations]
     else:
-        ids = organization_ids
+        ids = list(organization_ids)
 
-    # Create a list to store the IDs of organizations that do not meet privacy guards
-    excluded_ids = []
-
-    info(f'Sending task to organizations {ids}')
+    info(f"Sending task to organizations {ids}")
 
     n_covs = len(expl_vars)
     epochs = 10
+    tolerance = 1e-6
 
+    # --- get_unique_event_times: unpack per dataframe ---
     n_loops = 0
-    n_threshold_met = False
-    while not n_threshold_met:
-        # This list represents the organizations that will be excluded in the following loop
-        _excluded_ids = []
+    while True:
         if n_loops > 2:
-            error("Sample size violations should be eliminated yet criteria are not met. Exiting")
-            raise ValueError("Sample size violations should be eliminated yet criteria are not. Exiting")
-
+            error(
+                "Sample size violations should be eliminated yet criteria are not met. Exiting"
+            )
+            raise ValueError(
+                "Sample size violations should be eliminated yet criteria are not. Exiting"
+            )
         n_loops += 1
-        # Create a subtask for all selected organizations in the collaboration.
-        info("Creating subtask for all selected organizations in the collaboration")
+
         task = client.task.create(
             method="get_unique_event_times",
-            arguments={
-                "time_col": time_col,
-                "outcome_col": outcome_col
-            },
+            arguments={"time_col": time_col, "outcome_col": outcome_col},
             organizations=ids,
             name="Unique event times",
-            description="Getting unique event times and their counts"
+            description="Getting unique event times and their counts",
         )
-
-        # Wait for the node to return results of the subtask.
         info("Waiting for results")
         results = client.wait_for_results(task_id=task.get("id"))
         info("Results obtained!")
 
-        unique_time_events = []
-        for output in results:
+        if not results:
+            warn("No results returned from get_unique_event_times.")
+            return {"cohorts": {}, "details": {"iterations": 0, "all_converged": False}}
 
-            # Exclude organizations that do not meet the N-threshold
-            if "N-Threshold not met" in output:
-                warn(f"Insufficient samples for organization {output['N-Threshold not met']}. "
-                     f"Excluding organization from analysis.")
-                ids.remove(output["N-Threshold not met"])
-                excluded_ids.append(output["N-Threshold not met"])
-                _excluded_ids.append(output["N-Threshold not met"])
-                continue
+        dataframe_names = list(results[0].keys())
+        excluded_ids = {df_name: [] for df_name in dataframe_names}
+        unique_time_events_raw = {df_name: [] for df_name in dataframe_names}
 
-            output = pd.DataFrame.from_dict(output["times"])
-            unique_time_events.append(output)
+        for org_id, org_result in zip(ids, results):
+            for df_name, output in org_result.items():
+                if df_name not in excluded_ids:
+                    excluded_ids[df_name] = []
+                if df_name not in unique_time_events_raw:
+                    unique_time_events_raw[df_name] = []
+                if "N-Threshold not met" in output:
+                    warn(
+                        f"Insufficient samples for organization {org_id} (dataframe {df_name}). "
+                        f"Excluding from this dataframe."
+                    )
+                    excluded_ids[df_name].append(org_id)
+                elif "times" in output:
+                    unique_time_events_raw[df_name].append(
+                        pd.DataFrame.from_dict(output["times"])
+                    )
 
-        if len(_excluded_ids) == 0:
-            n_threshold_met = True
-        elif len(ids) == 0:
-            warn("No organizations meet the minimal sample size threshold, returning NaN.")
-            return {"excluded_organizations": excluded_ids, "table": np.nan}
+        ids_included = {
+            df_name: [i for i in ids if i not in excluded_ids[df_name]]
+            for df_name in dataframe_names
+        }
+        any_excluded_this_round = any(
+            excluded_ids[df_name] for df_name in dataframe_names
+        )
+        if not any_excluded_this_round:
+            break
+        if all(not ids_included[df_name] for df_name in dataframe_names):
+            warn(
+                "No organizations meet the minimal sample size threshold for any dataframe, returning NaN."
+            )
+            return {
+                "cohorts": {},
+                "details": {"iterations": 0, "all_converged": False},
+                "excluded_organizations": excluded_ids,
+            }
 
-    aggregated_time_events = pd.concat(unique_time_events)
-    aggregated_time_events = aggregated_time_events.groupby(time_col, as_index=False).sum()
+    aggregated_time_events = {}
+    unique_time_events = {}
+    for df_name in dataframe_names:
+        if not unique_time_events_raw[df_name]:
+            continue
+        agg = pd.concat(unique_time_events_raw[df_name]).groupby(
+            time_col, as_index=False
+        ).sum()
+        aggregated_time_events[df_name] = agg
+        unique_time_events[df_name] = agg[time_col].tolist()
 
-    # Get the list of unique_time_events
-    unique_time_events = aggregated_time_events[time_col].tolist()
+    active_dataframe_names = [
+        df_name
+        for df_name in dataframe_names
+        if df_name in aggregated_time_events and ids_included[df_name]
+    ]
+    if not active_dataframe_names:
+        return {
+            "cohorts": {},
+            "details": {"iterations": 0, "all_converged": False},
+        }
 
-    # create a subtask for all organizations in the collaboration.
-    info("Creating subtask for all organizations in the collaboration")
+    # --- compute_summed_z: unpack per dataframe ---
     task = client.task.create(
         method="compute_summed_z",
         arguments={
             "outcome_col": outcome_col,
             "expl_vars": expl_vars,
+            "use_dataframe_names": active_dataframe_names,
         },
         organizations=ids,
         name="Summed Z statistic",
-        description="Computing the summed Z statistic"
+        description="Computing the summed Z statistic",
     )
-
-    # wait for node to return results of the subtask.
     info("Waiting for results")
     results = client.wait_for_results(task_id=task.get("id"))
     info("Results obtained!")
 
-    z_sum = 0
-    for output in results:
-        z_sum += pd.Series(output["sum"])
+    z_sum = {}
+    for df_name in active_dataframe_names:
+        included_set = set(ids_included[df_name])
+        total = None
+        for org_id, org_result in zip(ids, results):
+            if org_id not in included_set or df_name not in org_result:
+                continue
+            out = org_result[df_name]
+            if "sum" not in out:
+                continue
+            s = pd.Series(out["sum"])
+            total = s if total is None else total + s
+        z_sum[df_name] = (
+            total
+            if total is not None
+            else pd.Series(0.0, index=expl_vars)
+        )
 
-    beta = np.zeros(n_covs)
+    betas = {df_name: np.zeros(n_covs) for df_name in active_dataframe_names}
+    converged_results = {}
+    iteration = 0
 
+    # --- Iteration loop with convergence kick-out ---
     for epoch in range(epochs):
+        if not active_dataframe_names:
+            break
+        iteration = epoch + 1
 
-        # JSON-serialize beta for Vantage6
-        beta = beta.tolist()
-
-        # De-serialise beta again
-        beta = np.array(beta)
-
-        # create a subtask for all organizations in the collaboration.
-        info("Creating subtask for all organizations in the collaboration")
         task = client.task.create(
             method="perform_iteration",
             arguments={
-                'time_col': time_col,
+                "time_col": time_col,
                 "expl_vars": expl_vars,
-                'beta': beta,
-                'unique_time_events': unique_time_events
+                "beta": {
+                    df_name: betas[df_name].tolist()
+                    for df_name in active_dataframe_names
+                },
+                "unique_time_events": {
+                    df_name: unique_time_events[df_name]
+                    for df_name in active_dataframe_names
+                },
+                "use_dataframe_names": active_dataframe_names,
             },
             organizations=ids,
             name="Start iteration",
-            description="Iterating to find the optimal beta"
+            description="Iterating to find the optimal beta",
         )
-
-        # wait for node to return results of the subtask.
         info("Waiting for results")
         results = client.wait_for_results(task_id=task.get("id"))
         info("Results obtained!")
 
-        summed_agg1 = 0
-        summed_agg2 = 0
-        summed_agg3 = 0
+        summed_agg1 = {}
+        summed_agg2 = {}
+        summed_agg3 = {}
+        for df_name in active_dataframe_names:
+            included_set = set(ids_included[df_name])
+            parts_agg1 = []
+            parts_agg2 = []
+            parts_agg3 = []
+            for org_id, org_result in zip(ids, results):
+                if org_id not in included_set or df_name not in org_result:
+                    continue
+                out = org_result[df_name]
+                if "agg1" in out and "agg2" in out and "agg3" in out:
+                    parts_agg1.append(np.array(out["agg1"]))
+                    parts_agg2.append(np.array(pd.DataFrame.from_dict(out["agg2"])))
+                    parts_agg3.append(
+                        np.array([np.array(lst) for lst in out["agg3"]])
+                    )
+            if parts_agg1:
+                summed_agg1[df_name] = sum(parts_agg1)
+                summed_agg2[df_name] = sum(parts_agg2)
+                summed_agg3[df_name] = sum(parts_agg3)
+            else:
+                summed_agg1[df_name] = np.array([])
+                summed_agg2[df_name] = np.array([])
+                summed_agg3[df_name] = np.array([])
 
-        for output in results:
-            summed_agg1 += np.array(output['agg1'])
-            summed_agg2 += np.array(pd.DataFrame.from_dict(output['agg2']))
-            summed_agg3 += np.array([np.array(lst) for lst in output['agg3']])
+        to_remove = []
+        for df_name in active_dataframe_names:
+            if df_name not in summed_agg1 or len(summed_agg1[df_name]) == 0:
+                continue
+            sag1 = summed_agg1[df_name]
+            sag2 = summed_agg2[df_name]
+            sag3 = summed_agg3[df_name]
+            agg_te = aggregated_time_events[df_name]
+            zs = z_sum[df_name]
 
-        primary_derivative, secondary_derivative = compute_derivatives(summed_agg1, summed_agg2, summed_agg3,
-                                                                       aggregated_time_events,
-                                                                       z_sum)
-
-        beta_old = np.array(beta)
-        beta = beta_old - solve(secondary_derivative, primary_derivative)
-        delta = float(max(abs(beta - beta_old)))
-
-        if math.isnan(delta):
-            info("Delta has turned into a NaN?")
-            break
-
-        if delta <= 0.000001:
-            info("Betas have settled! Finished iterating!")
-            break
-
-    # Computing the standard errors
-    SErrors = []
-    fisher = np.linalg.inv(-secondary_derivative)
-    for k in range(fisher.shape[0]):
-        SErrors.append(np.sqrt(fisher[k, k]))
-
-    # Calculating P and Z values
-    zvalues = (np.exp(beta) - 1) / np.array(SErrors)
-    pvalues = 2 * norm.cdf(-abs(zvalues))
-
-    # Calculate overall model significance using Wald test
-    # Reference: Andersen & Gill (1982) "Cox's regression model for counting processes"
-    degrees_of_freedom = len(beta)
-    wald_statistic = np.dot(beta, np.dot(-secondary_derivative, beta))
-    overall_p_value = chi2.sf(wald_statistic, degrees_of_freedom)
-
-    # Compute AIC for model comparison
-    # Reference: Cox (1972) "Regression models and life tables" - defines partial likelihood
-    try:
-        # Cox partial log-likelihood: L(β) = Σ[β'x_i - log(Σ_j exp(β'x_j))]
-        # First term: linear predictor contribution for all events
-        linear_part = np.dot(z_sum, beta)
-
-        # Second term: log of risk set sums (denominator terms)
-        # final summed_agg1 contains the risk set denominators at the converged β values
-        risk_set_part = 0
-        if hasattr(summed_agg1, '__len__') and len(summed_agg1) > 0:
-            for i in range(len(aggregated_time_events)):
-                if i < len(summed_agg1) and summed_agg1[i] > 0:
-                    freq = aggregated_time_events.iloc[i]['freq']
-                    # Check for numerical issues before computing log
-                    if summed_agg1[i] <= 0:
-                        # Risk of negative or zero due to noise in DP setting
-                        warn(f"Risk set sum is non-positive at time index {i}: {summed_agg1[i]}")
-                        continue
-                    risk_set_part += freq * np.log(summed_agg1[i])
-
-        log_likelihood = linear_part - risk_set_part
-        n_params = len(beta)  # degrees of freedom
-
-        # Check for numerical issues in log-likelihood
-        if np.isnan(log_likelihood) or np.isinf(log_likelihood):
-            raise ValueError(f"Invalid log-likelihood: {log_likelihood}")
-
-        # AIC = -2 * log-likelihood + 2 * k (Akaike, 1974)
-        aic = -2 * log_likelihood + 2 * n_params
-
-    except (ValueError, IndexError, FloatingPointError) as e:
-        warn(f"Could not compute AIC due to numerical/data issue: {e}")
-        aic = np.nan
-        n_params = len(beta)
-    except Exception as e:
-        warn(f"Unexpected error computing AIC: {e}")
-        aic = np.nan
-        n_params = len(beta)
-
-    # 95%CI = beta +- 1.96 * SE
-    results = pd.DataFrame(
-        np.array([np.around(beta, 5), np.around(np.exp(beta), 5), np.around(np.array(SErrors), 5)]).T,
-        columns=["Coef", "Exp(coef)", "SE"])
-    results['Var'] = expl_vars
-    results["lower_CI"] = np.around(np.exp(results["Coef"] - 1.96 * results["SE"]), 5)
-    results["upper_CI"] = np.around(np.exp(results["Coef"] + 1.96 * results["SE"]), 5)
-    results["Z"] = zvalues
-    results["p-value"] = pvalues
-    results = results.set_index("Var")
-
-    # Collect warnings for perfect prediction
-    warnings = []
-    threshold = 10
-    for idx, row in results.iterrows():
-        coef = row["Coef"]
-        se = row["SE"]
-        if (
-                abs(coef) > threshold or np.isinf(coef) or np.isnan(coef) or
-                abs(se) > threshold or np.isinf(se) or np.isnan(se)
-        ):
-            msg = (
-                f"Warning: Covariate '{row['Var']}' may perfectly predict the event "
-                f"(coef={coef}, SE={se}). Results may be unreliable."
+            primary_derivative, secondary_derivative = compute_derivatives(
+                sag1, sag2, sag3, agg_te, zs
             )
-            warn(msg)
-            warnings.append(msg)
+            beta_old = np.array(betas[df_name])
+            try:
+                beta_new = beta_old - solve(secondary_derivative, primary_derivative)
+            except Exception:
+                info(f"Solve failed for dataframe {df_name}, keeping current beta.")
+                continue
+            delta = float(np.max(np.abs(beta_new - beta_old)))
 
-    return {"included_organizations": ids,
-            "excluded_organizations": excluded_ids,
-            "model": results.to_json(),
-            "overall_p_value": float(overall_p_value),
-            "aic": float(aic),
-            "degrees_of_freedom": int(n_params),
-            "warnings": warnings}
+            if np.isnan(delta):
+                info(f"Delta is NaN for dataframe {df_name}.")
+                to_remove.append(df_name)
+                converged_results[df_name] = _prepare_cohort_result(
+                    df_name,
+                    beta_old,
+                    agg_te,
+                    zs,
+                    sag1,
+                    secondary_derivative,
+                    expl_vars,
+                    ids_included[df_name],
+                    excluded_ids[df_name],
+                    converged=False,
+                )
+                continue
+
+            if delta <= tolerance:
+                info(f"Betas have settled for dataframe {df_name}!")
+                to_remove.append(df_name)
+                converged_results[df_name] = _prepare_cohort_result(
+                    df_name,
+                    beta_new,
+                    agg_te,
+                    zs,
+                    sag1,
+                    secondary_derivative,
+                    expl_vars,
+                    ids_included[df_name],
+                    excluded_ids[df_name],
+                    converged=True,
+                )
+            else:
+                betas[df_name] = beta_new
+
+        for df_name in to_remove:
+            active_dataframe_names.remove(df_name)
+
+    all_converged = len(active_dataframe_names) == 0
+
+    # Store any remaining (non-converged) at max iterations
+    for df_name in active_dataframe_names[:]:
+        if df_name not in converged_results and df_name in summed_agg1:
+            sag1 = summed_agg1[df_name]
+            if len(sag1) > 0:
+                sag2 = summed_agg2[df_name]
+                sag3 = summed_agg3[df_name]
+                agg_te = aggregated_time_events[df_name]
+                zs = z_sum[df_name]
+                primary_derivative, secondary_derivative = compute_derivatives(
+                    sag1, sag2, sag3, agg_te, zs
+                )
+                converged_results[df_name] = _prepare_cohort_result(
+                    df_name,
+                    betas[df_name],
+                    agg_te,
+                    zs,
+                    sag1,
+                    secondary_derivative,
+                    expl_vars,
+                    ids_included[df_name],
+                    excluded_ids[df_name],
+                    converged=False,
+                )
+        active_dataframe_names.remove(df_name)
+
+    return {
+        "cohorts": converged_results,
+        "details": {
+            "iterations": iteration,
+            "all_converged": all_converged,
+        },
+    }
 
 
 def compute_derivatives(summed_agg1, summed_agg2, summed_agg3, aggregated_time_events, z_sum):
@@ -448,3 +527,104 @@ def compute_derivatives(summed_agg1, summed_agg2, summed_agg3, aggregated_time_e
     secondary_derivative = -tot_p2
 
     return primary_derivative, secondary_derivative
+
+
+def _prepare_cohort_result(
+    df_name: str,
+    beta: np.ndarray,
+    aggregated_time_events: pd.DataFrame,
+    z_sum: pd.Series,
+    summed_agg1: np.ndarray,
+    secondary_derivative: np.ndarray,
+    expl_vars: list[str],
+    ids_included: list,
+    excluded_ids: list,
+    converged: bool = True,
+) -> dict:
+    """Build the per-cohort result dict (model table, AIC, warnings, etc.)."""
+    n_params = len(beta)
+    SErrors = []
+    fisher = np.linalg.inv(-secondary_derivative)
+    for k in range(fisher.shape[0]):
+        SErrors.append(np.sqrt(fisher[k, k]))
+
+    zvalues = (np.exp(beta) - 1) / np.array(SErrors)
+    pvalues = 2 * norm.cdf(-abs(zvalues))
+    degrees_of_freedom = n_params
+    wald_statistic = np.dot(beta, np.dot(-secondary_derivative, beta))
+    overall_p_value = float(chi2.sf(wald_statistic, degrees_of_freedom))
+
+    try:
+        linear_part = np.dot(z_sum, beta)
+        risk_set_part = 0
+        if hasattr(summed_agg1, "__len__") and len(summed_agg1) > 0:
+            for i in range(len(aggregated_time_events)):
+                if i < len(summed_agg1) and summed_agg1[i] > 0:
+                    freq = aggregated_time_events.iloc[i]["freq"]
+                    if summed_agg1[i] <= 0:
+                        warn(
+                            f"Risk set sum is non-positive at time index {i}: {summed_agg1[i]}"
+                        )
+                        continue
+                    risk_set_part += freq * np.log(summed_agg1[i])
+        log_likelihood = linear_part - risk_set_part
+        if np.isnan(log_likelihood) or np.isinf(log_likelihood):
+            raise ValueError(f"Invalid log-likelihood: {log_likelihood}")
+        aic = float(-2 * log_likelihood + 2 * n_params)
+    except (ValueError, IndexError, FloatingPointError) as e:
+        warn(f"Could not compute AIC due to numerical/data issue: {e}")
+        aic = np.nan
+    except Exception as e:
+        warn(f"Unexpected error computing AIC: {e}")
+        aic = np.nan
+
+    results_df = pd.DataFrame(
+        np.array(
+            [
+                np.around(beta, 5),
+                np.around(np.exp(beta), 5),
+                np.around(np.array(SErrors), 5),
+            ]
+        ).T,
+        columns=["Coef", "Exp(coef)", "SE"],
+    )
+    results_df["Var"] = expl_vars
+    results_df["lower_CI"] = np.around(
+        np.exp(results_df["Coef"] - 1.96 * results_df["SE"]), 5
+    )
+    results_df["upper_CI"] = np.around(
+        np.exp(results_df["Coef"] + 1.96 * results_df["SE"]), 5
+    )
+    results_df["Z"] = zvalues
+    results_df["p-value"] = pvalues
+    results_df = results_df.set_index("Var")
+
+    warnings_list = []
+    threshold = 10
+    for idx, row in results_df.iterrows():
+        coef, se = row["Coef"], row["SE"]
+        if (
+            abs(coef) > threshold
+            or np.isinf(coef)
+            or np.isnan(coef)
+            or abs(se) > threshold
+            or np.isinf(se)
+            or np.isnan(se)
+        ):
+            msg = (
+                f"Warning: Covariate '{idx}' may perfectly predict the event "
+                f"(coef={coef}, SE={se}). Results may be unreliable."
+            )
+            warn(msg)
+            warnings_list.append(msg)
+
+    return {
+        "included_organizations": ids_included,
+        "excluded_organizations": excluded_ids,
+        "model": results_df.to_json(),
+        "overall_p_value": overall_p_value,
+        "aic": aic,
+        "degrees_of_freedom": int(n_params),
+        "warnings": warnings_list,
+        "converged": converged,
+    }
