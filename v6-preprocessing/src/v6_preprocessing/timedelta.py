@@ -3,8 +3,8 @@
 from vantage6.algorithm.decorator.action import preprocessing
 import pandas as pd
 
-from vantage6.algorithm.tools.exceptions import DataError, UserInputError
-
+from vantage6.algorithm.tools.util import info, error
+from .utils import is_datetime
 
 @preprocessing
 def timedelta(
@@ -69,62 +69,41 @@ def timedelta(
 
     """
     old_df = df.copy()
+
+    if not is_datetime(df[column]):
+        error(f"Column {column} is not a datetime. Returning original dataframe.")
+        return old_df
+
+    if to_date_column and not is_datetime(df[to_date_column]):
+        error(f"Column {to_date_column} is not a datetime. Returning original dataframe.")
+        return old_df
+
     try:
-        dates = pd.to_datetime(df[column], format=fmt)
-        dates_tz = dates.dt.tz
+
+        info(f"Calculating timedelta for column {column} into {output_column}.")
+
+        dates = df[column]
 
         if to_date_column:
-            try:
-                to_date = pd.to_datetime(df[to_date_column], format=fmt)
-            except ValueError as exc:
-                raise DataError(
-                    f"The column `{to_date_column}` cannot be converted to a datetime "
-                    "object."
-                ) from exc
-            # Normalize timezone awareness to match dates
-            if dates_tz is None and to_date.dt.tz is not None:
-                # Convert aware to_date to naive by converting to UTC then removing timezone
-                # Convert to UTC first, then create naive timestamps from string representation
-                to_date = pd.to_datetime(to_date.dt.tz_convert("UTC").astype(str))
-            elif dates_tz is not None and to_date.dt.tz is None:
-                # Convert naive to_date to aware in same timezone as dates
-                to_date = to_date.dt.tz_localize("UTC").dt.tz_convert(dates_tz)
-            elif dates_tz is not None and to_date.dt.tz is not None and to_date.dt.tz != dates_tz:
-                # Both aware but different timezones, convert to_date to match dates
-                to_date = to_date.dt.tz_convert(dates_tz)
-            duration_col = (to_date - dates).dt.days
+            info(f"Using column {to_date_column} as reference date.")
+            to_date = df[to_date_column]
         elif to_date:
+            info(f"Using date {to_date} as reference date.")
             try:
-                to_date = pd.Timestamp(to_date)
+                to_date = pd.Timestamp(to_date, tz="UTC")
             except ValueError as exc:
-                raise UserInputError("The `to_date` must be a valid date string.") from exc
-            # Normalize timezone awareness to match dates
-            if dates_tz is None:
-                # Make to_date naive if it's aware
-                if to_date.tz is not None:
-                    # Convert to UTC first, then create naive timestamp
-                    to_date_utc = to_date.tz_convert("UTC")
-                    to_date = pd.Timestamp(to_date_utc.to_pydatetime().replace(tzinfo=None))
-            else:
-                # Make to_date aware in the same timezone as dates
-                if to_date.tz is None:
-                    to_date = to_date.tz_localize("UTC").tz_convert(dates_tz)
-                elif to_date.tz != dates_tz:
-                    to_date = to_date.tz_convert(dates_tz)
-            duration_col = (to_date - dates).dt.days
+                error("The `to_date` must be a valid date string.")
         else:
-            to_date = pd.to_datetime("today")
-            # Normalize timezone awareness to match dates
-            if dates_tz is not None:
-                # Make to_date aware in the same timezone as dates
-                to_date = pd.Timestamp(to_date).tz_localize("UTC").tz_convert(dates_tz)
-            duration_col = (to_date - dates).dt.days
+            info(f"Using today as reference date.")
+            to_date = pd.to_datetime("today", utc=True)
 
-        df[output_column] = duration_col
+        info(f"Calculating timedelta...")
+        df[output_column] = (to_date - dates).dt.days
+
     except Exception as exc:
-        print("FAILED TO PROCESS TIME DELTA")
-        print("Cant exit badly as it will render the dataframe unusable")
-        print(exc)
+        error("FAILED TO PROCESS TIME DELTA")
+        error("Cant exit badly as it will render the dataframe unusable")
+        error(exc)
         return old_df
 
     return df

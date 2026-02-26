@@ -1,7 +1,9 @@
 import pandas as pd
 
 from vantage6.algorithm.decorator.action import preprocessing
-from vantage6.algorithm.tools.exceptions import DataError, UserInputError
+from vantage6.algorithm.tools.util import info, error
+
+from .utils import is_category
 
 @preprocessing
 def merge_categories(
@@ -43,13 +45,22 @@ def merge_categories(
     3        d             g
     """
 
+    info(f"Merging categories of column {column} into {output_column}.")
+    info(f"Mapping: {mapping}")
+
     old_df = df.copy()
+    if not is_category(df[column]):
+        error(f"Column {column} is not a category. Returning original dataframe.")
+        return old_df
+
     try:
         df[output_column] = df[column].replace({v: k for k, vals in mapping.items() for v in vals})
     except Exception as exc:
-        print("FAILED TO PROCESS MERGE CATEGORIES")
-        print("Cant exit badly as it will render the dataframe unusable")
-        print(exc)
+        error("FAILED TO PROCESS MERGE CATEGORIES")
+        error("Cant exit badly as it will render the dataframe unusable")
+        error(exc)
         return old_df
+
+    info(f"Done.")
 
     return df

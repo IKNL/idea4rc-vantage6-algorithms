@@ -1,7 +1,10 @@
 import pandas as pd
 
 from vantage6.algorithm.decorator.action import preprocessing
-from vantage6.algorithm.tools.exceptions import DataError, UserInputError
+from vantage6.algorithm.tools.util import info, error
+
+from .utils import is_category
+
 
 @preprocessing
 def one_hot_encode(
@@ -72,6 +75,15 @@ def one_hot_encode(
     """
 
     old_df = df.copy()
+    
+    if not is_category(df[column]):
+        error(f"Column {column} is not a category. Returning original dataframe.")
+        return old_df
+
+    info(f"One-hot encoding column {column}.")
+    info(f"Prefix: {prefix}")
+    info(f"Drop original: {drop_original}")
+
     try:
         # Map unseen categories to the unknown_category label
         df_copy = df.copy()
@@ -93,5 +105,7 @@ def one_hot_encode(
         print("Cant exit badly as it will render the dataframe unusable")
         print(exc)
         return old_df
+
+    info(f"Done.")
 
     return df_out
