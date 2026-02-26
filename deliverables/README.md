@@ -225,11 +225,11 @@ Vantage6 loads the data from the OMOP database. When it does so, it assigns spec
 
 We accept the following (numpy) types:
 
-* [numeric (numpy)](https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.number)
-* [bool (numpy)](https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.bool_)
+* [Int64Dtype (pandas)](https://pandas.pydata.org/docs/user_guide/integer_na.html)
+* [Float64Dtype (pandas)](https://pandas.pydata.org/docs/reference/api/pandas.Float64Dtype.html#pandas.Float64Dtype)
+* [boolean (pandas)](https://pandas.pydata.org/docs/user_guide/boolean.html)
 * [datetime64[ns, tz] (numpy)](https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.datetime64)
 * [CategoricalDtype (pandas)](https://pandas.pydata.org/docs/reference/api/pandas.CategoricalDtype.html#pandas.CategoricalDtype)
-
 
 ## Data Extraction
 To see the logic to extract the variables from the OMOP CDM see [h&n query](../v6-sessions/v6-sessions/sql/head_and_neck_features.sql).
@@ -327,8 +327,8 @@ The input parameters are as follows:
 |---|---|---|---|---|
 |`column`|✅|✅|`str`|The column name that contains the start date. This should be of type `datetime64`.
 |`output_column`|✅|✅|`str`|The new variable column name.
-|`to_date_column`|No|✅|`str`|The column containin the end date. If not provided the `to_date` argument will be used.
-|`to_date`|No|✅|`str`|The reference date to use `yyyy-mm-dd`. If not supplied, today will be used.
+|`to_date_column`|No|✅|`str`|The column containin the end date. If not provided the `to_date` argument will be used. If provided it the column should be of type `datetime64`.
+|`to_date`|No|✅|`str`|The reference date to use `yyyy-mm-dd`. If not supplied, and the `to_date_column` is also not supplied; today will be used.
 
 ### Merge categories
 Merging/grouping categories. E.g. a column has levels (=categories) `A`, `B` and `C`, but I want to group `B` and `C` into a new category `D` so that I get a new column with only categories `A` and `D`.
@@ -337,7 +337,7 @@ The input parameters are as follows:
 
 |Argument|Required|Display as argument|Type|Description|
 |---|---|---|---|---|
-|`column`|✅|✅|`str`|The column name to merge categories from. This should be of type `str` or `category`.|
+|`column`|✅|✅|`str`|The column name to merge categories from. The referenced column should be of type `category`.|
 |`output_column`|✅|✅|`str`|The new variable column name which will contain the merged categories.|
 |`mapping`|✅|✅|`dict[str, list[str]]`|A dictionary specifying how to group the levels. **Keys** are the new merged category names; **values** are lists of the original category names to merge into each new category.|
 
@@ -371,11 +371,10 @@ The input parameters are as follows:
 
 |Argument|Required|Display as argument|Type|Description|
 |---|---|---|---|---|
-|column|✅|✅|`str`|The column to one-hot encode|
+|column|✅|✅|`str`|The column name to one-hot encode, the column should be of type `category`.|
 |categories|✅|✅|`list[str]`|List of categories. In case there are categories present in the local data that are not in this list they will be added to the `unknown_category` group.
 |unknown_category|❌|✅|`str`|The column/variable name for categories which are present in the date but not in argument list of `categories`|
 |prefix|❌|✅|`str`|Prefix for the new one-hot encoded columns|
-|drop
 
 ### Merge variables
 Combine two categorical variables into one. For example combine columns `A` and `B` into a new column `C`:
@@ -396,9 +395,20 @@ The input parameters are as follows:
 
 |Argument|Required|Display as argument|Type|Description|
 |---|---|---|---|---|
-|column1|✅|✅|`str`|The first variable to use in the merge
-|column2|✅|✅|`str`|The second variable to use in the merge
-|output_column|✅|✅|`str`|The name of the new variable
+|column1|✅|✅|`str`|The first column name to use in the merge, this column needs to be of `category` type.
+|column2|✅|✅|`str`|The second column to use in the merge, this column needs to be of the `category` type.
+|output_column|✅|✅|`str`|The name of the new column.
+
+
+### Drop column
+You might want to drop a column in case you created a column that was not correct. This allows you to delete one.
+
+The input parameters are as follows:
+
+|Argument|Required|Display as argument|Type|Description|
+|---|---|---|---|---|
+|column|✅|✅|`str`|The column name to drop.
+
 
 ## Analytics Algorithms 
 
