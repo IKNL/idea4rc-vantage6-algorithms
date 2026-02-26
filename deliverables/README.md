@@ -399,6 +399,16 @@ The input parameters are as follows:
 |column2|✅|✅|`str`|The second column to use in the merge, this column needs to be of the `category` type.
 |output_column|✅|✅|`str`|The name of the new column.
 
+### Basic Arithmetic
+Basic operations: `add`, `subtract`, `multiply` and `divide`. All these operations can work on pandas series and on numeric values. 
+
+|Argument|Required|Display as argument|Type|Description|
+|---|---|---|---|---|
+|column1|✅|✅|`str` or `int` or `float`|The column name or value of the left hand side of the operation. In the case of a column name, the type of the column should either be `Int64` or `Float64`.
+|column2|✅|✅|`str` or `int` or `float`|The column name or value of the right hand side of the operation. In the case of a column name, the type of the column should either be `Int64` or `Float64`.
+|operation|✅|✅|`str`| The operation to perform, should be one of `add`, `subtract`, `multiply`, `divide`.
+|output_column|✅|✅|`str`|The name of the new column.
+
 
 ### Drop column
 You might want to drop a column in case you created a column that was not correct. This allows you to delete one.
