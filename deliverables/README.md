@@ -40,6 +40,7 @@ deliverables/
 │   │   ├── rps_cohort.parquet
 │   │   └── rps_pelvis_cohort.parquet
 │   ├── crosstabs-and-chisq.ipynb
+│   ├── analysis-coxph.ipynb
 │   ├── glm.ipynb
 │   ├── kaplan-meier.ipynb
 │   ├── preprocessing_merge_categories.ipynb
@@ -59,6 +60,10 @@ deliverables/
 │   ├── 8-analytics-glm.ipynb
 │   ├── 9-preprocessing-time-delta.ipynb
 │   ├── 10-preprocessing-merge-categories.ipynb
+│   ├── 11-preprocessing-one-hot-encoding.ipynb
+│   ├── 12-preprocessing-merge-variables.ipynb
+│   ├── 13-preprocessing-drop-variable.ipynb
+│   ├── 14-preprocessing-basic-arithmetic.ipynb
 │   └── token.txt # used for authentication in the 0-X notebooks, not in the repo. Create yourself.
 ├── security-and-privacy/ # Security analysis per algorithm required by the CoEs
 │   ├── Security & Privacy Summary.pdf      
@@ -474,7 +479,7 @@ The Kaplan Meier algorithm computes a Kaplan Meier estimate for the survival fun
 |`strata_column_name`|No|✅|`str`| The variable name to which you want to stratify. **This variable needs to be of the type `categorical`**|
 
 ### GLM 
-A GLM (Generalized Linear Model) lets you model relationships between variables using linear predictors and flexible distributions, enabling regression and classification tasks. I suugest to have a brief look at the swimlane diagram in the [Security and Privacy documentation](./security-and-privacy/Security%20&%20Privacy%20GLM.pdf) to have a goof overview of the different steps in the algorithm.
+A GLM (Generalized Linear Model) lets you model relationships between variables using linear predictors and flexible distributions, enabling regression and classification tasks. I sugest to have a brief look at the swimlane diagram in the [Security and Privacy documentation](./security-and-privacy/Security%20&%20Privacy%20GLM.pdf) to have a goof overview of the different steps in the algorithm.
 
 |Argument|Required|Display as argument|Type|Description|
 |---|---|---|---|---|
@@ -488,3 +493,15 @@ A GLM (Generalized Linear Model) lets you model relationships between variables 
 |`tolerance_level`|No|No|`numeric`|Do not supply as the default value should be used for now|
 |`max_iterations`|No|No|`numeric`|Do not supply as the default value should be used for now|
 | `organizations_to_include` |No|No| `list[int]` | List of vantage6 organization IDs that need to be included in the analysis|
+
+### CoxPH
+The Cox algorithm looks at how different factors (like age or treatment) change a person’s chance of experiencing something over time, for example dying or having a complication. It tells you whether a factor seems to increase, decrease, or not really affect that chance, while using all the follow-up time information instead of just "event yes/no".
+
+TODO: The security an privacy document
+
+|Argument|Required|Display as argument|Type|Description|
+|---|---|---|---|---|
+|`time_col`|✅|✅|`str`|The variable name of the time column. This should be a numerical, either `Float64` or `Int64`, column that represents the survival time.
+|`outcome_col`|✅|✅|`str`|The variable name of the outcome column. This should be a `boolean` variable.
+|`expl_vars`|✅|✅|`list[str]`|The variable names that represent the covariates. They should be numerical, either `Float64` or `Int64`, columns.
+|`organizations_to_include`|No|No|`list[int]`|List of vantage6 organization IDs that need to be included in the analysis|

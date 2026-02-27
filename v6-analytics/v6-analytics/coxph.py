@@ -26,8 +26,8 @@ def _filter_dataframes_on_names(
 
 
 @federated
-@dataframes
 @metadata
+@dataframes
 def get_unique_event_times(
     dataframes: dict[str, pd.DataFrame],
     metadata: RunMetaData,
@@ -93,9 +93,9 @@ def _get_unique_event_times(df: pd.DataFrame, time_col: str, outcome_col: str, m
     """
     info("Computing unique event times")
 
-    if df[outcome_col].notnull().sum() <= 10:
-        warn("Sub-task was not executed because the number of samples is too small (n <= 10)")
-        return {"N-Threshold not met": metadata.organization_id}
+    # if df[outcome_col].notnull().sum() <= 10:
+    #     warn("Sub-task was not executed because the number of samples is too small (n <= 10)")
+    #     return {"N-Threshold not met": metadata.organization_id}
 
     times = df[df[outcome_col] == 1].groupby(time_col, as_index=False).count()
     times = times.sort_values(by=time_col)[[time_col, outcome_col]]
@@ -180,7 +180,7 @@ def _perform_iteration(df: pd.DataFrame, time_col, expl_vars, beta, unique_time_
 #
 @central
 @algorithm_client
-def central(
+def coxph_central(
     client: AlgorithmClient, time_col, outcome_col, expl_vars, organization_ids
 ):
     """
@@ -202,7 +202,7 @@ def central(
     info(f"Sending task to organizations {ids}")
 
     n_covs = len(expl_vars)
-    epochs = 10
+    epochs = 25
     tolerance = 1e-6
 
     # --- get_unique_event_times: unpack per dataframe ---
@@ -337,6 +337,7 @@ def central(
         if not active_dataframe_names:
             break
         iteration = epoch + 1
+        info(f"Iteration {iteration}")
 
         task = client.task.create(
             method="perform_iteration",
@@ -365,6 +366,7 @@ def central(
         summed_agg2 = {}
         summed_agg3 = {}
         for df_name in active_dataframe_names:
+            info(f"Computing summed aggregates for dataframe {df_name}")
             included_set = set(ids_included[df_name])
             parts_agg1 = []
             parts_agg2 = []
@@ -425,6 +427,8 @@ def central(
                     converged=False,
                 )
                 continue
+
+            info(f"Delta: {delta}")
 
             if delta <= tolerance:
                 info(f"Betas have settled for dataframe {df_name}!")

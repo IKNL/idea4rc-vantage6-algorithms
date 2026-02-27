@@ -18,6 +18,7 @@ from .kaplan_meier import (
     get_unique_event_times  
 )
 from .glm import glm, compute_local_betas, compute_local_deviance  
+from .coxph import coxph_central, compute_summed_z, perform_iteration, get_unique_event_times
 
 __all__ = [
     "summary",
@@ -35,4 +36,8 @@ __all__ = [
     "glm",
     "compute_local_betas",
     "compute_local_deviance",
+    "coxph_central",
+    "compute_summed_z",
+    "perform_iteration",
+    "get_unique_event_times",
 ]
