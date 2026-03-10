@@ -21,7 +21,7 @@ packages = ["v6-sessions"]
 include-package-data = true
 
 [tool.setuptools.package-data]
-"*" = ["sql/*.sql"]
+"*" = ["sql/*.sql.j2"]
 
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]

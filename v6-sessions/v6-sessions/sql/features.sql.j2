@@ -9,16 +9,17 @@
 -- 1.1      | F. Martin      | 2026-02-11    | Update the clinical staging codes and 
 --          | A. van Gestel  |               | fixed some minor issues.
 -- -------------------------------------------------------------------------------------
-
-WITH
-
-    -- Define the list of patient IDs to analyze
-    patient_id_list AS (
-        SELECT person_id FROM (VALUES {@patient_ids}) AS t(person_id)
-    ),
-
+-- 1.2      | F. Martin      | 2026-03-10    | Introduced flexible feature selection,
+--          |                |               | using Jinja2 template.
+-- -------------------------------------------------------------------------------------
+--
 ----------------------------------------------------------------------------------------
--- PERSON table
+-- BASIC FEATURES
+--
+-- Both head and neck and sarcoma have the same basic features.
+--
+-- Patient ID
+-- The patient ID is the ID of the patient.
 --
 -- Sex
 -- In `PERSON.gender_concept_id` there are two codes:
@@ -29,7 +30,31 @@ WITH
 -- Year of Birth
 -- In `PERSON.year_of_birth` there is the year of birth of the patient.
 -- This results in a Integer variable with the year of birth.
+--
+-- Diagnosis date
+-- of episode_concept_id of 32533 Disease Episode (always one) look up the date
+--
+-- Morphology
+-- Extract episode_object_concept_id this contains the omop concept id for the ICDO3 
+-- code (for topography and morphology).
+--
+-- Topography
+-- Second part of `concept_code` of `episode.episode_object_concept_id` where `episode.episode_concept_id = 32533`
+--
+-- Life status
+-- Concept_id look for codes of Alive Dead etc (see excel). Look for latest date. 
+-- Translate from the vocabulary (also store the date)
+--
+-- Life status date
+-- `observation.observation_date` of the latest observation where `observation.observation_concept_id` is one of `2000100071`, `4230556`, `2000100072`,`2000100073`, `2000100074`, `2000100075`, `4163894`.
 ----------------------------------------------------------------------------------------
+
+WITH
+
+    -- Define the list of patient IDs to analyze
+    patient_id_list AS (
+        SELECT person_id FROM (VALUES {{ patient_ids }}) AS t(person_id)
+    ),
 
     -- PERSON table
     person AS (
@@ -40,23 +65,12 @@ WITH
         FROM
             patient_id_list pid
         LEFT JOIN
-            @cdm_schema.person person 
+            {{ cdm_schema }}.person person 
             ON pid.person_id = person.person_id
         LEFT JOIN
-            @cdm_schema.concept gender_concept 
+            {{ cdm_schema }}.concept gender_concept 
             ON person.gender_concept_id = gender_concept.concept_id
     ),
-
-----------------------------------------------------------------------------------------
--- EPISODE table
---
--- Diagnosis date
--- of episode_concept_id of 32533 Disease Episode (always one) look up the date
--- 
--- Topography and morphology
--- Extract episode_object_concept_id this contains the omop concept id for the ICDO3 
--- code (for topography and morphology).
-----------------------------------------------------------------------------------------
 
     -- EPISODE table
     primary_tumor AS (
@@ -68,21 +82,14 @@ WITH
         FROM
             patient_id_list pid
         LEFT JOIN
-            @cdm_schema.episode episode
+            {{ cdm_schema }}.episode episode
             ON pid.person_id = episode.person_id
         LEFT JOIN
-            @cdm_schema.concept diagnosis_concept
+            {{ cdm_schema }}.concept diagnosis_concept
             ON episode.episode_object_concept_id = diagnosis_concept.concept_id
         WHERE
             episode.episode_concept_id = 32533 -- Disease Episode
     ),
-
-----------------------------------------------------------------------------------------
--- Observation table
---
--- Concept_id look for codes of Alive Dead etc (see excel). Look for latest date. 
--- Translate from the vocabulary (also store the date)
-----------------------------------------------------------------------------------------
 
     -- OBSERVATION table
     person_status AS (
@@ -103,10 +110,10 @@ WITH
             FROM
                 patient_id_list pid
             LEFT JOIN
-                @cdm_schema.observation observation
+                {{ cdm_schema }}.observation observation
                 ON pid.person_id = observation.person_id
             LEFT JOIN
-                @cdm_schema.concept observation_concept
+                {{ cdm_schema }}.concept observation_concept
                 ON observation.observation_concept_id = observation_concept.concept_id
             WHERE
                 observation.observation_concept_id IN ( 	
@@ -122,10 +129,12 @@ WITH
         WHERE all_observations.observation_position = 1 -- get last observation
     ),
 
+{% if is_head_and_neck %}
 ----------------------------------------------------------------------------------------
--- Measurement table
+-- HEAD AND NECK FEATURES
 --
--- 
+-- Only head and neck has the following features.
+--
 -- Pathological staging
 -- Measurement_concept_id look up the code from pathological staging
 -- 
@@ -142,10 +151,10 @@ WITH
         FROM 
             patient_id_list pid
         LEFT JOIN
-            @cdm_schema.measurement measurement
+            {{ cdm_schema }}.measurement measurement
             ON pid.person_id = measurement.person_id
         LEFT JOIN
-            @cdm_schema.concept measurement_concept
+            {{ cdm_schema }}.concept measurement_concept
             ON measurement.measurement_concept_id = measurement_concept.concept_id
         WHERE
             measurement.measurement_concept_id IN (
@@ -192,10 +201,10 @@ WITH
         FROM 
             patient_id_list pid
         LEFT JOIN
-            @cdm_schema.measurement measurement
+            {{ cdm_schema }}.measurement measurement
             ON pid.person_id = measurement.person_id
         LEFT JOIN
-            @cdm_schema.concept measurement_concept
+            {{ cdm_schema }}.concept measurement_concept
             ON measurement.measurement_concept_id = measurement_concept.concept_id
         WHERE
             measurement.measurement_concept_id IN (
@@ -233,6 +242,44 @@ WITH
                 1635006  -- AJCC/UICC 8th clinical Stage 4C
             )
     )
+{% endif %}
+{% if is_sarcoma %}
+----------------------------------------------------------------------------------------
+-- SARCOMA FEATURES
+--
+-- Only sarcoma has the following features.
+--
+-- Date of biopsy
+-- `observation.observation_date` of the latest observation where 
+-- `observation.observation_concept_id` is one of `2000100071`, `4230556`, `2000100072`,
+-- `2000100073`, `2000100074`, `2000100075`, `4163894`.
+----------------------------------------------------------------------------------------
+    -- OBSERVATION table
+    biopsy AS (
+        SELECT
+            pid.person_id,
+            procedure_concept.concept_name as type_
+        FROM
+            patient_id_list pid
+        LEFT JOIN
+            {{ cdm_schema }}.procedure_occurrence procedure_occurrence
+            ON pid.person_id = procedure_occurrence.person_id
+        LEFT JOIN
+            {{ cdm_schema }}.concept procedure_concept
+            ON procedure_occurrence.procedure_concept_id = procedure_concept.concept_id
+        WHERE 
+            procedure_occurrence.procedure_concept_id IN (
+                4171863,
+                4321878,
+                4321986,
+                4228202,
+                4279903
+            )
+        -- WHERE procedure_occurrence.procedure_date = SURGERY_DATE
+    )
+{% endif %}
+
+
 
 ----------------------------------------------------------------------------------------
 -- Construct final table
@@ -246,9 +293,16 @@ SELECT
     COALESCE(primary_tumor.morphology, 'N/A')       as morphology,
     COALESCE(primary_tumor.topography, 'N/A')       as topography,
     COALESCE(person_status.status, 'N/A')           as life_status,
-    person_status.date                              as life_status_date,
+    person_status.date                              as life_status_date
+
+{% if is_head_and_neck %},
     COALESCE(pathological_staging.stage, 'N/A')     as pathological_stage,
     COALESCE(clinical_staging.stage, 'N/A')         as clinical_stage
+{% endif %}
+
+{% if is_sarcoma %},
+    COALESCE(biopsy.type_, 'N/A')                   as biopsy_type
+{% endif %}
 
 FROM
     person
@@ -258,12 +312,18 @@ LEFT JOIN
 LEFT JOIN
     person_status
     ON person.person_id = person_status.person_id
+
+{% if is_head_and_neck %}
 LEFT JOIN
     pathological_staging
     ON person.person_id = pathological_staging.person_id
 LEFT JOIN
     clinical_staging
     ON person.person_id = clinical_staging.person_id
+{% endif %}
 
-
-
+{% if is_sarcoma %}
+LEFT JOIN
+    biopsy
+    ON person.person_id = biopsy.person_id
+{% endif %}

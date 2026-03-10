@@ -32,10 +32,10 @@ help:
 
 image:
 	@echo "Building ${REGISTRY}/${REGISTRY_PROJECT}/${IMAGE}:${TAG}-v6-${VANTAGE6_VERSION}"
-	@echo "Building ${REGISTRY}/${REGISTRY_PROJECT}/${IMAGE}:latest"
+	@echo "Building ${REGISTRY}/${REGISTRY_PROJECT}/${IMAGE}:${TAG}"
 	docker buildx build \
 		--tag ${REGISTRY}/${REGISTRY_PROJECT}/${IMAGE}:${TAG}-v6-${VANTAGE6_VERSION} \
-		--tag ${REGISTRY}/${REGISTRY_PROJECT}/${IMAGE}:latest \
+		--tag ${REGISTRY}/${REGISTRY_PROJECT}/${IMAGE}:${TAG} \
 		--platform ${PLATFORMS} \
 		--build-arg TAG=${TAG} \
 		--build-arg BASE=${BASE} \
