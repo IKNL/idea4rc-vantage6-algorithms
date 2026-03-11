@@ -261,14 +261,14 @@ Variable|Type|Status|Notes
 --|--|--|--
 `surgery_hospital`|`CategoricalDtype`||`care_site.care_site_name`
 `pathological_stage`|`CategoricalDtype`|✅|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of  `1634741`, `1635511`, `1634787`, `1635797`, `1635800`, `1634799`, `1633751`, `1634619`, `1635386`, `1633499`, `1634947`, `1634705`, `1634208`, `1635230`, `1633697`, `1634731`, `1635745`, `1634005`, `1635370`, `1634472`, `1634487`, `1635893`, `1634492`, `1634551`.
-`pathological_stage_pt`|`CategoricalDtype`||`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `1634270`, `1635402`, `1634986`, `1635660`, `1633798`, `1634720`, `1633279`, `1634675`, `1634635`, `1633445`, `1635422`, `1635070`, `1634792`, `1634491`, `1633307`, `1635670`, `1634658`, `1634386`, `1635311`, `1635341`, `1635396`, `1634101`, `1633723`, `1634894`, `1633900`, `1633699`, `1633658`.
-`pathological_stage_pn`|`CategoricalDtype`||`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `1635823`, `1634505`, `1634117`, `1634212`, `1633726`, `1635560`, `1634562`, `1634245`, `1633659`, `1634541`, `1633569`, `1633336`, `1633273`, `1635717`, `1635871`, `1634773`, `1633607`, `1634645`, `1635113`, `1634601`, `1634383`, `1634504`, `1633668`, `1635307`, `1634271`, `1634397`, `1635545`, `1633500`, `1634847`, `1634770`.
-`pathological_stage_pm`|`CategoricalDtype`||`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `1635345`, `1635536`, `1634606`, `1633469`, `1635336`, `1634891`.
+`pathological_stage_pt`|`CategoricalDtype`|✅|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `1634270`, `1635402`, `1634986`, `1635660`, `1633798`, `1634720`, `1633279`, `1634675`, `1634635`, `1633445`, `1635422`, `1635070`, `1634792`, `1634491`, `1633307`, `1635670`, `1634658`, `1634386`, `1635311`, `1635341`, `1635396`, `1634101`, `1633723`, `1634894`, `1633900`, `1633699`, `1633658`.
+`pathological_stage_pn`|`CategoricalDtype`|✅|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `1635823`, `1634505`, `1634117`, `1634212`, `1633726`, `1635560`, `1634562`, `1634245`, `1633659`, `1634541`, `1633569`, `1633336`, `1633273`, `1635717`, `1635871`, `1634773`, `1633607`, `1634645`, `1635113`, `1634601`, `1634383`, `1634504`, `1633668`, `1635307`, `1634271`, `1634397`, `1635545`, `1633500`, `1634847`, `1634770`.
+`pathological_stage_pm`|`CategoricalDtype`|✅|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `1635345`, `1635536`, `1634606`, `1633469`, `1635336`, `1634891`.
 `pathological_stage_extra_nodal_extension`|`CategoricalDtype`||`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `36769946`,`36770618`.
 `clinical_stage`|`CategoricalDtype`|✅|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `1635842`,  `1633828`, `1635824`, `1633905`, `1634457`, `1635758`, `1634718`, `1635182`, `1635217`, `1635848`, `1635125`, `1634596`, `1634307`, `1634766`, `1635029`, `1635535`, `1634451`, `1634810`, `1633922`, `1635757`, `1635708`, `1633270`, `1634614`, `1635006`.
-`clinical_stage_ct`|`CategoricalDtype`||`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `1635299`, `1634269`, `1633589`, `1635857`, `1635227`, `1633737`, `1635656`, `1633815`, `1635794`, `1634381`, `1635664`, `1633883`, `1633747`, `1634029`, `1634651`, `1633877`, `1633324`, `1635556`, `1635522`, `1635530`, `1634973`, `1634247`, `1634522`, `1634963`, `1634624`, `1634120`, `1634854`.
-`clinical_stage_cn`|`CategoricalDtype`||`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `1635104`, `1633679`, `1634797`, `1633315`, `1633942`, `1634070`, `1635697`, `1634139`, `1633651`, `1635470`, `1635634`, `1633763`, `1634143`, `1635739`, `1633788`, `1633433`, `1635677`, `1633323`, `1634678`, `1634727`, `1633271`, `1635605`, `1634037`, `1633854`, `1633434`, `1635004`, `1635496`, `1635283`, `1635084`, `1635828`.
-`clinical_stage_cm`|`CategoricalDtype`||`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `1634194`, `1633468`, `1634757`, `1634829`, `1633276`, `1633974`.
+`clinical_stage_ct`|`CategoricalDtype`|✅|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `1635299`, `1634269`, `1633589`, `1635857`, `1635227`, `1633737`, `1635656`, `1633815`, `1635794`, `1634381`, `1635664`, `1633883`, `1633747`, `1634029`, `1634651`, `1633877`, `1633324`, `1635556`, `1635522`, `1635530`, `1634973`, `1634247`, `1634522`, `1634963`, `1634624`, `1634120`, `1634854`.
+`clinical_stage_cn`|`CategoricalDtype`|✅|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `1635104`, `1633679`, `1634797`, `1633315`, `1633942`, `1634070`, `1635697`, `1634139`, `1633651`, `1635470`, `1635634`, `1633763`, `1634143`, `1635739`, `1633788`, `1633433`, `1635677`, `1633323`, `1634678`, `1634727`, `1633271`, `1635605`, `1634037`, `1633854`, `1633434`, `1635004`, `1635496`, `1635283`, `1635084`, `1635828`.
+`clinical_stage_cm`|`CategoricalDtype`|✅|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `1634194`, `1633468`, `1634757`, `1634829`, `1633276`, `1633974`.
 `clinical_stage_extra_nodal_extension`|`CategoricalDtype`||`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `36769946`, `36770618`.
 `surgery_extra_nodal_extension`|`CategoricalDtype`||`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `36769946`, `36770618`.
 `neck_surgery`|`CategoricalDtype`||`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `4188539`, `4188540`.
@@ -278,7 +278,7 @@ Variable|Type|Status|Notes
 Variable|Type|Status|Notes
 --|--|--|--
 `type_of_biopsy`|`CategoricalDtype`||`concept_name` of `procedure_occurrence.procedure_concept_id` where `procedure_date` is equal to `surgery_date` and `measurement_concept_id` is one of `4171863`, `4321878`,`4321986`, `4228202`, `4279903`.
-`date_of_biopsy`|`datetime64[ns,tz]`||Planned
+`date_of_biopsy`|`datetime64[ns,tz]`|✅|Planned
 `pathological_stage`|`CategoricalDtype`||Planned
 `clinical_stage`|`CategoricalDtype`||Planned
 `macrogrouping_topography`|`CategoricalDtype`||Planned 
@@ -417,19 +417,19 @@ The input parameters are as follows:
 
 |Argument|Required|Display as argument|Type|Description|
 |---|---|---|---|---|
-|column1|✅|✅|`str`|The first column name to use in the merge, this column needs to be of `category` type.
-|column2|✅|✅|`str`|The second column to use in the merge, this column needs to be of the `category` type.
-|output_column|✅|✅|`str`|The name of the new column.
+|`column1`|✅|✅|`str`|The first column name to use in the merge, this column needs to be of `category` type.
+|`column2`|✅|✅|`str`|The second column to use in the merge, this column needs to be of the `category` type.
+|`output_column`|✅|✅|`str`|The name of the new column.
 
 ### Basic Arithmetic
 Basic operations: `add`, `subtract`, `multiply` and `divide`. All these operations can work on pandas series and on numeric values. 
 
 |Argument|Required|Display as argument|Type|Description|
 |---|---|---|---|---|
-|column1|✅|✅|`str` or `int` or `float`|The column name or value of the left hand side of the operation. In the case of a column name, the type of the column should either be `Int64` or `Float64`.
-|column2|✅|✅|`str` or `int` or `float`|The column name or value of the right hand side of the operation. In the case of a column name, the type of the column should either be `Int64` or `Float64`.
-|operation|✅|✅|`str`| The operation to perform, should be one of `add`, `subtract`, `multiply`, `divide`.
-|output_column|✅|✅|`str`|The name of the new column.
+|`column1`|✅|✅|`str` or `int` or `float`|The column name or value of the left hand side of the operation. In the case of a column name, the type of the column should either be `Int64` or `Float64`.
+|`column2`|✅|✅|`str` or `int` or `float`|The column name or value of the right hand side of the operation. In the case of a column name, the type of the column should either be `Int64` or `Float64`.
+|`operation`|✅|✅|`str`| The operation to perform, should be one of `add`, `subtract`, `multiply`, `divide`.
+|`output_column`|✅|✅|`str`|The name of the new column.
 
 
 ### Drop column
@@ -439,7 +439,7 @@ The input parameters are as follows:
 
 |Argument|Required|Display as argument|Type|Description|
 |---|---|---|---|---|
-|column|✅|✅|`str`|The column name to drop.
+|`column`|✅|✅|`str`|The column name to drop.
 
 
 ## Analytics Algorithms 
