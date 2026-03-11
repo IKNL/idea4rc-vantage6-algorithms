@@ -184,6 +184,12 @@ def convert_head_neck_columns(df: pd.DataFrame) -> pd.DataFrame:
         [
             "pathological_stage",
             "clinical_stage",
+            "pathological_stage_pt",
+            "pathological_stage_pn",
+            "pathological_stage_pm",
+            "clinical_stage_ct",
+            "clinical_stage_cn",
+            "clinical_stage_cm",
         ],
     )
     return df
@@ -245,42 +251,3 @@ def _to_boolean(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
         df[column] = df[column].astype("boolean")
     return df
 
-
-# def convert_sarcoma_columns(df: pd.DataFrame) -> pd.DataFrame:
-#     """
-#     This function converts the sarcoma columns of the dataframe to the correct types.
-#     """
-#     df["patient_id"] = pd.to_numeric(df["patient_id"], errors="coerce")
-#     df["age"] = pd.to_numeric(df["age"], errors="coerce")
-#     df["survival_days"] = pd.to_numeric(df["survival_days"], errors="coerce")
-#     df["tumor_size"] = pd.to_numeric(df["tumor_size"], errors="coerce")
-#     df["surgery_concept"] = pd.to_numeric(df["surgery_concept"], errors="coerce")
-#     df["completeness_of_resection_concept_id"] = pd.to_numeric(
-#         df["completeness_of_resection_concept_id"], errors="coerce"
-#     )
-#     df["n_cancer_episodes"] = pd.to_numeric(df["n_cancer_episodes"], errors="coerce")
-
-#     # Boolean columns (CASE statements that return 1/0)
-#     df["censor"] = df["censor"].astype("bool")
-#     df["tumor_rupture"] = df["tumor_rupture"].astype("bool")
-#     df["pre_operative_chemo"] = df["pre_operative_chemo"].astype("bool")
-#     df["post_operative_chemo"] = df["post_operative_chemo"].astype("bool")
-#     df["pre_operative_radio"] = df["pre_operative_radio"].astype("bool")
-#     df["post_operative_radio"] = df["post_operative_radio"].astype("bool")
-#     df["local_recurrence"] = df["local_recurrence"].astype("bool")
-#     df["distant_metastasis"] = df["distant_metastasis"].astype("bool")
-
-#     # Category columns
-#     df["sex"] = df["sex"].astype("category")
-#     df["status"] = df["status"].astype("category")
-#     df["histology"] = df["histology"].astype("category")
-#     df["fnclcc_grade"] = df["fnclcc_grade"].astype("category")
-#     df["multifocality"] = df["multifocality"].astype("category")
-#     df["completeness_of_resection"] = df["completeness_of_resection"].astype("category")
-
-#     # Datetime columns
-#     df["surgery_date"] = pd.to_datetime(
-#         df["surgery_date"], errors="coerce", utc=True
-#     ).dt.normalize()
-
-#     return df
