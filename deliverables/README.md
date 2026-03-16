@@ -247,14 +247,32 @@ Variable|Type|Status|Notes
 `sex`|`CategoricalDtype`|✅|`concept_name` of `person.gender_concept_id`
 `year_of_birth`|`Int64`|✅|`person.year_of_birth`
 `diagnosis_date`|`datetime64[ns, tz]`|✅| `episode.episode_start_date` where `episode.episode_concept_id = 32533`
+`age_at_diagnosis`|`Int64`||
+`diagnosisCode`|`CategoricalDtype`||
 `morphology`|`CategoricalDtype`|✅|First part of `concept_code` of `episode.episode_object_concept_id` where `episode.episode_concept_id = 32533`
 `topography`|`CategoricalDtype`|✅|Second part of `concept_code` of `episode.episode_object_concept_id` where `episode.episode_concept_id = 32533`
 `life_status`|`CategoricalDtype`|✅|`concept_name` of latest observation where `observation.observation_concept_id` is one of `2000100071`, `4230556`, `2000100072`,`2000100073`, `2000100074`, `2000100075`, `4163894`.
 `life_status_date`|`datetime64[ns, tz]`|✅|`observation.observation_date` of the latest observation where `observation.observation_concept_id` is one of `2000100071`, `4230556`, `2000100072`,`2000100073`, `2000100074`, `2000100075`, `4163894`.
 `surgery_intent`|`CategoricalDtype`||`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `4179711`, `4162591`.
 `margins_after_surgery`|`CategoricalDtype`||`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `1634643`, `1633801`, `1634484`.
+`date_of_surgery`|`datetime64[ns, tz]`|||
 `radio_therapy_intent`|`CategoricalDtype`||`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `4179711`, `4162591`.
-
+`radiotherapy_hospital`|???||
+`radio_start_date`|`datetime64[ns, tz]`|???||
+`radio_end_date`|`datetime64[ns, tz]`|???||
+`radio_setting`|`CategoricalDtype`(?)||
+`radio_total_dose_gy`|`Float64`||
+`radio_number_of_fractions`|`Float64`||
+`radio_rt_treatment_completed_as_planned`|`CategoricalDtype`||
+`systemic_type_of_systemic_treatment`|`CategoricalDtype`||
+`systemic_start_date_systemic_treatment`|`datetime64[ns, tz]`||
+`systemic_end_date_systemic_treatment`|`datetime64[ns, tz]`||
+`systemic_regimen`|`CategoricalDtype`||
+`systemic_reason_for_end_of_treatment`|`CategoricalDtype`||
+`drugs_for_threatments`|???||
+`overall_treatment_response_response`|`CategoricalDtype`||
+`overall_treatment_response_defined_done`|???||
+Overall treatment response date|???| Still needs to be defined by Unai|
 
 ## Head and Neck variables
 Variable|Type|Status|Notes
@@ -272,7 +290,18 @@ Variable|Type|Status|Notes
 `clinical_stage_extra_nodal_extension`|`CategoricalDtype`||`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `36769946`, `36770618`.
 `surgery_extra_nodal_extension`|`CategoricalDtype`||`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `36769946`, `36770618`.
 `neck_surgery`|`CategoricalDtype`||`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `4188539`, `4188540`.
-`laterality_of_dissection`|`CategoricalDtype`||`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `4112106`, `4117496`, `4112107`.
+`laterality_of_the_dissection`|`CategoricalDtype`||`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `4112106`, `4117496`, `4112107`.
+`date_of_neck_surgery`|`datetime64[ns,tz]`|||
+`radio_beam_quality`|`CategoricalDtype`||
+`radio_total_high_dose`|`Float64`||
+`radio_treatment_site_primary_only`|`boolean`||
+`radio_treatment_site_neck_only`| `boolean`||
+`radio_treatment_site_primary_and_ipsilateral_neck`|`boolean`||
+`radio_treatment_site_primary_and_bilateral_neck`|`boolean`||
+`radio_treatment_site_distant_metastasis`|`boolean`||
+`systemic_intent`|`CategoricalDtype`||
+`systemic_setting`|`CategoricalDtype`||
+
 
 ## Sarcoma variables
 Variable|Type|Status|Notes
@@ -283,6 +312,7 @@ Variable|Type|Status|Notes
 `clinical_stage`|`CategoricalDtype`||Planned
 `macrogrouping_topography`|`CategoricalDtype`||Planned 
 `morphological_grouping`|`CategoricalDtype`||Planned
+`last_contact`|`datetime64[ns,tz]`||
 
 ## Authentication
 Vantage6 uses its own Keycloak instance which is linked to the CERTH keycloak instance. Authentication process will be as follows (handled by RAVEN and the keycloak instances):
