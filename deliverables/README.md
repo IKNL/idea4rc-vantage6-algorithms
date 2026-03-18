@@ -273,6 +273,30 @@ Variable|Type|Status|Notes
 `overall_treatment_response_response`|`CategoricalDtype`||
 `overall_treatment_response_defined_done`|???||
 Overall treatment response date|???| Still needs to be defined by Unai|
+`clinical_is_transit_metastasis_with_clinical_confirmation`|`boolean`||
+`clinical_is_multifocal_tumor`|`boolean`||
+`clinical_regional_nodal_metastases`|`boolean`||
+`clinical_soft_tissue`|`boolean`||
+`clinical_distant_lymph_node`|`boolean`||
+`clinical_lung`|`boolean`||
+`clinical_metastasisatbone`|`boolean`||
+`clinical_liver`|`boolean`||
+`clinical_pleura`|`boolean`||
+`clinical_peritoneum`|`boolean`||
+`clinical_brain`|`boolean`||
+`clinical_other_viscera`|`boolean`||
+`clinical_unknown`|`boolean`||
+`pathelogical_regional_nodal_metastases`|`boolean`||
+`pathelogical_soft_tissue`|`boolean`||
+`pathelogical_distant_lymph_node`|`boolean`||
+`pathelogical_lung`|`boolean`||
+`pathelogical_metastasisatbone`|`boolean`||
+`pathelogical_liver`|`boolean`||
+`pathelogical_pleura`|`boolean`||
+`pathelogical_peritoneum`|`boolean`||
+`pathelogical_brain`|`boolean`||
+`pathelogical_other_viscera`|`boolean`||
+`pathelogical_unknown`|`boolean`||
 
 ## Head and Neck variables
 Variable|Type|Status|Notes
@@ -306,12 +330,16 @@ Variable|Type|Status|Notes
 ## Sarcoma variables
 Variable|Type|Status|Notes
 --|--|--|--
-`type_of_biopsy`|`CategoricalDtype`||`concept_name` of `procedure_occurrence.procedure_concept_id` where `procedure_date` is equal to `surgery_date` and `measurement_concept_id` is one of `4171863`, `4321878`,`4321986`, `4228202`, `4279903`.
-`date_of_biopsy`|`datetime64[ns,tz]`|✅|Planned
-`pathological_stage`|`CategoricalDtype`||Planned
-`clinical_stage`|`CategoricalDtype`||Planned
-`macrogrouping_topography`|`CategoricalDtype`||Planned 
-`morphological_grouping`|`CategoricalDtype`||Planned
+`type_of_biopsy`|`CategoricalDtype`|✅|`concept_name` of `procedure_occurrence.procedure_concept_id` where `procedure_date` is equal to `surgery_date` and `measurement_concept_id` is one of `4171863`, `4321878`,`4321986`, `4228202`, `4279903`.
+`date_of_biopsy`|`datetime64[ns,tz]`||
+`clinical_localised`|`boolean`||
+`clinical_number_of_tumor_nodules`|`Int64`||
+`clinical_loco_regional`|`boolean`||
+`pathelogical_localised`|`boolean`||
+`pathelogical_number_of_tumor_nodules`|`Int64`||
+`pathelogical_loco-regional`|`boolean`||
+`pathelogical_is_transit_metastasis_with_clinical_confirmation`|`boolean`||
+`pathelogical_is_multifocal_tumor`|`boolean`||
 `last_contact`|`datetime64[ns,tz]`||
 
 ## Authentication
