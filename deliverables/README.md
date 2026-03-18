@@ -247,8 +247,8 @@ Variable|Type|Status|Notes
 `sex`|`CategoricalDtype`|✅|`concept_name` of `person.gender_concept_id`
 `year_of_birth`|`Int64`|✅|`person.year_of_birth`
 `diagnosis_date`|`datetime64[ns, tz]`|✅| `episode.episode_start_date` where `episode.episode_concept_id = 32533`
-`age_at_diagnosis`|`Int64`|1|
-`diagnosisCode`|`CategoricalDtype`|1|
+`age_at_diagnosis`|`Int64`|23/03|
+`diagnosisCode`|`CategoricalDtype`|23/03|
 `morphology`|`CategoricalDtype`|✅|First part of `concept_code` of `episode.episode_object_concept_id` where `episode.episode_concept_id = 32533`
 `topography`|`CategoricalDtype`|✅|Second part of `concept_code` of `episode.episode_object_concept_id` where `episode.episode_concept_id = 32533`
 `life_status`|`CategoricalDtype`|✅|`concept_name` of latest observation where `observation.observation_concept_id` is one of `2000100071`, `4230556`, `2000100072`,`2000100073`, `2000100074`, `2000100075`, `4163894`.
@@ -273,30 +273,30 @@ Variable|Type|Status|Notes
 `overall_treatment_response_response`|`CategoricalDtype`|*|
 `overall_treatment_response_defined_done`|???||
 Overall treatment response date|???| Still needs to be defined by Unai|
-`clinical_is_transit_metastasis_with_clinical_confirmation`|`boolean`|1|
-`clinical_is_multifocal_tumor`|`boolean`|1|
-`clinical_regional_nodal_metastases`|`boolean`|1|
-`clinical_soft_tissue`|`boolean`|1|
-`clinical_distant_lymph_node`|`boolean`|1|
-`clinical_lung`|`boolean`|1|
-`clinical_metastasisatbone`|`boolean`|1|
-`clinical_liver`|`boolean`|1|
-`clinical_pleura`|`boolean`|1|
-`clinical_peritoneum`|`boolean`|1|
-`clinical_brain`|`boolean`|1|
-`clinical_other_viscera`|`boolean`|1|
-`clinical_unknown`|`boolean`|1|
-`pathelogical_regional_nodal_metastases`|`boolean`|1|
-`pathelogical_soft_tissue`|`boolean`|1|
-`pathelogical_distant_lymph_node`|`boolean`|1|
-`pathelogical_lung`|`boolean`|1|
-`pathelogical_metastasisatbone`|`boolean`|1|
-`pathelogical_liver`|`boolean`|1|
-`pathelogical_pleura`|`boolean`|1|
-`pathelogical_peritoneum`|`boolean`|1|
-`pathelogical_brain`|`boolean`|1|
-`pathelogical_other_viscera`|`boolean`|1|
-`pathelogical_unknown`|`boolean`|1|
+`clinical_is_transit_metastasis_with_clinical_confirmation`|`boolean`|23/04|
+`clinical_is_multifocal_tumor`|`boolean`|23/04|
+`clinical_regional_nodal_metastases`|`boolean`|23/04|
+`clinical_soft_tissue`|`boolean`|23/04|
+`clinical_distant_lymph_node`|`boolean`|23/04|
+`clinical_lung`|`boolean`|23/04|
+`clinical_metastasisatbone`|`boolean`|23/04|
+`clinical_liver`|`boolean`|23/04|
+`clinical_pleura`|`boolean`|23/04|
+`clinical_peritoneum`|`boolean`|23/04|
+`clinical_brain`|`boolean`|23/04|
+`clinical_other_viscera`|`boolean`|23/04|
+`clinical_unknown`|`boolean`|23/04|
+`pathelogical_regional_nodal_metastases`|`boolean`|26/04|
+`pathelogical_soft_tissue`|`boolean`|26/04|
+`pathelogical_distant_lymph_node`|`boolean`|26/04|
+`pathelogical_lung`|`boolean`|26/04|
+`pathelogical_metastasisatbone`|`boolean`|26/04|
+`pathelogical_liver`|`boolean`|26/04|
+`pathelogical_pleura`|`boolean`|26/04|
+`pathelogical_peritoneum`|`boolean`|26/04|
+`pathelogical_brain`|`boolean`|26/04|
+`pathelogical_other_viscera`|`boolean`|26/04|
+`pathelogical_unknown`|`boolean`|26/04|
 
 ## Head and Neck variables
 Variable|Type|Status|Notes
@@ -331,16 +331,16 @@ Variable|Type|Status|Notes
 Variable|Type|Status|Notes
 --|--|--|--
 `type_of_biopsy`|`CategoricalDtype`|✅|`concept_name` of `procedure_occurrence.procedure_concept_id` where `procedure_date` is equal to `surgery_date` and `measurement_concept_id` is one of `4171863`, `4321878`,`4321986`, `4228202`, `4279903`.
-`date_of_biopsy`|`datetime64[ns,tz]`|2|
-`clinical_localised`|`boolean`|2|
-`clinical_number_of_tumor_nodules`|`Int64`|2|
-`clinical_loco_regional`|`boolean`|2|
-`pathelogical_localised`|`boolean`|2|
-`pathelogical_number_of_tumor_nodules`|`Int64`|2|
-`pathelogical_loco-regional`|`boolean`|2|
-`pathelogical_is_transit_metastasis_with_clinical_confirmation`|`boolean`|2|
-`pathelogical_is_multifocal_tumor`|`boolean`|2|
-`last_contact`|`datetime64[ns,tz]`|2|
+`date_of_biopsy`|`datetime64[ns,tz]`|02/04|
+`clinical_localised`|`boolean`|02/04|
+`clinical_number_of_tumor_nodules`|`Int64`|02/04|
+`clinical_loco_regional`|`boolean`|02/04|
+`pathelogical_localised`|`boolean`|02/04|
+`pathelogical_number_of_tumor_nodules`|`Int64`|02/04|
+`pathelogical_loco-regional`|`boolean`|02/04|
+`pathelogical_is_transit_metastasis_with_clinical_confirmation`|`boolean`|02/04|
+`pathelogical_is_multifocal_tumor`|`boolean`|02/04|
+`last_contact`|`datetime64[ns,tz]`|02/04|
 
 ## Authentication
 Vantage6 uses its own Keycloak instance which is linked to the CERTH keycloak instance. Authentication process will be as follows (handled by RAVEN and the keycloak instances):
