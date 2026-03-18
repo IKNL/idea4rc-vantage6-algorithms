@@ -247,56 +247,56 @@ Variable|Type|Status|Notes
 `sex`|`CategoricalDtype`|✅|`concept_name` of `person.gender_concept_id`
 `year_of_birth`|`Int64`|✅|`person.year_of_birth`
 `diagnosis_date`|`datetime64[ns, tz]`|✅| `episode.episode_start_date` where `episode.episode_concept_id = 32533`
-`age_at_diagnosis`|`Int64`||
-`diagnosisCode`|`CategoricalDtype`||
+`age_at_diagnosis`|`Int64`|1|
+`diagnosisCode`|`CategoricalDtype`|1|
 `morphology`|`CategoricalDtype`|✅|First part of `concept_code` of `episode.episode_object_concept_id` where `episode.episode_concept_id = 32533`
 `topography`|`CategoricalDtype`|✅|Second part of `concept_code` of `episode.episode_object_concept_id` where `episode.episode_concept_id = 32533`
 `life_status`|`CategoricalDtype`|✅|`concept_name` of latest observation where `observation.observation_concept_id` is one of `2000100071`, `4230556`, `2000100072`,`2000100073`, `2000100074`, `2000100075`, `4163894`.
 `life_status_date`|`datetime64[ns, tz]`|✅|`observation.observation_date` of the latest observation where `observation.observation_concept_id` is one of `2000100071`, `4230556`, `2000100072`,`2000100073`, `2000100074`, `2000100075`, `4163894`.
-`surgery_intent`|`CategoricalDtype`||`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `4179711`, `4162591`.
-`margins_after_surgery`|`CategoricalDtype`||`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `1634643`, `1633801`, `1634484`.
-`date_of_surgery`|`datetime64[ns, tz]`|||
-`radio_therapy_intent`|`CategoricalDtype`||`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `4179711`, `4162591`.
-`radiotherapy_hospital`|???||
-`radio_start_date`|`datetime64[ns, tz]`|???||
-`radio_end_date`|`datetime64[ns, tz]`|???||
-`radio_setting`|`CategoricalDtype`(?)||
-`radio_total_dose_gy`|`Float64`||
-`radio_number_of_fractions`|`Float64`||
-`radio_rt_treatment_completed_as_planned`|`CategoricalDtype`||
-`systemic_type_of_systemic_treatment`|`CategoricalDtype`||
-`systemic_start_date_systemic_treatment`|`datetime64[ns, tz]`||
-`systemic_end_date_systemic_treatment`|`datetime64[ns, tz]`||
-`systemic_regimen`|`CategoricalDtype`||
-`systemic_reason_for_end_of_treatment`|`CategoricalDtype`||
-`drugs_for_threatments`|???||
-`overall_treatment_response_response`|`CategoricalDtype`||
+`surgery_intent`|`CategoricalDtype`|*|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `4179711`, `4162591`.
+`margins_after_surgery`|`CategoricalDtype`|*|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `1634643`, `1633801`, `1634484`.
+`date_of_surgery`|`datetime64[ns, tz]`|*||
+`radio_therapy_intent`|`CategoricalDtype`|*|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `4179711`, `4162591`.
+`radiotherapy_hospital`|???|*|
+`radio_start_date`|`datetime64[ns, tz]`|*||
+`radio_end_date`|`datetime64[ns, tz]`|*||
+`radio_setting`|`CategoricalDtype`(?)|*|
+`radio_total_dose_gy`|`Float64`|*|
+`radio_number_of_fractions`|`Float64`|*|
+`radio_rt_treatment_completed_as_planned`|`CategoricalDtype`|*|
+`systemic_type_of_systemic_treatment`|`CategoricalDtype`|*|
+`systemic_start_date_systemic_treatment`|`datetime64[ns, tz]`|*|
+`systemic_end_date_systemic_treatment`|`datetime64[ns, tz]`|*|
+`systemic_regimen`|`CategoricalDtype`|*|
+`systemic_reason_for_end_of_treatment`|`CategoricalDtype`|*|
+`drugs_for_threatments`|???|*|
+`overall_treatment_response_response`|`CategoricalDtype`|*|
 `overall_treatment_response_defined_done`|???||
 Overall treatment response date|???| Still needs to be defined by Unai|
-`clinical_is_transit_metastasis_with_clinical_confirmation`|`boolean`||
-`clinical_is_multifocal_tumor`|`boolean`||
-`clinical_regional_nodal_metastases`|`boolean`||
-`clinical_soft_tissue`|`boolean`||
-`clinical_distant_lymph_node`|`boolean`||
-`clinical_lung`|`boolean`||
-`clinical_metastasisatbone`|`boolean`||
-`clinical_liver`|`boolean`||
-`clinical_pleura`|`boolean`||
-`clinical_peritoneum`|`boolean`||
-`clinical_brain`|`boolean`||
-`clinical_other_viscera`|`boolean`||
-`clinical_unknown`|`boolean`||
-`pathelogical_regional_nodal_metastases`|`boolean`||
-`pathelogical_soft_tissue`|`boolean`||
-`pathelogical_distant_lymph_node`|`boolean`||
-`pathelogical_lung`|`boolean`||
-`pathelogical_metastasisatbone`|`boolean`||
-`pathelogical_liver`|`boolean`||
-`pathelogical_pleura`|`boolean`||
-`pathelogical_peritoneum`|`boolean`||
-`pathelogical_brain`|`boolean`||
-`pathelogical_other_viscera`|`boolean`||
-`pathelogical_unknown`|`boolean`||
+`clinical_is_transit_metastasis_with_clinical_confirmation`|`boolean`|1|
+`clinical_is_multifocal_tumor`|`boolean`|1|
+`clinical_regional_nodal_metastases`|`boolean`|1|
+`clinical_soft_tissue`|`boolean`|1|
+`clinical_distant_lymph_node`|`boolean`|1|
+`clinical_lung`|`boolean`|1|
+`clinical_metastasisatbone`|`boolean`|1|
+`clinical_liver`|`boolean`|1|
+`clinical_pleura`|`boolean`|1|
+`clinical_peritoneum`|`boolean`|1|
+`clinical_brain`|`boolean`|1|
+`clinical_other_viscera`|`boolean`|1|
+`clinical_unknown`|`boolean`|1|
+`pathelogical_regional_nodal_metastases`|`boolean`|1|
+`pathelogical_soft_tissue`|`boolean`|1|
+`pathelogical_distant_lymph_node`|`boolean`|1|
+`pathelogical_lung`|`boolean`|1|
+`pathelogical_metastasisatbone`|`boolean`|1|
+`pathelogical_liver`|`boolean`|1|
+`pathelogical_pleura`|`boolean`|1|
+`pathelogical_peritoneum`|`boolean`|1|
+`pathelogical_brain`|`boolean`|1|
+`pathelogical_other_viscera`|`boolean`|1|
+`pathelogical_unknown`|`boolean`|1|
 
 ## Head and Neck variables
 Variable|Type|Status|Notes
@@ -311,36 +311,36 @@ Variable|Type|Status|Notes
 `clinical_stage_ct`|`CategoricalDtype`|✅|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `1635299`, `1634269`, `1633589`, `1635857`, `1635227`, `1633737`, `1635656`, `1633815`, `1635794`, `1634381`, `1635664`, `1633883`, `1633747`, `1634029`, `1634651`, `1633877`, `1633324`, `1635556`, `1635522`, `1635530`, `1634973`, `1634247`, `1634522`, `1634963`, `1634624`, `1634120`, `1634854`.
 `clinical_stage_cn`|`CategoricalDtype`|✅|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `1635104`, `1633679`, `1634797`, `1633315`, `1633942`, `1634070`, `1635697`, `1634139`, `1633651`, `1635470`, `1635634`, `1633763`, `1634143`, `1635739`, `1633788`, `1633433`, `1635677`, `1633323`, `1634678`, `1634727`, `1633271`, `1635605`, `1634037`, `1633854`, `1633434`, `1635004`, `1635496`, `1635283`, `1635084`, `1635828`.
 `clinical_stage_cm`|`CategoricalDtype`|✅|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `1634194`, `1633468`, `1634757`, `1634829`, `1633276`, `1633974`.
-`clinical_stage_extra_nodal_extension`|`CategoricalDtype`||`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `36769946`, `36770618`.
-`surgery_extra_nodal_extension`|`CategoricalDtype`||`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `36769946`, `36770618`.
-`neck_surgery`|`CategoricalDtype`||`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `4188539`, `4188540`.
-`laterality_of_the_dissection`|`CategoricalDtype`||`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `4112106`, `4117496`, `4112107`.
-`date_of_neck_surgery`|`datetime64[ns,tz]`|||
-`radio_beam_quality`|`CategoricalDtype`||
-`radio_total_high_dose`|`Float64`||
-`radio_treatment_site_primary_only`|`boolean`||
-`radio_treatment_site_neck_only`| `boolean`||
-`radio_treatment_site_primary_and_ipsilateral_neck`|`boolean`||
-`radio_treatment_site_primary_and_bilateral_neck`|`boolean`||
-`radio_treatment_site_distant_metastasis`|`boolean`||
-`systemic_intent`|`CategoricalDtype`||
-`systemic_setting`|`CategoricalDtype`||
+`clinical_stage_extra_nodal_extension`|`CategoricalDtype`|3|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `36769946`, `36770618`.
+`surgery_extra_nodal_extension`|`CategoricalDtype`|*|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `36769946`, `36770618`.
+`neck_surgery`|`CategoricalDtype`|*|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `4188539`, `4188540`.
+`laterality_of_the_dissection`|`CategoricalDtype`|*|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `4112106`, `4117496`, `4112107`.
+`date_of_neck_surgery`|`datetime64[ns,tz]`|*||
+`radio_beam_quality`|`CategoricalDtype`|*|
+`radio_total_high_dose`|`Float64`|*|
+`radio_treatment_site_primary_only`|`boolean`|*|
+`radio_treatment_site_neck_only`| `boolean`|*|
+`radio_treatment_site_primary_and_ipsilateral_neck`|`boolean`|*|
+`radio_treatment_site_primary_and_bilateral_neck`|`boolean`|*|
+`radio_treatment_site_distant_metastasis`|`boolean`|*|
+`systemic_intent`|`CategoricalDtype`|*|
+`systemic_setting`|`CategoricalDtype`|*|
 
 
 ## Sarcoma variables
 Variable|Type|Status|Notes
 --|--|--|--
 `type_of_biopsy`|`CategoricalDtype`|✅|`concept_name` of `procedure_occurrence.procedure_concept_id` where `procedure_date` is equal to `surgery_date` and `measurement_concept_id` is one of `4171863`, `4321878`,`4321986`, `4228202`, `4279903`.
-`date_of_biopsy`|`datetime64[ns,tz]`||
-`clinical_localised`|`boolean`||
-`clinical_number_of_tumor_nodules`|`Int64`||
-`clinical_loco_regional`|`boolean`||
-`pathelogical_localised`|`boolean`||
-`pathelogical_number_of_tumor_nodules`|`Int64`||
-`pathelogical_loco-regional`|`boolean`||
-`pathelogical_is_transit_metastasis_with_clinical_confirmation`|`boolean`||
-`pathelogical_is_multifocal_tumor`|`boolean`||
-`last_contact`|`datetime64[ns,tz]`||
+`date_of_biopsy`|`datetime64[ns,tz]`|2|
+`clinical_localised`|`boolean`|2|
+`clinical_number_of_tumor_nodules`|`Int64`|2|
+`clinical_loco_regional`|`boolean`|2|
+`pathelogical_localised`|`boolean`|2|
+`pathelogical_number_of_tumor_nodules`|`Int64`|2|
+`pathelogical_loco-regional`|`boolean`|2|
+`pathelogical_is_transit_metastasis_with_clinical_confirmation`|`boolean`|2|
+`pathelogical_is_multifocal_tumor`|`boolean`|2|
+`last_contact`|`datetime64[ns,tz]`|2|
 
 ## Authentication
 Vantage6 uses its own Keycloak instance which is linked to the CERTH keycloak instance. Authentication process will be as follows (handled by RAVEN and the keycloak instances):
