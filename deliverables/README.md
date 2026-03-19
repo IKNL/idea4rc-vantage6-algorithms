@@ -247,8 +247,8 @@ Variable|Type|Status|Notes
 `sex`|`CategoricalDtype`|✅|`concept_name` of `person.gender_concept_id`
 `year_of_birth`|`Int64`|✅|`person.year_of_birth`
 `diagnosis_date`|`datetime64[ns, tz]`|✅| `episode.episode_start_date` where `episode.episode_concept_id = 32533`
-`age_at_diagnosis`|`Int64`|23/03|
-`diagnosisCode`|`CategoricalDtype`|23/03|
+`age_at_diagnosis`|`Int64`|23/03|Year of `episode.episode_start_date` where `episode.episode_concept_id = 32533` - `person.year_of_birth`
+`diagnosisCode`|`CategoricalDtype`|23/03|`concept_code` of `episode.episode_object_concept_id` where `episode.episode_concept_id = 32533`
 `morphology`|`CategoricalDtype`|✅|First part of `concept_code` of `episode.episode_object_concept_id` where `episode.episode_concept_id = 32533`
 `topography`|`CategoricalDtype`|✅|Second part of `concept_code` of `episode.episode_object_concept_id` where `episode.episode_concept_id = 32533`
 `life_status`|`CategoricalDtype`|✅|`concept_name` of latest observation where `observation.observation_concept_id` is one of `2000100071`, `4230556`, `2000100072`,`2000100073`, `2000100074`, `2000100075`, `4163894`.
@@ -273,30 +273,32 @@ Variable|Type|Status|Notes
 `overall_treatment_response_response`|`CategoricalDtype`|*|
 `overall_treatment_response_defined_done`|???||
 Overall treatment response date|???| Still needs to be defined by Unai|
-`clinical_is_transit_metastasis_with_clinical_confirmation`|`boolean`|23/03|
-`clinical_is_multifocal_tumor`|`boolean`|23/03|
-`clinical_regional_nodal_metastases`|`boolean`|23/03|
-`clinical_soft_tissue`|`boolean`|23/03|
-`clinical_distant_lymph_node`|`boolean`|23/03|
-`clinical_lung`|`boolean`|23/03|
-`clinical_metastasisatbone`|`boolean`|23/03|
-`clinical_liver`|`boolean`|23/03|
-`clinical_pleura`|`boolean`|23/03|
-`clinical_peritoneum`|`boolean`|23/03|
-`clinical_brain`|`boolean`|23/03|
-`clinical_other_viscera`|`boolean`|23/03|
-`clinical_unknown`|`boolean`|23/03|
-`pathelogical_regional_nodal_metastases`|`boolean`|26/03|
-`pathelogical_soft_tissue`|`boolean`|26/03|
-`pathelogical_distant_lymph_node`|`boolean`|26/03|
-`pathelogical_lung`|`boolean`|26/03|
-`pathelogical_metastasisatbone`|`boolean`|26/03|
-`pathelogical_liver`|`boolean`|26/03|
-`pathelogical_pleura`|`boolean`|26/03|
-`pathelogical_peritoneum`|`boolean`|26/03|
-`pathelogical_brain`|`boolean`|26/03|
-`pathelogical_other_viscera`|`boolean`|26/03|
-`pathelogical_unknown`|`boolean`|26/03|
+`clinical_is_transit_metastasis_with_clinical_confirmation`|`boolean`|23/03|`TRUE` if is present `measurement.measurement_concept_id = 36769249` where `measurement.measurement_date` is equal to `diagnosis_date`
+`clinical_is_multifocal_tumor`|`boolean`|23/03|`TRUE` if is present `measurement.measurement_concept_id = 36769933` where `measurement.measurement_date` is equal to `diagnosis_date`
+`clinical_regional_nodal_metastases`|`boolean`|23/03|`TRUE` if is present `measurement.measurement_concept_id = 36769269` where `measurement.measurement_date` is equal to `diagnosis_date`
+`clinical_soft_tissue`|`boolean`|23/03|`TRUE` if is present `measurement.measurement_concept_id = 35225724` where `measurement.measurement_date` is equal to `diagnosis_date`
+`clinical_distant_lymph_node`|`boolean`|23/03|`TRUE` if is present `measurement.measurement_concept_id = 36769243` where `measurement.measurement_date` is equal to `diagnosis_date`
+`clinical_lung`|`boolean`|23/03|`TRUE` if is present `measurement.measurement_concept_id = 36770283` where `measurement.measurement_date` is equal to `diagnosis_date`
+`clinical_metastasisatbone`|`boolean`|23/03|`TRUE` if is present `measurement.measurement_concept_id = 36769301` where `measurement.measurement_date` is equal to `diagnosis_date`
+`clinical_liver`|`boolean`|23/03|`TRUE` if is present `measurement.measurement_concept_id = 36770544` where `measurement.measurement_date` is equal to `diagnosis_date`
+`clinical_pleura`|`boolean`|23/03|`TRUE` if is present `measurement.measurement_concept_id = 35226258` where `measurement.measurement_date` is equal to `diagnosis_date`
+`clinical_peritoneum`|`boolean`|23/03|`TRUE` if is present `measurement.measurement_concept_id = 35226253` where `measurement.measurement_date` is equal to `diagnosis_date`
+`clinical_brain`|`boolean`|23/03|`TRUE` if is present `measurement.measurement_concept_id = 36768862` where `measurement.measurement_date` is equal to `diagnosis_date`
+`clinical_other_viscera`|`boolean`|23/03|`TRUE` if is present `measurement.measurement_concept_id = 36769180` where `measurement.measurement_date` is equal to `diagnosis_date`
+`clinical_unknown`|`boolean`|23/03|`TRUE` if is present `measurement.measurement_concept_id = 4129922` where `measurement.measurement_date` is equal to `diagnosis_date`
+`pathelogical_regional_nodal_metastases`|`boolean`|26/03|`TRUE` if is present `measurement.measurement_concept_id = 36769269` where `measurement.measurement_date` is equal to `date_of_surgery`**
+`pathelogical_soft_tissue`|`boolean`|26/03|`TRUE` if is present `measurement.measurement_concept_id = 35225724` where `measurement.measurement_date` is equal to `date_of_surgery`**
+`pathelogical_distant_lymph_node`|`boolean`|26/03|`TRUE` if is present `measurement.measurement_concept_id = 36769243` where `measurement.measurement_date` is equal to `date_of_surgery`**
+`pathelogical_lung`|`boolean`|26/03|`TRUE` if is present `measurement.measurement_concept_id = 36770283` where `measurement.measurement_date` is equal to `date_of_surgery`**
+`pathelogical_metastasisatbone`|`boolean`|26/03|`TRUE` if is present `measurement.measurement_concept_id = 36769301` where `measurement.measurement_date` is equal to `date_of_surgery`**
+`pathelogical_liver`|`boolean`|26/03|`TRUE` if is present `measurement.measurement_concept_id = 36770544` where `measurement.measurement_date` is equal to `date_of_surgery`**
+`pathelogical_pleura`|`boolean`|26/03|`TRUE` if is present `measurement.measurement_concept_id = 35226258` where `measurement.measurement_date` is equal to `date_of_surgery`**
+`pathelogical_peritoneum`|`boolean`|26/03|`TRUE` if is present `measurement.measurement_concept_id = 35226253` where `measurement.measurement_date` is equal to `date_of_surgery`**
+`pathelogical_brain`|`boolean`|26/03|`TRUE` if is present `measurement.measurement_concept_id = 36768862` where `measurement.measurement_date` is equal to `date_of_surgery`**
+`pathelogical_other_viscera`|`boolean`|26/03|`TRUE` if is present `measurement.measurement_concept_id = 36769180` where `measurement.measurement_date` is equal to `date_of_surgery`**
+`pathelogical_unknown`|`boolean`|26/03|`TRUE` if is present `measurement.measurement_concept_id = 4129922` where `measurement.measurement_date` is equal to `date_of_surgery`**
+
+** Assuming that `date_of_surgery` refers to the date of the surgery performed at the primary tumor stage (first surgery), excluding any procedures related to recurrences.
 
 ## Head and Neck variables
 Variable|Type|Status|Notes
@@ -330,17 +332,19 @@ Variable|Type|Status|Notes
 ## Sarcoma variables
 Variable|Type|Status|Notes
 --|--|--|--
-`type_of_biopsy`|`CategoricalDtype`|✅|`concept_name` of `procedure_occurrence.procedure_concept_id` where `procedure_date` is equal to `surgery_date` and `measurement_concept_id` is one of `4171863`, `4321878`,`4321986`, `4228202`, `4279903`.
-`date_of_biopsy`|`datetime64[ns,tz]`|02/04|
-`clinical_localised`|`boolean`|02/04|
-`clinical_number_of_tumor_nodules`|`Int64`|02/04|
-`clinical_loco_regional`|`boolean`|02/04|
-`pathelogical_localised`|`boolean`|02/04|
-`pathelogical_number_of_tumor_nodules`|`Int64`|02/04|
-`pathelogical_loco-regional`|`boolean`|02/04|
-`pathelogical_is_transit_metastasis_with_clinical_confirmation`|`boolean`|02/04|
-`pathelogical_is_multifocal_tumor`|`boolean`|02/04|
-`last_contact`|`datetime64[ns,tz]`|02/04|
+`type_of_biopsy`|`CategoricalDtype`|⚠️|`concept_name` of <b>FIRST</b> `procedure_occurrence.procedure_concept_id` where `procedure_concept_id` is one of `4171863`, `4321878`,`4321986`, `4228202`, `4279903`, `4311405`.
+`date_of_biopsy`|`datetime64[ns,tz]`|02/04|`procedure_date` of <b>FIRST</b> `procedure_occurrence.procedure_concept_id` where `procedure_concept_id` is one of `4171863`, `4321878`,`4321986`, `4228202`, `4279903`, `4311405`.
+`clinical_localised`|`boolean`|02/04|`TRUE` if is present `episode.episode_concept_id = 32942` where `episode.episode_start_date` is equal to `diagnosis_date`
+`clinical_number_of_tumor_nodules`|`Int64`|02/04|`value_as_number` of `measurement.measurement_concept_id = 4228659` where `measurement.measurement_date` is equal to `diagnosis_date`
+`clinical_loco_regional`|`boolean`|02/04|`TRUE` if is present `episode.episode_concept_id = 32943` where `episode.episode_start_date` is equal to `diagnosis_date`
+`pathelogical_localised`|`boolean`|02/04|`TRUE` if is present `episode.episode_concept_id = 32942` where `episode.episode_start_date` is equal to `date_of_surgery`**
+`pathelogical_number_of_tumor_nodules`|`Int64`|02/04|`value_as_number` of `measurement.measurement_concept_id = 4228659` where `measurement.measurement_date` is equal to `date_of_surgery`**
+`pathelogical_loco-regional`|`boolean`|02/04|`TRUE` if is present `episode.episode_concept_id = 32943` where `episode.episode_start_date` is equal to `date_of_surgery`**
+`pathelogical_is_transit_metastasis_with_clinical_confirmation`|`boolean`|02/04|`TRUE` if is present `measurement.measurement_concept_id = 36769249` where `measurement.measurement_date` is equal to `date_of_surgery`**
+`pathelogical_is_multifocal_tumor`|`boolean`|02/04|`TRUE` if is present `measurement.measurement_concept_id = 36769933` where `measurement.measurement_date` is equal to `date_of_surgery`**
+`last_contact`|`datetime64[ns,tz]`|02/04|`episode.episode_end_date` where `episode.episode_concept_id = 32533`
+
+** Assuming that `date_of_surgery` refers to the date of the surgery performed at the primary tumor stage (first surgery), excluding any procedures related to recurrences.
 
 ## Authentication
 Vantage6 uses its own Keycloak instance which is linked to the CERTH keycloak instance. Authentication process will be as follows (handled by RAVEN and the keycloak instances):
