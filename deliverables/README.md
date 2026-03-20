@@ -263,13 +263,13 @@ Variable|Type|Status|Notes
 `radio_setting`|`CategoricalDtype`(?)|*|
 `radio_total_dose_gy`|`Float64`|*|
 `radio_number_of_fractions`|`Float64`|*|
-`radio_rt_treatment_completed_as_planned`|`CategoricalDtype`|*|
+`radio_treatment_completed_as_planned`|`CategoricalDtype`|*|
 `systemic_type_of_systemic_treatment`|`CategoricalDtype`|*|
 `systemic_start_date_systemic_treatment`|`datetime64[ns, tz]`|*|
 `systemic_end_date_systemic_treatment`|`datetime64[ns, tz]`|*|
 `systemic_regimen`|`CategoricalDtype`|*|
 `systemic_reason_for_end_of_treatment`|`CategoricalDtype`|*|
-`drugs_for_threatments`|???|*|
+`drugs_for_treatments`|???|*|
 `overall_treatment_response_response`|`CategoricalDtype`|*|
 `overall_treatment_response_defined_done`|???||
 Overall treatment response date|???| Still needs to be defined by Unai|
@@ -286,17 +286,17 @@ Overall treatment response date|???| Still needs to be defined by Unai|
 `clinical_brain`|`boolean`|23/03|`TRUE` if is present `measurement.measurement_concept_id = 36768862` where `measurement.measurement_date` is equal to `diagnosis_date`
 `clinical_other_viscera`|`boolean`|23/03|`TRUE` if is present `measurement.measurement_concept_id = 36769180` where `measurement.measurement_date` is equal to `diagnosis_date`
 `clinical_unknown`|`boolean`|23/03|`TRUE` if is present `measurement.measurement_concept_id = 4129922` where `measurement.measurement_date` is equal to `diagnosis_date`
-`pathelogical_regional_nodal_metastases`|`boolean`|26/03|`TRUE` if is present `measurement.measurement_concept_id = 36769269` where `measurement.measurement_date` is equal to `date_of_surgery`**
-`pathelogical_soft_tissue`|`boolean`|26/03|`TRUE` if is present `measurement.measurement_concept_id = 35225724` where `measurement.measurement_date` is equal to `date_of_surgery`**
-`pathelogical_distant_lymph_node`|`boolean`|26/03|`TRUE` if is present `measurement.measurement_concept_id = 36769243` where `measurement.measurement_date` is equal to `date_of_surgery`**
-`pathelogical_lung`|`boolean`|26/03|`TRUE` if is present `measurement.measurement_concept_id = 36770283` where `measurement.measurement_date` is equal to `date_of_surgery`**
-`pathelogical_metastasisatbone`|`boolean`|26/03|`TRUE` if is present `measurement.measurement_concept_id = 36769301` where `measurement.measurement_date` is equal to `date_of_surgery`**
-`pathelogical_liver`|`boolean`|26/03|`TRUE` if is present `measurement.measurement_concept_id = 36770544` where `measurement.measurement_date` is equal to `date_of_surgery`**
-`pathelogical_pleura`|`boolean`|26/03|`TRUE` if is present `measurement.measurement_concept_id = 35226258` where `measurement.measurement_date` is equal to `date_of_surgery`**
-`pathelogical_peritoneum`|`boolean`|26/03|`TRUE` if is present `measurement.measurement_concept_id = 35226253` where `measurement.measurement_date` is equal to `date_of_surgery`**
-`pathelogical_brain`|`boolean`|26/03|`TRUE` if is present `measurement.measurement_concept_id = 36768862` where `measurement.measurement_date` is equal to `date_of_surgery`**
-`pathelogical_other_viscera`|`boolean`|26/03|`TRUE` if is present `measurement.measurement_concept_id = 36769180` where `measurement.measurement_date` is equal to `date_of_surgery`**
-`pathelogical_unknown`|`boolean`|26/03|`TRUE` if is present `measurement.measurement_concept_id = 4129922` where `measurement.measurement_date` is equal to `date_of_surgery`**
+`pathological_regional_nodal_metastases`|`boolean`|26/03|`TRUE` if is present `measurement.measurement_concept_id = 36769269` where `measurement.measurement_date` is equal to `date_of_surgery`**
+`pathological_soft_tissue`|`boolean`|26/03|`TRUE` if is present `measurement.measurement_concept_id = 35225724` where `measurement.measurement_date` is equal to `date_of_surgery`**
+`pathological_distant_lymph_node`|`boolean`|26/03|`TRUE` if is present `measurement.measurement_concept_id = 36769243` where `measurement.measurement_date` is equal to `date_of_surgery`**
+`pathological_lung`|`boolean`|26/03|`TRUE` if is present `measurement.measurement_concept_id = 36770283` where `measurement.measurement_date` is equal to `date_of_surgery`**
+`pathological_metastasisatbone`|`boolean`|26/03|`TRUE` if is present `measurement.measurement_concept_id = 36769301` where `measurement.measurement_date` is equal to `date_of_surgery`**
+`pathological_liver`|`boolean`|26/03|`TRUE` if is present `measurement.measurement_concept_id = 36770544` where `measurement.measurement_date` is equal to `date_of_surgery`**
+`pathological_pleura`|`boolean`|26/03|`TRUE` if is present `measurement.measurement_concept_id = 35226258` where `measurement.measurement_date` is equal to `date_of_surgery`**
+`pathological_peritoneum`|`boolean`|26/03|`TRUE` if is present `measurement.measurement_concept_id = 35226253` where `measurement.measurement_date` is equal to `date_of_surgery`**
+`pathological_brain`|`boolean`|26/03|`TRUE` if is present `measurement.measurement_concept_id = 36768862` where `measurement.measurement_date` is equal to `date_of_surgery`**
+`pathological_other_viscera`|`boolean`|26/03|`TRUE` if is present `measurement.measurement_concept_id = 36769180` where `measurement.measurement_date` is equal to `date_of_surgery`**
+`pathological_unknown`|`boolean`|26/03|`TRUE` if is present `measurement.measurement_concept_id = 4129922` where `measurement.measurement_date` is equal to `date_of_surgery`**
 
 ** Assuming that `date_of_surgery` refers to the date of the surgery performed at the primary tumor stage (first surgery), excluding any procedures related to recurrences.
 
@@ -337,11 +337,11 @@ Variable|Type|Status|Notes
 `clinical_localised`|`boolean`|02/04|`TRUE` if is present `episode.episode_concept_id = 32942` where `episode.episode_start_date` is equal to `diagnosis_date`
 `clinical_number_of_tumor_nodules`|`Int64`|02/04|`value_as_number` of `measurement.measurement_concept_id = 4228659` where `measurement.measurement_date` is equal to `diagnosis_date`
 `clinical_loco_regional`|`boolean`|02/04|`TRUE` if is present `episode.episode_concept_id = 32943` where `episode.episode_start_date` is equal to `diagnosis_date`
-`pathelogical_localised`|`boolean`|02/04|`TRUE` if is present `episode.episode_concept_id = 32942` where `episode.episode_start_date` is equal to `date_of_surgery`**
-`pathelogical_number_of_tumor_nodules`|`Int64`|02/04|`value_as_number` of `measurement.measurement_concept_id = 4228659` where `measurement.measurement_date` is equal to `date_of_surgery`**
-`pathelogical_loco-regional`|`boolean`|02/04|`TRUE` if is present `episode.episode_concept_id = 32943` where `episode.episode_start_date` is equal to `date_of_surgery`**
-`pathelogical_is_transit_metastasis_with_clinical_confirmation`|`boolean`|02/04|`TRUE` if is present `measurement.measurement_concept_id = 36769249` where `measurement.measurement_date` is equal to `date_of_surgery`**
-`pathelogical_is_multifocal_tumor`|`boolean`|02/04|`TRUE` if is present `measurement.measurement_concept_id = 36769933` where `measurement.measurement_date` is equal to `date_of_surgery`**
+`pathological_localised`|`boolean`|02/04|`TRUE` if is present `episode.episode_concept_id = 32942` where `episode.episode_start_date` is equal to `date_of_surgery`**
+`pathological_number_of_tumor_nodules`|`Int64`|02/04|`value_as_number` of `measurement.measurement_concept_id = 4228659` where `measurement.measurement_date` is equal to `date_of_surgery`**
+`pathological_loco_regional`|`boolean`|02/04|`TRUE` if is present `episode.episode_concept_id = 32943` where `episode.episode_start_date` is equal to `date_of_surgery`**
+`pathological_is_transit_metastasis_with_clinical_confirmation`|`boolean`|02/04|`TRUE` if is present `measurement.measurement_concept_id = 36769249` where `measurement.measurement_date` is equal to `date_of_surgery`**
+`pathological_is_multifocal_tumor`|`boolean`|02/04|`TRUE` if is present `measurement.measurement_concept_id = 36769933` where `measurement.measurement_date` is equal to `date_of_surgery`**
 `last_contact`|`datetime64[ns,tz]`|02/04|`episode.episode_end_date` where `episode.episode_concept_id = 32533`
 
 ** Assuming that `date_of_surgery` refers to the date of the surgery performed at the primary tumor stage (first surgery), excluding any procedures related to recurrences.
