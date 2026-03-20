@@ -149,7 +149,7 @@ WITH
             MAX(CASE WHEN measurement.measurement_concept_id = 35226258 THEN 1 ELSE 0 END)  as pleura,
             MAX(CASE WHEN measurement.measurement_concept_id = 35226253 THEN 1 ELSE 0 END)  as peritoneum,
             MAX(CASE WHEN measurement.measurement_concept_id = 36768862 THEN 1 ELSE 0 END)  as brain,
-            MAX(CASE WHEN measurement.measurement_concept_id = 36769180 THEN 1 ELSE 0 END)  as other_viscera,
+            MAX(CASE WHEN measurement.measurement_concept_id = 36769180 THEN 1 ELSE 0 END)  as other_viscera
         FROM 
             patient_id_list pid
         LEFT JOIN
@@ -502,7 +502,7 @@ SELECT
     COALESCE(primary_tumor.morphology, 'N/A')       as morphology,
     COALESCE(primary_tumor.topography, 'N/A')       as topography,
     COALESCE(person_status.status, 'N/A')           as life_status,
-    person_status.date                              as life_status_date
+    person_status.date                              as life_status_date,
 
     staging_flags.is_transit_metastasis_with_clinical_confirmation as clinical_is_transit_metastasis_with_clinical_confirmation,
     staging_flags.is_multifocal_tumor               as clinical_is_multifocal_tumor,
