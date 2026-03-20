@@ -343,30 +343,98 @@ WITH
 --
 -- Only sarcoma has the following features.
 --
+-- Type of biopsy
 -- Date of biopsy
--- `observation.observation_date` of the latest observation where 
--- `observation.observation_concept_id` is one of `2000100071`, `4230556`, `2000100072`,
--- `2000100073`, `2000100074`, `2000100075`, `4163894`.
+-- Clinical localised
+-- Clinical loco-regional
+-- Number of tumor nodules
+--
 ----------------------------------------------------------------------------------------
-    -- OBSERVATION table
+    -- PROCEDURE OCCURRENCE table
     biopsy AS (
         SELECT
             pid.person_id,
-            procedure_concept.concept_name as type_
+            procedure_concept.concept_name as type_of_biopsy,
+            procedure_occurrence.procedure_date as date_of_biopsy
+        FROM (
+            SELECT
+                pid.person_id,
+                procedure_concept.concept_name,
+                procedure_occurrence.procedure_date,
+                ROW_NUMBER() OVER (
+                    PARTITION BY pid.person_id
+                    ORDER BY procedure_occurrence.procedure_date ASC
+                ) AS biopsy_position
+            FROM
+                patient_id_list pid
+            LEFT JOIN
+                {{ cdm_schema }}.procedure_occurrence procedure_occurrence
+                ON pid.person_id = procedure_occurrence.person_id
+            LEFT JOIN
+                {{ cdm_schema }}.concept procedure_concept
+                ON procedure_occurrence.procedure_concept_id = procedure_concept.concept_id
+            WHERE 
+                procedure_occurrence.procedure_concept_id IN (
+                    4171863, 4321878,4321986, 4228202, 4279903, 4311405
+                )
+        ) AS all_biopsies
+        WHERE all_biopsies.biopsy_position = 1 -- get first biopsy
+    ),
+
+    -- EPISODE table
+    clinical_staging_sarcoma AS (
+        SELECT
+            pid.person_id,
+            MAX(
+                CASE WHEN episode.episode_concept_id = 32942 
+                AND episode.episode_start_date = primary_tumor.diagnosis_date 
+                THEN 1 ELSE 0 END) as clinical_localised,
+            MAX(
+                CASE WHEN episode.episode_concept_id = 32943 
+                AND episode.episode_start_date = primary_tumor.diagnosis_date 
+                THEN 1 ELSE 0 END) as clinical_loco_regional
         FROM
             patient_id_list pid
         LEFT JOIN
-            {{ cdm_schema }}.procedure_occurrence procedure_occurrence
-            ON pid.person_id = procedure_occurrence.person_id
+            {{ cdm_schema }}.episode episode
+            ON pid.person_id = episode.person_id
         LEFT JOIN
-            {{ cdm_schema }}.concept procedure_concept
-            ON procedure_occurrence.procedure_concept_id = procedure_concept.concept_id
-        WHERE 
-            procedure_occurrence.procedure_concept_id IN (
-                4171863, 4321878, 4321986, 4228202, 4279903
-            )
-        -- WHERE procedure_occurrence.procedure_date = SURGERY_DATE
+            primary_tumor
+            ON pid.person_id = primary_tumor.person_id
+    ),    
+
+    -- MEASUREMENT table
+    clinical_number_of_tumor_nodules AS (
+        SELECT
+            pid.person_id,
+            measurement.value_as_number as number_of_tumor_nodules
+        FROM
+            patient_id_list pid
+        LEFT JOIN
+            {{ cdm_schema }}.measurement measurement
+            ON pid.person_id = measurement.person_id
+        LEFT JOIN
+            primary_tumor
+            ON pid.person_id = primary_tumor.person_id
+        WHERE
+            measurement.measurement_concept_id = 4228659
+            AND measurement.measurement_date = primary_tumor.diagnosis_date
+    ),
+
+    -- EPISODE table
+    last_contact AS (
+        SELECT
+            pid.person_id,
+            episode.episode_end_date as last_contact
+        FROM
+            patient_id_list pid
+        LEFT JOIN
+            {{ cdm_schema }}.episode episode
+            ON pid.person_id = episode.person_id
+        WHERE
+            episode.episode_concept_id = 32533
     )
+
 {% endif %}
 
 
@@ -397,7 +465,12 @@ SELECT
 {% endif %}
 
 {% if is_sarcoma %},
-    COALESCE(biopsy.type_, 'N/A')                   as biopsy_type
+    COALESCE(biopsy.type_of_biopsy, 'N/A')          as type_of_biopsy,
+    biopsy.date_of_biopsy                           as date_of_biopsy,
+    clinical_staging_sarcoma.clinical_localised     as clinical_localised,
+    clinical_number_of_tumor_nodules.number_of_tumor_nodules as number_of_tumor_nodules,
+    clinical_staging_sarcoma.clinical_loco_regional as clinical_loco_regional,
+    last_contact.last_contact                       as last_contact
 {% endif %}
 
 FROM
@@ -440,4 +513,13 @@ LEFT JOIN
 LEFT JOIN
     biopsy
     ON person.person_id = biopsy.person_id
+LEFT JOIN
+    clinical_staging_sarcoma
+    ON person.person_id = clinical_staging_sarcoma.person_id
+LEFT JOIN
+    clinical_number_of_tumor_nodules
+    ON person.person_id = clinical_number_of_tumor_nodules.person_id
+LEFT JOIN
+    last_contact
+    ON person.person_id = last_contact.person_id
 {% endif %}

@@ -332,17 +332,17 @@ Variable|Type|Status|Notes
 ## Sarcoma variables
 Variable|Type|Status|Notes
 --|--|--|--
-`type_of_biopsy`|`CategoricalDtype`|⚠️|`concept_name` of <b>FIRST</b> `procedure_occurrence.procedure_concept_id` where `procedure_concept_id` is one of `4171863`, `4321878`,`4321986`, `4228202`, `4279903`, `4311405`.
-`date_of_biopsy`|`datetime64[ns,tz]`|02/04|`procedure_date` of <b>FIRST</b> `procedure_occurrence.procedure_concept_id` where `procedure_concept_id` is one of `4171863`, `4321878`,`4321986`, `4228202`, `4279903`, `4311405`.
-`clinical_localised`|`boolean`|02/04|`TRUE` if is present `episode.episode_concept_id = 32942` where `episode.episode_start_date` is equal to `diagnosis_date`
-`clinical_number_of_tumor_nodules`|`Int64`|02/04|`value_as_number` of `measurement.measurement_concept_id = 4228659` where `measurement.measurement_date` is equal to `diagnosis_date`
-`clinical_loco_regional`|`boolean`|02/04|`TRUE` if is present `episode.episode_concept_id = 32943` where `episode.episode_start_date` is equal to `diagnosis_date`
+`type_of_biopsy`|`CategoricalDtype`|🐧|`concept_name` of <b>FIRST</b> `procedure_occurrence.procedure_concept_id` where `procedure_concept_id` is one of `4171863`, `4321878`,`4321986`, `4228202`, `4279903`, `4311405`.
+`date_of_biopsy`|`datetime64[ns,tz]`|🐧|`procedure_date` of <b>FIRST</b> `procedure_occurrence.procedure_concept_id` where `procedure_concept_id` is one of `4171863`, `4321878`,`4321986`, `4228202`, `4279903`, `4311405`.
+`clinical_localised`|`boolean`|🐧|`TRUE` if is present `episode.episode_concept_id = 32942` where `episode.episode_start_date` is equal to `diagnosis_date`
+`clinical_number_of_tumor_nodules`|`Int64`|🐧|`value_as_number` of `measurement.measurement_concept_id = 4228659` where `measurement.measurement_date` is equal to `diagnosis_date`
+`clinical_loco_regional`|`boolean`|🐧|`TRUE` if is present `episode.episode_concept_id = 32943` where `episode.episode_start_date` is equal to `diagnosis_date`
 `pathelogical_localised`|`boolean`|02/04|`TRUE` if is present `episode.episode_concept_id = 32942` where `episode.episode_start_date` is equal to `date_of_surgery`**
 `pathelogical_number_of_tumor_nodules`|`Int64`|02/04|`value_as_number` of `measurement.measurement_concept_id = 4228659` where `measurement.measurement_date` is equal to `date_of_surgery`**
 `pathelogical_loco-regional`|`boolean`|02/04|`TRUE` if is present `episode.episode_concept_id = 32943` where `episode.episode_start_date` is equal to `date_of_surgery`**
 `pathelogical_is_transit_metastasis_with_clinical_confirmation`|`boolean`|02/04|`TRUE` if is present `measurement.measurement_concept_id = 36769249` where `measurement.measurement_date` is equal to `date_of_surgery`**
 `pathelogical_is_multifocal_tumor`|`boolean`|02/04|`TRUE` if is present `measurement.measurement_concept_id = 36769933` where `measurement.measurement_date` is equal to `date_of_surgery`**
-`last_contact`|`datetime64[ns,tz]`|02/04|`episode.episode_end_date` where `episode.episode_concept_id = 32533`
+`last_contact`|`datetime64[ns,tz]`|🐧|`episode.episode_end_date` where `episode.episode_concept_id = 32533`
 
 ** Assuming that `date_of_surgery` refers to the date of the surgery performed at the primary tumor stage (first surgery), excluding any procedures related to recurrences.
 
