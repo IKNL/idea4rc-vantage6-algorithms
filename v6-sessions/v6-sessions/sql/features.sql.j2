@@ -77,6 +77,7 @@ WITH
         SELECT
             pid.person_id,
             episode.episode_start_date as diagnosis_date, -- e.g. 2020-01-01
+            EXTRACT(YEAR FROM episode.episode_start_date) - person.year_of_birth as age_at_diagnosis, -- e.g. 67
             split_part(diagnosis_concept.concept_code, '-', 1) as morphology, -- e.g. 8888/8
             split_part(diagnosis_concept.concept_code, '-', 2) as topography -- e.g. C34.1
         FROM
@@ -87,6 +88,9 @@ WITH
         LEFT JOIN
             {{ cdm_schema }}.concept diagnosis_concept
             ON episode.episode_object_concept_id = diagnosis_concept.concept_id
+        LEFT JOIN
+            {{ cdm_schema }}.person person
+            ON pid.person_id = person.person_id
         WHERE
             episode.episode_concept_id = 32533 -- Disease Episode
     ),
@@ -380,6 +384,7 @@ SELECT
     COALESCE(person.sex, 'N/A')                     as sex,
     person.year_of_birth                            as year_of_birth,
     primary_tumor.diagnosis_date                    as diagnosis_date,
+    primary_tumor.age_at_diagnosis                  as age_at_diagnosis,
     COALESCE(primary_tumor.morphology, 'N/A')       as morphology,
     COALESCE(primary_tumor.topography, 'N/A')       as topography,
     COALESCE(person_status.status, 'N/A')           as life_status,

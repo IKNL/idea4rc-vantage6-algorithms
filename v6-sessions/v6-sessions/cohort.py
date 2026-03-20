@@ -164,7 +164,7 @@ def convert_base_columns(df: pd.DataFrame) -> pd.DataFrame:
         ],
     )
 
-    df = _to_int64(df, ["year_of_birth"])
+    df = _to_int64(df, ["year_of_birth", "age_at_diagnosis"])
 
     df = _to_datetime(
         df,

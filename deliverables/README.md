@@ -247,7 +247,7 @@ Variable|Type|Status|Notes
 `sex`|`CategoricalDtype`|✅|`concept_name` of `person.gender_concept_id`
 `year_of_birth`|`Int64`|✅|`person.year_of_birth`
 `diagnosis_date`|`datetime64[ns, tz]`|✅| `episode.episode_start_date` where `episode.episode_concept_id = 32533`
-`age_at_diagnosis`|`Int64`|23/03|Year of `episode.episode_start_date` where `episode.episode_concept_id = 32533` - `person.year_of_birth`
+`age_at_diagnosis`|`Int64`|🐧|Year of `episode.episode_start_date` where `episode.episode_concept_id = 32533` - `person.year_of_birth`
 `diagnosisCode`|`CategoricalDtype`|23/03|`concept_code` of `episode.episode_object_concept_id` where `episode.episode_concept_id = 32533`
 `morphology`|`CategoricalDtype`|✅|First part of `concept_code` of `episode.episode_object_concept_id` where `episode.episode_concept_id = 32533`
 `topography`|`CategoricalDtype`|✅|Second part of `concept_code` of `episode.episode_object_concept_id` where `episode.episode_concept_id = 32533`
