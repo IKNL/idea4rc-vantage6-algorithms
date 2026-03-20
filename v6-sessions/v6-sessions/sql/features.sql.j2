@@ -76,9 +76,11 @@ WITH
     primary_tumor AS (
         SELECT
             pid.person_id,
-            episode.episode_start_date as diagnosis_date, -- e.g. 2020-01-01
-            split_part(diagnosis_concept.concept_code, '-', 1) as morphology, -- e.g. 8888/8
-            split_part(diagnosis_concept.concept_code, '-', 2) as topography -- e.g. C34.1
+            episode.episode_start_date                                              as diagnosis_date, -- e.g. 2020-01-01
+            EXTRACT(YEAR FROM episode.episode_start_date) - person.year_of_birth    as age_at_diagnosis, -- e.g. 67
+            diagnosis_concept.concept_name                                          as diagnosis_code, -- e.g. "C34.1-8888/8"
+            split_part(diagnosis_concept.concept_code, '-', 1)                      as morphology, -- e.g. 8888/8
+            split_part(diagnosis_concept.concept_code, '-', 2)                      as topography -- e.g. C34.1
         FROM
             patient_id_list pid
         LEFT JOIN
@@ -87,6 +89,9 @@ WITH
         LEFT JOIN
             {{ cdm_schema }}.concept diagnosis_concept
             ON episode.episode_object_concept_id = diagnosis_concept.concept_id
+        LEFT JOIN
+            {{ cdm_schema }}.person person
+            ON pid.person_id = person.person_id
         WHERE
             episode.episode_concept_id = 32533 -- Disease Episode
     ),
@@ -129,7 +134,51 @@ WITH
         WHERE all_observations.observation_position = 1 -- get last observation
     ),
 
-{% if is_head_and_neck %}
+    -- MEASUREMENT table
+    staging_flags AS (
+        SELECT 
+            pid.person_id,
+            MAX(CASE WHEN measurement.measurement_concept_id = 36769249 THEN 1 ELSE 0 END)  as is_transit_metastasis_with_clinical_confirmation,
+            MAX(CASE WHEN measurement.measurement_concept_id = 36769933 THEN 1 ELSE 0 END)  as is_multifocal_tumor,
+            MAX(CASE WHEN measurement.measurement_concept_id = 36769269 THEN 1 ELSE 0 END)  as regional_nodal_metastases,
+            MAX(CASE WHEN measurement.measurement_concept_id = 35225724 THEN 1 ELSE 0 END)  as soft_tissue,
+            MAX(CASE WHEN measurement.measurement_concept_id = 36769243 THEN 1 ELSE 0 END)  as distant_lymph_node,
+            MAX(CASE WHEN measurement.measurement_concept_id = 36770283 THEN 1 ELSE 0 END)  as lung,
+            MAX(CASE WHEN measurement.measurement_concept_id = 36769301 THEN 1 ELSE 0 END)  as metastasis_at_bone,
+            MAX(CASE WHEN measurement.measurement_concept_id = 36770544 THEN 1 ELSE 0 END)  as liver,
+            MAX(CASE WHEN measurement.measurement_concept_id = 35226258 THEN 1 ELSE 0 END)  as pleura,
+            MAX(CASE WHEN measurement.measurement_concept_id = 35226253 THEN 1 ELSE 0 END)  as peritoneum,
+            MAX(CASE WHEN measurement.measurement_concept_id = 36768862 THEN 1 ELSE 0 END)  as brain,
+            MAX(CASE WHEN measurement.measurement_concept_id = 36769180 THEN 1 ELSE 0 END)  as other_viscera,
+        FROM 
+            patient_id_list pid
+        LEFT JOIN
+            {{ cdm_schema }}.measurement measurement
+            ON pid.person_id = measurement.person_id
+        LEFT JOIN
+            primary_tumor
+            ON pid.person_id = primary_tumor.person_id
+        WHERE
+            measurement.measurement_concept_id IN (
+                -- Clinical staging
+                36769249, -- Is transit metastasis with clinical confirmation
+                36769933, -- Is multifocal tumor
+                36769269, -- Regional nodal metastases
+                35225724, -- Soft tissue
+                36769243, -- Distant lymph node
+                36770283, -- Lung
+                36769301, -- Metastasis at bone
+                36770544, -- Liver
+                35226258, -- Pleura
+                35226253, -- Peritoneum
+                36768862, -- Brain
+                36769180, -- Other viscera
+                4129922 -- Unknown
+            )
+            AND measurement.measurement_date = primary_tumor.diagnosis_date
+    )
+    
+{% if is_head_and_neck %},
 ----------------------------------------------------------------------------------------
 -- HEAD AND NECK FEATURES
 --
@@ -337,7 +386,7 @@ WITH
     )
 
 {% endif %}
-{% if is_sarcoma %}
+{% if is_sarcoma %},
 ----------------------------------------------------------------------------------------
 -- SARCOMA FEATURES
 --
@@ -448,10 +497,26 @@ SELECT
     COALESCE(person.sex, 'N/A')                     as sex,
     person.year_of_birth                            as year_of_birth,
     primary_tumor.diagnosis_date                    as diagnosis_date,
+    primary_tumor.age_at_diagnosis                  as age_at_diagnosis,
+    COALESCE(primary_tumor.diagnosis_code, 'N/A')   as diagnosis_code,
     COALESCE(primary_tumor.morphology, 'N/A')       as morphology,
     COALESCE(primary_tumor.topography, 'N/A')       as topography,
     COALESCE(person_status.status, 'N/A')           as life_status,
     person_status.date                              as life_status_date
+
+    staging_flags.is_transit_metastasis_with_clinical_confirmation as clinical_is_transit_metastasis_with_clinical_confirmation,
+    staging_flags.is_multifocal_tumor               as clinical_is_multifocal_tumor,
+    staging_flags.regional_nodal_metastases         as clinical_regional_nodal_metastases,
+    staging_flags.soft_tissue                       as clinical_soft_tissue,
+    staging_flags.distant_lymph_node                as clinical_distant_lymph_node,
+    staging_flags.lung                              as clinical_lung,
+    staging_flags.metastasis_at_bone                as clinical_metastasis_at_bone,
+    staging_flags.liver                             as clinical_liver,
+    staging_flags.pleura                            as clinical_pleura,
+    staging_flags.peritoneum                        as clinical_peritoneum,
+    staging_flags.brain                             as clinical_brain,
+    staging_flags.other_viscera                     as clinical_other_viscera,
+    staging_flags.unknown                           as clinical_unknown            
 
 {% if is_head_and_neck %},
     COALESCE(pathological_staging.stage, 'N/A')     as pathological_stage,
@@ -481,6 +546,9 @@ LEFT JOIN
 LEFT JOIN
     person_status
     ON person.person_id = person_status.person_id
+LEFT JOIN
+    staging_flags
+    ON person.person_id = staging_flags.person_id
 
 {% if is_head_and_neck %}
 LEFT JOIN

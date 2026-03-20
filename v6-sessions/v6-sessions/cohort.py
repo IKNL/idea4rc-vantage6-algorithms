@@ -158,13 +158,14 @@ def convert_base_columns(df: pd.DataFrame) -> pd.DataFrame:
         df,
         [
             "sex",
+            "diagnosis_code",
             "morphology",
             "topography",
             "life_status"
         ],
     )
 
-    df = _to_int64(df, ["year_of_birth"])
+    df = _to_int64(df, ["year_of_birth", "age_at_diagnosis"])
 
     df = _to_datetime(
         df,
@@ -172,6 +173,24 @@ def convert_base_columns(df: pd.DataFrame) -> pd.DataFrame:
             "diagnosis_date",
             "life_status_date",
         ],
+    )
+
+    df = _to_boolean(df, 
+        [
+            "clinical_is_transit_metastasis_with_clinical_confirmation",
+            "clinical_is_multifocal_tumor",
+            "clinical_regional_nodal_metastases",
+            "clinical_soft_tissue",
+            "clinical_distant_lymph_node",
+            "clinical_lung",
+            "clinical_metastasis_at_bone",
+            "clinical_liver",
+            "clinical_pleura",
+            "clinical_peritoneum",
+            "clinical_brain",
+            "clinical_other_viscera",
+            "clinical_unknown"
+        ]
     )
 
     return df
