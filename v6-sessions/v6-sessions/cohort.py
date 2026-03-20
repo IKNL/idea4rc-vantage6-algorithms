@@ -217,7 +217,30 @@ def convert_sarcoma_columns(df: pd.DataFrame) -> pd.DataFrame:
     df = _to_category(
         df,
         [
-            "biopsy_type",
+            "type_of_biopsy",
+        ],
+    )
+
+    df = _to_int64(
+        df, 
+        [
+            "number_of_tumor_nodules"
+        ],
+    )
+
+    df = _to_datetime(
+        df,
+        [
+            "date_of_biopsy",
+            "last_contact",
+        ],
+    )
+
+    df = _to_boolean(
+        df,
+        [
+            "clinical_localised",
+            "clinical_loco_regional",
         ],
     )
     return df
