@@ -195,7 +195,18 @@ def convert_base_columns(df: pd.DataFrame) -> pd.DataFrame:
             "clinical_peritoneum",
             "clinical_brain",
             "clinical_other_viscera",
-            "clinical_unknown"
+            "clinical_unknown",
+            "pathological_regional_nodal_metastases",
+            "pathological_soft_tissue",
+            "pathological_distant_lymph_node",
+            "pathological_lung",
+            "pathological_metastasis_at_bone",
+            "pathological_liver",
+            "pathological_pleura",
+            "pathological_peritoneum",
+            "pathological_brain",
+            "pathological_other_viscera",
+            "pathological_unknown"
         ]
     )
 
