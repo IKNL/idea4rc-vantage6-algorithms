@@ -149,7 +149,8 @@ WITH
             MAX(CASE WHEN measurement.measurement_concept_id = 35226258 THEN 1 ELSE 0 END)  as pleura,
             MAX(CASE WHEN measurement.measurement_concept_id = 35226253 THEN 1 ELSE 0 END)  as peritoneum,
             MAX(CASE WHEN measurement.measurement_concept_id = 36768862 THEN 1 ELSE 0 END)  as brain,
-            MAX(CASE WHEN measurement.measurement_concept_id = 36769180 THEN 1 ELSE 0 END)  as other_viscera
+            MAX(CASE WHEN measurement.measurement_concept_id = 36769180 THEN 1 ELSE 0 END)  as other_viscera,
+            MAX(CASE WHEN measurement.measurement_concept_id = 4129922 THEN 1 ELSE 0 END)  as unknown
         FROM 
             patient_id_list pid
         LEFT JOIN
@@ -176,6 +177,8 @@ WITH
                 4129922 -- Unknown
             )
             AND measurement.measurement_date = primary_tumor.diagnosis_date
+        GROUP BY
+            pid.person_id
     )
     
 {% if is_head_and_neck %},
@@ -402,9 +405,9 @@ WITH
     -- PROCEDURE OCCURRENCE table
     biopsy AS (
         SELECT
-            pid.person_id,
-            procedure_concept.concept_name as type_of_biopsy,
-            procedure_occurrence.procedure_date as date_of_biopsy
+            all_biopsies.person_id,
+            all_biopsies.concept_name as type_of_biopsy,
+            all_biopsies.procedure_date as date_of_biopsy
         FROM (
             SELECT
                 pid.person_id,
@@ -450,6 +453,8 @@ WITH
         LEFT JOIN
             primary_tumor
             ON pid.person_id = primary_tumor.person_id
+        GROUP BY
+            pid.person_id
     ),    
 
     -- MEASUREMENT table
