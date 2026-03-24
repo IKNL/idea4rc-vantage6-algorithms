@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "pandas>=2.3.3",
+    "ruff>=0.15.2",
     "vantage6-algorithm-tools==5.0.0b1",
 ]
 

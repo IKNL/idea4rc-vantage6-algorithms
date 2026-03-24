@@ -5,7 +5,7 @@ FROM harbor2.vantage6.ai/infrastructure/algorithm-ohdsi-base:5.0
 ARG PKG_NAME="v6-sessions"
 
 # install federated algorithm
-COPY ../v6-idea4rc-common /deps/v6-idea4rc-common
+COPY v6-idea4rc-common /deps/v6-idea4rc-common
 RUN pip install /deps/v6-idea4rc-common
 COPY v6-sessions /app
 RUN pip install /app

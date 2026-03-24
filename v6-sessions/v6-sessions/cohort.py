@@ -5,9 +5,15 @@ import numpy as np
 import pandas as pd
 import pyarrow as pa
 from jinja2 import Template
-from ohdsi import common, database_connector, sqlrender
+from ohdsi import common, database_connector
 from rpy2.rinterface_lib.sexp import NACharacterType
 from rpy2.robjects import RS4
+from v6_idea4rc_common import (
+    to_boolean as _to_boolean,
+    to_category as _to_category,
+    to_datetime as _to_datetime,
+    to_int64 as _to_int64,
+)
 from vantage6.algorithm.decorator import data_extraction
 from vantage6.algorithm.tools.util import error, get_env_var, info
 
@@ -246,50 +252,4 @@ def convert_sarcoma_columns(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def _to_datetime(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
-    """
-    This function converts the given column to a datetime.
-    """
-    for column in columns:
-        df[column] = pd.to_datetime(
-            df[column], errors="coerce", utc=True
-        ).dt.normalize()
-    return df
-
-
-def _to_category(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
-    """
-    This function converts the given column to a category.
-    """
-    for column in columns:
-        df[column] = df[column].astype("category")
-    return df
-
-
-def _to_int64(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
-    """
-    This function converts the given column to a int64.
-    """
-    for column in columns:
-        df[column] = pd.to_numeric(df[column], errors="coerce").astype("Int64")
-    return df
-
-
-def _to_float64(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
-    """
-    This function converts the given column to a float64.
-    """
-    for column in columns:
-        df[column] = pd.to_numeric(df[column], errors="coerce").astype("Float64")
-    return df
-
-
-def _to_boolean(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
-    """
-    This function converts the given column to a boolean.
-
-    """
-    for column in columns:
-        df[column] = df[column].astype("boolean")
-    return df
 

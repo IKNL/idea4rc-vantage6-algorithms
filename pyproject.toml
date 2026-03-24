@@ -3,12 +3,15 @@ members = [
     "v6-analytics",
     "v6-sessions",
     "v6-preprocessing",
+    "v6-idea4rc-common",
+    "scripts/app",
 ]
 
 [tool.uv.sources]
 v6-analytics = { workspace = true }
 v6-sessions = { workspace = true }
 v6-preprocessing = { workspace = true }
+v6-idea4rc-common = { workspace = true }
 
 [tool.uv]
 prerelease = "allow"
