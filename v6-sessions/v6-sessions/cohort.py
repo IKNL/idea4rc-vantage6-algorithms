@@ -178,6 +178,7 @@ def convert_base_columns(df: pd.DataFrame) -> pd.DataFrame:
         [
             "diagnosis_date",
             "life_status_date",
+            "date_of_surgery",
         ],
     )
 
