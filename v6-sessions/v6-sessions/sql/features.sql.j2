@@ -96,6 +96,28 @@ WITH
             episode.episode_concept_id = 32533 -- Disease Episode
     ),
 
+    primary_surgery AS (
+        SELECT
+            pid.person_id,
+            episode.episode_start_date as date_of_surgery
+        FROM
+            patient_id_list pid
+        LEFT JOIN
+            {{ cdm_schema }}.episode episode
+            ON pid.person_id = episode.person_id
+        LEFT JOIN
+            primary_tumor
+            ON pid.person_id = primary_tumor.person_id
+        WHERE
+            episode.episode_concept_id = 32939 -- Surgery Episode
+            AND episode.episode_parent_id IN (
+                SELECT primary_tumor.episode_id FROM primary_tumor
+            )
+        ORDER BY
+            episode.episode_start_date ASC
+        LIMIT 1
+    ),
+
     -- OBSERVATION table
     person_status AS (
 
@@ -503,6 +525,7 @@ SELECT
     person.year_of_birth                            as year_of_birth,
     primary_tumor.diagnosis_date                    as diagnosis_date,
     primary_tumor.age_at_diagnosis                  as age_at_diagnosis,
+    primary_surgery.date_of_surgery                 as date_of_surgery,
     COALESCE(primary_tumor.diagnosis_code, 'N/A')   as diagnosis_code,
     COALESCE(primary_tumor.morphology, 'N/A')       as morphology,
     COALESCE(primary_tumor.topography, 'N/A')       as topography,
@@ -548,6 +571,9 @@ FROM
 LEFT JOIN
     primary_tumor
     ON person.person_id = primary_tumor.person_id
+LEFT JOIN
+    primary_surgery
+    ON person.person_id = primary_surgery.person_id
 LEFT JOIN
     person_status
     ON person.person_id = person_status.person_id
