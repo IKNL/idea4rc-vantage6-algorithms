@@ -1,3 +1,4 @@
+import json
 from enum import Enum
 from typing import Any
 
@@ -173,6 +174,47 @@ def _aggregate_partial_summaries(results: list[dict], lookup_organizations) -> d
     info("Aggregating partial summaries")
     aggregate = {}
     is_first = True
+
+    def _merge_date_bound(
+        current_value: Any,
+        incoming_value: Any,
+        prefer_min: bool,
+    ) -> Any:
+        """Merge date bounds while safely handling None/NaT values."""
+        current_missing = current_value is None or pd.isna(current_value)
+        incoming_missing = incoming_value is None or pd.isna(incoming_value)
+
+        if current_missing and incoming_missing:
+            return current_value
+        if current_missing:
+            return incoming_value
+        if incoming_missing:
+            return current_value
+
+        current_dt = pd.to_datetime(current_value, utc=True, errors="coerce")
+        incoming_dt = pd.to_datetime(incoming_value, utc=True, errors="coerce")
+        if pd.isna(current_dt) and pd.isna(incoming_dt):
+            return current_value
+        if pd.isna(current_dt):
+            return incoming_dt.date().isoformat()
+        if pd.isna(incoming_dt):
+            return current_dt.date().isoformat()
+
+        if prefer_min:
+            return min(current_dt, incoming_dt).date().isoformat()
+        return max(current_dt, incoming_dt).date().isoformat()
+
+    def _normalize_date_summary(date_summary: Any) -> dict[str, dict[str, Any]]:
+        """Normalize date summary payload to dict format for aggregation."""
+        if date_summary is None:
+            return {}
+        if isinstance(date_summary, str):
+            if not date_summary.strip():
+                return {}
+            return json.loads(date_summary)
+        return date_summary
+
+    # For each node (= organization)
     for result in results:
         if result is None:
             # raise AlgorithmExecutionError(
@@ -183,6 +225,7 @@ def _aggregate_partial_summaries(results: list[dict], lookup_organizations) -> d
             continue
 
         organization_name = lookup_organizations[str(result["organization_id"])]
+        result["date"] = _normalize_date_summary(result.get("date"))
         if is_first:
             # copy results. Only convert num complete rows per node to a list so that
             # we can add the other nodes to it later
@@ -237,6 +280,22 @@ def _aggregate_partial_summaries(results: list[dict], lookup_organizations) -> d
             aggregated_dict = aggregate["categorical"][column]
             aggregated_dict["count"] += result["categorical"][column]["count"]
             aggregated_dict["missing"] += result["categorical"][column]["missing"]
+        
+        # aggregate data for date columns
+        for column in result["date"]:
+            aggregated_dict = aggregate["date"][column]
+            aggregated_dict["count"] += result["date"][column]["count"]
+            aggregated_dict["missing"] += result["date"][column]["missing"]
+            aggregated_dict["min"] = _merge_date_bound(
+                aggregate["date"][column].get("min"),
+                result["date"][column].get("min"),
+                prefer_min=True,
+            )
+            aggregated_dict["max"] = _merge_date_bound(
+                aggregate["date"][column].get("max"),
+                result["date"][column].get("max"),
+                prefer_min=False,
+            )
 
         # add the number of complete rows for this node
         aggregate["num_complete_rows_per_node"][organization_name] = result[
@@ -264,6 +323,8 @@ def _aggregate_partial_summaries(results: list[dict], lookup_organizations) -> d
             aggregated_dict["mean"] = aggregated_dict["sum"] / aggregated_dict["count"]
         else:
             aggregated_dict["mean"] = 0  # TODO this is terrible, we should not do this
+
+    
 
     return aggregate
 
@@ -336,6 +397,14 @@ def summary_per_data_station(
 
 def structure_summary_per_data_station_output(df, results, metadata):
     for var in results["numeric"]:
+        # Temp fix to avoid errors when all values are NaN
+        if df[var].isna().all():
+            warn(f"Column {var} is all NaN, skipping")
+            results["numeric"][var]["median"] = 1
+            results["numeric"][var]["q_25"] = 1
+            results["numeric"][var]["q_75"] = 1    
+            continue
+
         results["numeric"][var]["median"] = float(np.nanmedian(df[var]))
         results["numeric"][var]["q_25"] = float(np.nanquantile(df[var], 0.25))
         results["numeric"][var]["q_75"] = float(np.nanquantile(df[var], 0.75))
@@ -413,6 +482,13 @@ def _summary_per_data_station(
     categorical_columns = df.select_dtypes(include=['object', 'category', 'bool']).columns.tolist()
     df_numeric = df[numeric_columns]
     df_non_numeric = df[categorical_columns]
+    df_date_columns = df.select_dtypes(include=['datetime64[ns]', 'datetime', 'datetime64', 'datetime64[ns, UTC]']).columns.tolist()
+    df_date = df[df_date_columns]
+    
+    # compute data summary for date columns
+    summary_date = pd.DataFrame()
+    if not df_date.empty:
+        summary_date = _get_date_summary(df_date)
 
     # compute data summary for numeric columns
     summary_numeric = pd.DataFrame()
@@ -455,6 +531,7 @@ def _summary_per_data_station(
     return {
         "numeric": summary_numeric.to_dict(),
         "categorical": summary_categorical.to_dict(),
+        "date": summary_date.to_json(date_format="iso"),
         "num_complete_rows_per_node": num_complete_rows_per_node,
         "num_rows_per_node": num_rows_per_node,
         "counts_unique_values": counts_unique_values,
@@ -493,6 +570,19 @@ def _get_categorical_summary(df: pd.DataFrame) -> pd.DataFrame:
     summary_categorical.drop(["top", "freq", "unique"], inplace=True)
     return summary_categorical
 
+def _get_date_summary(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Compute the summary statistics for the date columns
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        The data to compute the summary statistics for
+    """
+    summary_date = df.describe()
+    summary_date.loc["missing"] = df.isna().sum()
+    summary_date.drop(["25%", "50%", "75%"], inplace=True)
+    return summary_date
 
 def _get_counts_unique_values(df: pd.DataFrame) -> dict:
     """
@@ -550,7 +640,13 @@ def _mask_privacy(counts: pd.Series, privacy_threshold: int, column: str) -> dic
             "All counts for this column will be masked."
         )
         return {}
-    return counts.to_dict()
+    
+    # return counts.to_dict()
+    def to_py_scalar(x):
+        # Convert numpy scalars (e.g. numpy.bool_, numpy.int64) to native Python types
+        return x.item() if isinstance(x, np.generic) else x
+    
+    return {to_py_scalar(k): to_py_scalar(v) for k, v in counts.items()}
 
 
 def _filter_results(
