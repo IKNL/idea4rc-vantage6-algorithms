@@ -116,7 +116,13 @@ def __create_cohort_dataframe(
 
     info("Converting dataframe to pandas")
     try:
-        converted_df = common.convert_from_r(df, date_cols=["surgery_date"])
+        converted_df = common.convert_from_r(df, date_cols=[
+            "date_of_surgery",
+            "diagnosis_date",
+            "life_status_date",
+            "date_of_biopsy",
+            "last_contact",
+        ])
     except Exception as e:
         error(f"Failed to convert dataframe: {e}")
         traceback.print_exc()
