@@ -472,12 +472,13 @@ def _partial_crosstab(
     )
 
     # TODO this is a fix for categorical columns with empty values.
-    for col in df.select_dtypes(include=["category"]).columns:
+    categorical_columns = df.select_dtypes(include=["category"]).columns
+    for col in categorical_columns:
         if "N/A" not in df[col].cat.categories:
             df[col] = df[col].cat.add_categories("N/A")
 
     # Fill empty (categorical) values with "N/A"
-    df = df.fillna("N/A")
+    df[categorical_columns] = df[categorical_columns].fillna("N/A")
 
     # Create contingency table
     info("Creating contingency table...")
