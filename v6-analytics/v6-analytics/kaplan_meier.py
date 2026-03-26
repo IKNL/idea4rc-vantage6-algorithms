@@ -22,6 +22,13 @@ from vantage6.algorithm.tools.exceptions import (
     PrivacyThresholdViolation,
 )
 from vantage6.algorithm.tools.util import get_env_var, info, warn
+from v6_idea4rc_common.type_guards import (
+    Idea4rcDType,
+    assert_column_dtype_in,
+    assert_columns_dtype_in,
+    convert_int64_01_to_boolean,
+    is_binary_int64_01,
+)
 
 # The following global variables are algorithm settings. They can be overwritten by
 # the node admin by setting the corresponding environment variables.
@@ -401,6 +408,22 @@ def _get_unique_event_times(
     InputError
         If the time column is not found in the DataFrame.
     """
+    assert_column_dtype_in(
+        df,
+        time_column_name,
+        allowed=[Idea4rcDType.INT64, Idea4rcDType.FLOAT64],
+        algorithm="kaplan_meier",
+        expected_kind="numeric (nullable Int64 or Float64)",
+    )
+    if strata_column_name:
+        assert_column_dtype_in(
+            df,
+            strata_column_name,
+            allowed=[Idea4rcDType.CATEGORY],
+            algorithm="kaplan_meier",
+            expected_kind="categorical (pandas 'category')",
+        )
+
     df = _remove_negative_event_times(df, time_column_name)
     info("Getting unique event times.")
     info(f"Time column name: {time_column_name}.")
@@ -452,6 +475,37 @@ def _get_km_event_table(
     str
         The Kaplan-Meier event table in JSON format.
     """
+    assert_column_dtype_in(
+        df,
+        time_column_name,
+        allowed=[Idea4rcDType.INT64, Idea4rcDType.FLOAT64],
+        algorithm="kaplan_meier",
+        expected_kind="numeric (nullable Int64 or Float64)",
+    )
+    censor_dtype = str(df[censor_column_name].dtype) if censor_column_name in df.columns else "<missing>"
+    if censor_column_name not in df.columns:
+        raise InputError(f"Column '{censor_column_name}' not found in the data frame.")
+    if censor_dtype == Idea4rcDType.BOOLEAN.value:
+        pass
+    elif is_binary_int64_01(df[censor_column_name]):
+        df[censor_column_name] = convert_int64_01_to_boolean(
+            df[censor_column_name], algorithm="kaplan_meier", column=censor_column_name
+        )
+    else:
+        raise InputError(
+            f"Column '{censor_column_name}' has dtype '{censor_dtype}', expected boolean "
+            f"or Int64 restricted to {{0,1,NA}}."
+        )
+
+    if strata_column_name:
+        assert_column_dtype_in(
+            df,
+            strata_column_name,
+            allowed=[Idea4rcDType.CATEGORY],
+            algorithm="kaplan_meier",
+            expected_kind="categorical (pandas 'category')",
+        )
+
     info("Removing negative event times.")
     df = _remove_negative_event_times(df, time_column_name)
 
@@ -504,10 +558,9 @@ def _calculate_km_event_table(
     pd.DataFrame
         The Kaplan-Meier event table as a DataFrame.
     """
-    # Make sure the censor column is boolean
-    # TODO this is a fix for the current implementation.. We use category and numberical
-    # data types. Thus we need to convert it before we can use arithmetic operations.
-    df[censor_column_name] = df[censor_column_name].astype(int)
+    # Convert censor column into a numeric indicator for aggregation.
+    # (Boolean/Int64{0,1} already validated upstream; fill NA to avoid astype(int) failures.)
+    df[censor_column_name] = df[censor_column_name].fillna(False).astype("Int64")
 
     # Group by the time column, aggregating both death and total counts simultaneously
     km_df = (

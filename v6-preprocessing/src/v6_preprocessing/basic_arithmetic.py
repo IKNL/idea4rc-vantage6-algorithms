@@ -18,13 +18,14 @@ def basic_arithmetic(df: pd.DataFrame, column1: str | int | float, column2: str 
     
     if isinstance(column1, str):
         column1 = df[column1]
-        if not (is_int(column1) and is_float(column1)):
+        if not (is_int(column1) or is_float(column1)):
             error(f"Column 1 is not numeric. Returning original dataframe.")
             return old_df
     if isinstance(column2, str):
+        column2_name = column2
         column2 = df[column2]
         if not (is_int(column2) or is_float(column2)):
-            error(f"Column {column2} is not numeric. Returning original dataframe.")
+            error(f"Column {column2_name} is not numeric. Returning original dataframe.")
             return old_df
     
     try:
@@ -48,5 +49,5 @@ def basic_arithmetic(df: pd.DataFrame, column1: str | int | float, column2: str 
         error(exc)
         return old_df
     
-    info(f"Done.")
+    info("Done.")
     return df

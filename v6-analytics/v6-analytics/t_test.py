@@ -11,6 +11,10 @@ from vantage6.algorithm.decorator import (
 )
 from vantage6.algorithm.tools.exceptions import InputError
 from vantage6.algorithm.tools.util import get_env_var, info
+from v6_idea4rc_common.type_guards import (
+    Idea4rcDType,
+    assert_columns_dtype_in,
+)
 
 T_TEST_MINIMUM_NUMBER_OF_RECORDS = 3
 
@@ -163,7 +167,7 @@ def _t_test_partial(df: pd.DataFrame, columns: list[str] | None = None) -> dict:
         )
 
     if not columns:
-        columns = df.select_dtypes(include=["number"]).columns.tolist()
+        columns = df.select_dtypes(include=["Int64", "Float64"]).columns.tolist()
     else:
         # Check that column names exist in the dataframe
         non_existing_columns = [col for col in columns if col not in df.columns]
@@ -171,12 +175,22 @@ def _t_test_partial(df: pd.DataFrame, columns: list[str] | None = None) -> dict:
             raise InputError(
                 f"Columns {non_existing_columns} do not exist in the dataframe"
             )
-        # Check that columns are numerical
-        non_numeric_columns = [
-            col for col in columns if not ptypes.is_numeric_dtype(df[col])
-        ]
-        if non_numeric_columns:
-            raise InputError(f"Columns {non_numeric_columns} are not numeric")
+        assert_columns_dtype_in(
+            df,
+            columns,
+            allowed=[Idea4rcDType.INT64, Idea4rcDType.FLOAT64],
+            algorithm="t_test",
+            expected_kind="numeric (nullable Int64 or Float64)",
+        )
+
+    # In strict mode, always enforce the accepted numeric dtypes
+    assert_columns_dtype_in(
+        df,
+        columns,
+        allowed=[Idea4rcDType.INT64, Idea4rcDType.FLOAT64],
+        algorithm="t_test",
+        expected_kind="numeric (nullable Int64 or Float64)",
+    )
 
     # Compute mean and sample variance
     partial_results = {}

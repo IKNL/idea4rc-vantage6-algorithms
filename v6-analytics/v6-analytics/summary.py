@@ -18,6 +18,12 @@ from vantage6.algorithm.tools.exceptions import (
     PrivacyThresholdViolation,
 )
 from vantage6.algorithm.tools.util import error, get_env_var, info, warn
+from v6_idea4rc_common.type_guards import (
+    Idea4rcDType,
+    assert_column_dtype_in,
+    assert_columns_dtype_in,
+    classify_idea4rc_dtype,
+)
 
 # names of environment variables
 ## minimum number of rows in the dataframe
@@ -175,6 +181,28 @@ def _aggregate_partial_summaries(results: list[dict], lookup_organizations) -> d
     aggregate = {}
     is_first = True
 
+    def _merge_numeric_bound(
+        current_value: Any,
+        incoming_value: Any,
+        prefer_min: bool,
+    ) -> Any:
+        """
+        Merge numeric bounds while safely handling None/NaN values.
+
+        Values can become None after serialization (e.g. NaN -> null).
+        """
+        current_missing = current_value is None or pd.isna(current_value)
+        incoming_missing = incoming_value is None or pd.isna(incoming_value)
+
+        if current_missing and incoming_missing:
+            return None
+        if current_missing:
+            return incoming_value
+        if incoming_missing:
+            return current_value
+
+        return min(current_value, incoming_value) if prefer_min else max(current_value, incoming_value)
+
     def _merge_date_bound(
         current_value: Any,
         incoming_value: Any,
@@ -255,13 +283,15 @@ def _aggregate_partial_summaries(results: list[dict], lookup_organizations) -> d
         for column in result["numeric"]:
             aggregated_dict = aggregate["numeric"][column]
             aggregated_dict["count"] += result["numeric"][column]["count"]
-            aggregated_dict["min"] = min(
-                aggregate["numeric"][column]["min"],
-                result["numeric"][column]["min"],
+            aggregated_dict["min"] = _merge_numeric_bound(
+                aggregate["numeric"][column].get("min"),
+                result["numeric"][column].get("min"),
+                prefer_min=True,
             )
-            aggregated_dict["max"] = max(
-                aggregate["numeric"][column]["max"],
-                result["numeric"][column]["max"],
+            aggregated_dict["max"] = _merge_numeric_bound(
+                aggregate["numeric"][column].get("max"),
+                result["numeric"][column].get("max"),
+                prefer_min=False,
             )
             aggregated_dict["missing"] += result["numeric"][column]["missing"]
             aggregated_dict["sum"] += result["numeric"][column]["sum"]
@@ -378,6 +408,13 @@ def summary_per_data_station(
     results = {}
     for df, name in zip(dfs, cohort_names):
         if stratification_column:
+            assert_column_dtype_in(
+                df,
+                stratification_column,
+                allowed=[Idea4rcDType.CATEGORY],
+                algorithm="summary",
+                expected_kind="categorical (pandas 'category')",
+            )
             for value in df[stratification_column].unique():
                 df_stratified = df[df[stratification_column] == value]
                 results[f"{name}_{stratification_column}=={value}"] = (
@@ -429,6 +466,13 @@ def variance_per_data_station(
     info("Cake is a lie")
     for df, name in zip(dfs, cohort_names):
         if stratification_column:
+            assert_column_dtype_in(
+                df,
+                stratification_column,
+                allowed=[Idea4rcDType.CATEGORY],
+                algorithm="summary_variance",
+                expected_kind="categorical (pandas 'category')",
+            )
             strata = df[stratification_column].unique()
             for stratum in strata:
                 df_strata = df[df[stratification_column] == stratum]
@@ -470,19 +514,38 @@ def _summary_per_data_station(
     # check_privacy(df, columns)
 
     # Split the data in numeric and non-numeric columns
-    inferred_numeric_columns = df.select_dtypes(include='number').columns.tolist()
+    inferred_numeric_columns = df.select_dtypes(
+        include=["Int64", "Float64"]
+    ).columns.tolist()
     if numeric_columns is None:
         numeric_columns = inferred_numeric_columns
         info(f"Inferred numeric columns: {inferred_numeric_columns}")
     else:
-        df = check_match_inferred_numeric(numeric_columns, inferred_numeric_columns, df)
+        assert_columns_dtype_in(
+            df,
+            numeric_columns,
+            allowed=[Idea4rcDType.INT64, Idea4rcDType.FLOAT64],
+            algorithm="summary",
+            expected_kind="numeric (nullable Int64 or Float64)",
+        )
+
+    # In strict mode, enforce accepted numeric dtypes for the final numeric set
+    assert_columns_dtype_in(
+        df,
+        numeric_columns,
+        allowed=[Idea4rcDType.INT64, Idea4rcDType.FLOAT64],
+        algorithm="summary",
+        expected_kind="numeric (nullable Int64 or Float64)",
+    )
 
     # set numeric and non-numeric columns
     # non_numeric_columns = list(set(columns) - set(numeric_columns))
-    categorical_columns = df.select_dtypes(include=['object', 'category', 'bool']).columns.tolist()
+    categorical_columns = df.select_dtypes(include=["category", "boolean"]).columns.tolist()
     df_numeric = df[numeric_columns]
     df_non_numeric = df[categorical_columns]
-    df_date_columns = df.select_dtypes(include=['datetime64[ns]', 'datetime', 'datetime64', 'datetime64[ns, UTC]']).columns.tolist()
+    df_date_columns = [
+        c for c in df.columns if classify_idea4rc_dtype(df[c]) == Idea4rcDType.DATETIME64TZ
+    ]
     df_date = df[df_date_columns]
     
     # compute data summary for date columns
@@ -835,13 +898,14 @@ def _variance_per_data_station(
     info("Checking if data complies to privacy settings")
     # check_privacy(df, columns)
 
-    # Cast the columns to numeric
-    try:
-        cast_df_to_numeric(df, columns)
-    except ValueError as exc:
-        error(str(exc))
-        error("Exiting algorithm...")
-        return None
+    # Strict IDEA4RC dtype enforcement
+    assert_columns_dtype_in(
+        df,
+        columns,
+        allowed=[Idea4rcDType.INT64, Idea4rcDType.FLOAT64],
+        algorithm="summary_variance",
+        expected_kind="numeric (nullable Int64 or Float64)",
+    )
 
     # Calculate the variance
     info("Calculating variance")
