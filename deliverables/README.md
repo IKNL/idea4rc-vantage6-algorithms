@@ -253,9 +253,9 @@ Variable|Type|Status|Notes
 `topography`|`CategoricalDtype`|✅|Second part of `concept_code` of `episode.episode_object_concept_id` where `episode.episode_concept_id = 32533`
 `life_status`|`CategoricalDtype`|✅|`concept_name` of latest observation where `observation.observation_concept_id` is one of `2000100071`, `4230556`, `2000100072`,`2000100073`, `2000100074`, `2000100075`, `4163894`.
 `life_status_date`|`datetime64[ns, tz]`|✅|`observation.observation_date` of the latest observation where `observation.observation_concept_id` is one of `2000100071`, `4230556`, `2000100072`,`2000100073`, `2000100074`, `2000100075`, `4163894`.
-`surgery_intent`|`CategoricalDtype`|*|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `4179711`, `4162591`.
-`margins_after_surgery`|`CategoricalDtype`|*|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `1634643`, `1633801`, `1634484`.
-`date_of_surgery`|`datetime64[ns, tz]`|🐧||
+`surgery_intent`|`CategoricalDtype`|🐸|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `4179711`, `4162591`.
+`margins_after_surgery`|`CategoricalDtype`|🐸|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `1634643`, `1633801`, `1634484`.
+`date_of_surgery`|`datetime64[ns, tz]`|🐸||
 `radio_therapy_intent`|`CategoricalDtype`|*|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `4179711`, `4162591`.
 `radiotherapy_hospital`|???|*|
 `radio_start_date`|`datetime64[ns, tz]`|*||
