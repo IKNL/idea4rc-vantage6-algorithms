@@ -25,6 +25,14 @@ from vantage6.algorithm.client import AlgorithmClient
 from vantage6.algorithm.decorator.action import central, federated
 from vantage6.algorithm.decorator.data import dataframes
 from vantage6.algorithm.decorator.algorithm_client import algorithm_client
+from v6_idea4rc_common.type_guards import (
+    Idea4rcDType,
+    assert_column_dtype_in,
+    assert_columns_dtype_in,
+    classify_idea4rc_dtype,
+    convert_int64_01_to_boolean,
+    is_binary_int64_01,
+)
 
 
 # Constants for main function arguments
@@ -1172,14 +1180,101 @@ class GLMDataManager:
 
         self.df = df
         self.formula = formula
-        self.family_str = family
+        self.family_str = family.lower() if isinstance(family, str) else family
         self.survival_sensor_column = survival_sensor_column
+
+        outcome_variable = self._parse_outcome_variable(self.formula)
+        if outcome_variable not in self.df.columns:
+            raise UserInputError(
+                f"Outcome variable '{outcome_variable}' not found in dataframe."
+            )
+
+        # Family-dependent checks/conversions for the outcome variable
+        if self.family_str == Family.BINOMIAL.value:
+            outcome_dtype = str(self.df[outcome_variable].dtype)
+            if outcome_dtype == Idea4rcDType.BOOLEAN.value:
+                pass
+            elif is_binary_int64_01(self.df[outcome_variable]):
+                self.df[outcome_variable] = convert_int64_01_to_boolean(
+                    self.df[outcome_variable],
+                    algorithm="glm",
+                    column=outcome_variable,
+                )
+            else:
+                raise UserInputError(
+                    f"Binomial family requires outcome '{outcome_variable}' to be "
+                    f"boolean or Int64 restricted to {{0,1,NA}}; got '{outcome_dtype}'."
+                )
+        elif self.family_str in (Family.GAUSSIAN.value, Family.POISSON.value, Family.SURVIVAL.value):
+            assert_column_dtype_in(
+                self.df,
+                outcome_variable,
+                allowed=[Idea4rcDType.INT64, Idea4rcDType.FLOAT64],
+                algorithm="glm",
+                expected_kind="numeric (nullable Int64 or Float64)",
+            )
+        else:
+            # get_family() will raise a UserInputError with the supported set
+            pass
+
+        # Survival sensor column: boolean or Int64{0,1,NA} -> boolean
+        if self.family_str == Family.SURVIVAL.value:
+            if not self.survival_sensor_column:
+                raise UserInputError(
+                    "The survival family requires the survival_sensor_column to be provided."
+                )
+            sensor_dtype = str(self.df[self.survival_sensor_column].dtype)
+            if sensor_dtype == Idea4rcDType.BOOLEAN.value:
+                pass
+            elif is_binary_int64_01(self.df[self.survival_sensor_column]):
+                self.df[self.survival_sensor_column] = convert_int64_01_to_boolean(
+                    self.df[self.survival_sensor_column],
+                    algorithm="glm",
+                    column=self.survival_sensor_column,
+                )
+            else:
+                raise UserInputError(
+                    f"Survival family requires survival_sensor_column '{self.survival_sensor_column}' "
+                    f"to be boolean or Int64 restricted to {{0,1,NA}}; got '{sensor_dtype}'."
+                )
 
         # User can indicate if there are numerical predictors that should be treated as
         # categorical.
         if categorical_predictors is not None:
             for predictor in categorical_predictors:
-                self.df[predictor] = self.df[predictor].astype("category")
+                if predictor not in self.df.columns:
+                    raise UserInputError(
+                        f"categorical_predictors column '{predictor}' not found in dataframe."
+                    )
+                predictor_dtype = classify_idea4rc_dtype(self.df[predictor])
+                if predictor_dtype == Idea4rcDType.CATEGORY:
+                    continue
+                if predictor_dtype == Idea4rcDType.BOOLEAN:
+                    self.df[predictor] = self.df[predictor].astype("category")
+                    continue
+                raise UserInputError(
+                    f"categorical_predictors only accepts 'category' or 'boolean' columns. "
+                    f"Column '{predictor}' has dtype '{self.df[predictor].dtype}'."
+                )
+
+        # Validate all columns used by the formula (excluding the survival sensor helper column)
+        used_columns = list(Formula(self.formula).required_variables)
+        if self.survival_sensor_column:
+            used_columns = [c for c in used_columns if c != self.survival_sensor_column]
+        for col in used_columns:
+            dtype = classify_idea4rc_dtype(self.df[col])
+            if dtype is None:
+                raise UserInputError(
+                    f"GLM only supports IDEA4RC dtypes. Column '{col}' has dtype '{self.df[col].dtype}'."
+                )
+            if dtype == Idea4rcDType.DATETIME64TZ:
+                raise UserInputError(
+                    f"Datetime columns are not allowed in GLM predictors. Column '{col}' is datetime."
+                )
+            if dtype not in (Idea4rcDType.INT64, Idea4rcDType.FLOAT64, Idea4rcDType.BOOLEAN, Idea4rcDType.CATEGORY):
+                raise UserInputError(
+                    f"Column '{col}' has unsupported dtype '{self.df[col].dtype}' for GLM."
+                )
 
         self.y, self.X = self._get_design_matrix()
         self.y = cast_to_pandas(self.y)
@@ -1339,6 +1434,24 @@ class GLMDataManager:
                         " in this algorithm computation. Please contact the node "
                         "administrator for more information."
                     )
+
+    @staticmethod
+    def _parse_outcome_variable(formula: str) -> str:
+        """
+        Extract the outcome variable name from a formula of the form 'y ~ x1 + x2'.
+        This is intentionally strict: it must be a single column name.
+        """
+        if "~" not in formula:
+            raise UserInputError("Invalid formula: missing '~'.")
+        lhs = formula.split("~", 1)[0].strip()
+        if not lhs:
+            raise UserInputError("Invalid formula: empty left-hand side.")
+        # Disallow transformations on the LHS for now (strict column name only)
+        if any(ch in lhs for ch in ("(", ")", ":", "*", "+", "-", "/", " ")):
+            raise UserInputError(
+                f"Invalid outcome expression '{lhs}'. Provide a single outcome column name."
+            )
+        return lhs
         non_allowed_collumns = get_env_var(ENVVAR_DISALLOWED_COLUMNS)
         if non_allowed_collumns:
             non_allowed_collumns = non_allowed_collumns.split(",")

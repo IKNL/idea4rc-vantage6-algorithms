@@ -1,5 +1,7 @@
 import pandas as pd
 
+from v6_idea4rc_common.type_guards import Idea4rcDType, classify_idea4rc_dtype
+
 def is_boolean(column: pd.Series) -> bool:
     """
     This function checks if the given value is a boolean.
@@ -14,7 +16,7 @@ def is_boolean(column: pd.Series) -> bool:
     bool
         True if the column is a boolean, False otherwise.
     """
-    return pd.api.types.is_bool_dtype(column)
+    return classify_idea4rc_dtype(column) == Idea4rcDType.BOOLEAN
 
 def is_category(column: pd.Series) -> bool:
     """
@@ -30,7 +32,7 @@ def is_category(column: pd.Series) -> bool:
     bool
         True if the column is a category, False otherwise.
     """
-    return pd.api.types.is_categorical_dtype(column)
+    return classify_idea4rc_dtype(column) == Idea4rcDType.CATEGORY
 
 def is_datetime(column: pd.Series) -> bool:
     """
@@ -46,7 +48,8 @@ def is_datetime(column: pd.Series) -> bool:
     bool
         True if the column is a datetime, False otherwise.
     """
-    return pd.api.types.is_datetime64_any_dtype(column)
+    # Strict IDEA4RC accepted datetime dtype (tz-aware)
+    return classify_idea4rc_dtype(column) == Idea4rcDType.DATETIME64TZ
 
 def is_float(column: pd.Series) -> bool:
     """
@@ -62,10 +65,10 @@ def is_float(column: pd.Series) -> bool:
     bool
         True if the column is a float64, False otherwise.
     """
-    return pd.api.types.is_float_dtype(column)
+    return classify_idea4rc_dtype(column) == Idea4rcDType.FLOAT64
 
 def is_int(column: pd.Series) -> bool:
     """
     This function checks if the given column is a int64.
     """
-    return pd.api.types.is_int64_dtype(column)
+    return classify_idea4rc_dtype(column) == Idea4rcDType.INT64

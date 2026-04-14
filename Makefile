@@ -1,7 +1,7 @@
 VANTAGE6_VERSION ?= 5.0.0
 TAG ?= tbd
-REGISTRY ?= harbor2.vantage6.ai
-REGISTRY_PROJECT ?= idea4rc
+REGISTRY ?= ghcr.io
+REGISTRY_PROJECT ?= iknl
 PLATFORMS ?= linux/amd64
 BASE ?= 5.0
 

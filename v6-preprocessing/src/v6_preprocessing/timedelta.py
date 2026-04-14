@@ -98,7 +98,7 @@ def timedelta(
             to_date = pd.to_datetime("today", utc=True)
 
         info(f"Calculating timedelta...")
-        df[output_column] = (to_date - dates).dt.days
+        df[output_column] = (to_date - dates).dt.days.astype("Int64")
 
     except Exception as exc:
         error("FAILED TO PROCESS TIME DELTA")

@@ -92,7 +92,7 @@ def one_hot_encode(
         # )
 
         # Perform one-hot encoding
-        one_hot_df = pd.get_dummies(df_copy[column], prefix=prefix)
+        one_hot_df = pd.get_dummies(df_copy[column], prefix=prefix).astype("Int64")
 
         # Drop columns from df that will be replaced by one-hot columns (avoids duplicates, one_hot overwrites)
         cols_replaced = [c for c in one_hot_df.columns if c in df.columns]

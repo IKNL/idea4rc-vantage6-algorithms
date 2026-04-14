@@ -1,6 +1,3 @@
-from pandas.core.frame import DataFrame
-
-
 from io import StringIO
 
 import pandas as pd
@@ -13,6 +10,10 @@ from vantage6.algorithm.tools.exceptions import (
 )
 
 from vantage6.algorithm.tools.util import get_env_var, info
+from v6_idea4rc_common.type_guards import (
+    Idea4rcDType,
+    assert_columns_dtype_in,
+)
 
 @federated
 @dataframes
@@ -458,6 +459,14 @@ def _partial_crosstab(
     PrivacyThresholdViolation
         The privacy threshold is not met by any values in the contingency table.
     """
+    assert_columns_dtype_in(
+        df,
+        [results_col] + list(group_cols),
+        allowed=[Idea4rcDType.CATEGORY],
+        algorithm="crosstab",
+        expected_kind="categorical (pandas 'category')",
+    )
+
     # get environment variables with privacy settings
     # pylint: disable=invalid-name
     PRIVACY_THRESHOLD = _convert_envvar_to_int(
@@ -472,12 +481,13 @@ def _partial_crosstab(
     )
 
     # TODO this is a fix for categorical columns with empty values.
-    for col in df.select_dtypes(include=["category"]).columns:
+    categorical_columns = df.select_dtypes(include=["category"]).columns
+    for col in categorical_columns:
         if "N/A" not in df[col].cat.categories:
             df[col] = df[col].cat.add_categories("N/A")
 
     # Fill empty (categorical) values with "N/A"
-    df = df.fillna("N/A")
+    df[categorical_columns] = df[categorical_columns].fillna("N/A")
 
     # Create contingency table
     info("Creating contingency table...")

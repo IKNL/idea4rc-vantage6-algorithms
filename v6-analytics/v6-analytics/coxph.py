@@ -14,6 +14,11 @@ from vantage6.algorithm.decorator import (
     central,
     metadata
 )
+from v6_idea4rc_common.type_guards import (
+    Idea4rcDType,
+    assert_column_dtype_in,
+    assert_columns_dtype_in,
+)
 
 
 def _filter_dataframes_on_names(
@@ -93,6 +98,21 @@ def _get_unique_event_times(df: pd.DataFrame, time_col: str, outcome_col: str, m
     """
     info("Computing unique event times")
 
+    assert_column_dtype_in(
+        df,
+        time_col,
+        allowed=[Idea4rcDType.INT64, Idea4rcDType.FLOAT64],
+        algorithm="coxph",
+        expected_kind="numeric (nullable Int64 or Float64)",
+    )
+    assert_column_dtype_in(
+        df,
+        outcome_col,
+        allowed=[Idea4rcDType.BOOLEAN],
+        algorithm="coxph",
+        expected_kind="boolean (pandas 'boolean')",
+    )
+
     # if df[outcome_col].notnull().sum() <= 10:
     #     warn("Sub-task was not executed because the number of samples is too small (n <= 10)")
     #     return {"N-Threshold not met": metadata.organization_id}
@@ -118,6 +138,20 @@ def _compute_summed_z(df: pd.DataFrame, outcome_col, expl_vars):
     dict: A dictionary containing the sum of the explanatory variables for the outcome events.
     """
     info("Computing summed z statistics")
+    assert_column_dtype_in(
+        df,
+        outcome_col,
+        allowed=[Idea4rcDType.BOOLEAN],
+        algorithm="coxph",
+        expected_kind="boolean (pandas 'boolean')",
+    )
+    assert_columns_dtype_in(
+        df,
+        list(expl_vars),
+        allowed=[Idea4rcDType.INT64, Idea4rcDType.FLOAT64],
+        algorithm="coxph",
+        expected_kind="numeric (nullable Int64 or Float64)",
+    )
     z_sum = (df[df[outcome_col] == 1][expl_vars].sum().to_dict())
     return {'sum': z_sum}
 
@@ -138,6 +172,20 @@ def _perform_iteration(df: pd.DataFrame, time_col, expl_vars, beta, unique_time_
     dict: A dictionary containing the aggregates computed during the iteration.
     """
     info("Computing aggregates for the derivation of the partial likelihood")
+    assert_column_dtype_in(
+        df,
+        time_col,
+        allowed=[Idea4rcDType.INT64, Idea4rcDType.FLOAT64],
+        algorithm="coxph",
+        expected_kind="numeric (nullable Int64 or Float64)",
+    )
+    assert_columns_dtype_in(
+        df,
+        list(expl_vars),
+        allowed=[Idea4rcDType.INT64, Idea4rcDType.FLOAT64],
+        algorithm="coxph",
+        expected_kind="numeric (nullable Int64 or Float64)",
+    )
     # Deserialize beta values
     beta = np.array(beta)
     num_unique_time_events = len(unique_time_events)
@@ -218,7 +266,7 @@ def coxph_central(
         n_loops += 1
 
         task = client.task.create(
-            method="get_unique_event_times",
+            method="coxph_get_unique_event_times",
             arguments={"time_col": time_col, "outcome_col": outcome_col},
             organizations=ids,
             name="Unique event times",
