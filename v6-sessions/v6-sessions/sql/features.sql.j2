@@ -816,7 +816,6 @@ WITH
 ----------------------------------------------------------------------------------------
 SELECT
 
-    person.person_id                                as patient_id,
     COALESCE(person.sex, 'N/A')                     as sex,
     person.year_of_birth                            as year_of_birth,
     primary_tumor.diagnosis_date                    as diagnosis_date,
