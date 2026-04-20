@@ -39,6 +39,7 @@ define build_image
 		--platform ${PLATFORMS} \
 		--build-arg TAG=${TAG} \
 		--build-arg BASE=${BASE} \
+		--no-cache \
 		-f ./docker/$(2).Dockerfile \
 		$(if ${_condition_push},--push .,.)
 endef

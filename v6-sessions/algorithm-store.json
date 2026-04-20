@@ -1,7 +1,7 @@
 {
     "reviews": [],
     "vantage6_version": "5.0.0a41",
-    "image": "harbor2.vantage6.ai/idea4rc/sessions",
+    "image": "ghcr.io/iknl/sessions",
     "partitioning": "horizontal",
     "functions": [
         {
