@@ -12,6 +12,8 @@
 -- 1.2      | F. Martin      | 2026-03-10    | Introduced flexible feature selection,
 --          |                |               | using Jinja2 template.
 -- -------------------------------------------------------------------------------------
+-- 1.3      | F. Martin      | 2026-04-22    | Selected only patients that are in the
+--          |                |               | cohort.
 --
 ----------------------------------------------------------------------------------------
 -- BASIC FEATURES
@@ -53,7 +55,13 @@ WITH
 
     -- Define the list of patient IDs to analyze
     patient_id_list AS (
-        SELECT person_id FROM (VALUES {{ patient_ids }}) AS t(person_id)
+        SELECT DISTINCT 
+            t.person_id as person_id
+        FROM 
+            (VALUES {{ patient_ids }}) AS t(person_id)
+        JOIN 
+            {{ cdm_schema }}.person person
+            ON t.person_id = person.person_id
     ),
 
     -- PERSON table
@@ -103,30 +111,153 @@ WITH
             episode.episode_concept_id = 32533 -- Disease Episode
     ),
 
-    primary_surgery AS (
-        SELECT
-            pid.person_id,
-            CASE
-                WHEN episode.episode_start_date >= DATE '3000-01-01' THEN NULL
-                ELSE episode.episode_start_date
-            END as date_of_surgery
-        FROM
-            patient_id_list pid
-        LEFT JOIN
-            {{ cdm_schema }}.episode episode
-            ON pid.person_id = episode.person_id
-        LEFT JOIN
-            primary_tumor
-            ON pid.person_id = primary_tumor.person_id
-        WHERE
-            episode.episode_concept_id = 32939 -- Surgery Episode
-            AND episode.episode_parent_id IN (
-                SELECT primary_tumor.episode_id FROM primary_tumor
-            )
-        ORDER BY
-            episode.episode_start_date ASC
-        LIMIT 1
+
+
+    -- Surgeries table
+    -- - only surgeries on/after diagnosis_date
+    -- - ordered by date per patient
+    -- surgery_id numbers surgeries per patient (1–5)
+    -- surgery_id = 1 corresponds to primary surgery
+
+    surgeries AS (
+        SELECT *
+        FROM (
+            SELECT
+                pid.person_id,
+                episode.episode_id,
+                CASE
+                    WHEN episode.episode_start_date >= DATE '3000-01-01' THEN NULL
+                    ELSE episode.episode_start_date
+                END AS date_of_surgery,
+                ROW_NUMBER() OVER (
+                    PARTITION BY pid.person_id
+                    ORDER BY episode.episode_start_date ASC
+                ) AS surgery_id
+            FROM
+                patient_id_list pid
+            LEFT JOIN {{ cdm_schema }}.episode episode
+                ON pid.person_id = episode.person_id
+            LEFT JOIN primary_tumor
+                ON pid.person_id = primary_tumor.person_id
+            WHERE
+                episode.episode_concept_id = 32939 -- Surgery Episode
+                AND episode.episode_start_date < DATE '3000-01-01'
+                AND episode.episode_start_date >= primary_tumor.diagnosis_date
+        ) s
+        WHERE surgery_id <= 5
     ),
+
+
+    -- Assumption: first surgery intent is the relevant one
+    surgery_intent AS (
+        SELECT
+            episode_id,
+            measurement_concept_id,
+            surgery_intent
+        FROM (
+            SELECT
+                ee.episode_id,
+                m.measurement_concept_id,
+                c.concept_name AS surgery_intent,                
+                ROW_NUMBER() OVER (
+                    PARTITION BY ee.episode_id
+                    ORDER BY m.measurement_date ASC
+                ) AS rn
+            FROM {{ cdm_schema }}.episode episode
+            JOIN {{ cdm_schema }}.episode_event ee
+                ON episode.episode_id = ee.episode_id
+            JOIN {{ cdm_schema }}.procedure_occurrence po
+                ON ee.event_id = po.procedure_occurrence_id
+            JOIN {{ cdm_schema }}.measurement m
+                ON m.measurement_event_id = po.procedure_occurrence_id
+            JOIN {{ cdm_schema }}.concept c
+                ON c.concept_id = m.measurement_concept_id
+            WHERE
+                episode.episode_concept_id = 32939 -- Surgery episode
+                AND m.measurement_concept_id IN (4179711, 4162591)
+        ) si
+        WHERE rn = 1
+    ),
+
+    -- Assumption: first margins after surgery is the relevant one
+    margins_after_surgery AS (
+        SELECT
+            episode_id,
+            measurement_concept_id,
+            margins_after_surgery
+        FROM (
+            SELECT
+                ee.episode_id,
+                m.measurement_concept_id,
+                c.concept_name AS margins_after_surgery,
+                ROW_NUMBER() OVER (
+                    PARTITION BY ee.episode_id
+                    ORDER BY m.measurement_date ASC
+                ) AS rn
+            FROM {{ cdm_schema }}.episode episode
+            JOIN {{ cdm_schema }}.episode_event ee
+                ON episode.episode_id = ee.episode_id
+            JOIN {{ cdm_schema }}.procedure_occurrence po
+                ON ee.event_id = po.procedure_occurrence_id
+            JOIN {{ cdm_schema }}.measurement m
+                ON m.measurement_event_id = po.procedure_occurrence_id
+            JOIN {{ cdm_schema }}.concept c
+                ON c.concept_id = m.measurement_concept_id
+            WHERE
+                episode.episode_concept_id = 32939 -- Surgery episode
+                AND m.measurement_concept_id IN (1634643, 1633801, 1634484)
+        ) mas
+        WHERE rn = 1
+    ),
+
+    surgeries_enriched AS (
+        SELECT
+            surgeries.person_id,
+            surgeries.episode_id,
+            surgeries.date_of_surgery,
+            surgeries.surgery_id,
+            surgery_intent.surgery_intent,
+            margins_after_surgery.margins_after_surgery
+        FROM surgeries surgeries
+        LEFT JOIN surgery_intent surgery_intent
+            ON surgeries.episode_id = surgery_intent.episode_id
+        LEFT JOIN margins_after_surgery margins_after_surgery
+            ON surgeries.episode_id = margins_after_surgery.episode_id
+    ),
+
+    surgeries_wide AS (
+    SELECT
+        person_id,
+
+        -- Surgery 1
+        MAX(CASE WHEN surgery_id = 1 THEN date_of_surgery END)            AS surgery_1_date,
+        MAX(CASE WHEN surgery_id = 1 THEN surgery_intent END)             AS surgery_1_intent,
+        MAX(CASE WHEN surgery_id = 1 THEN margins_after_surgery END)      AS surgery_1_margins_after_surgery,
+
+        -- Surgery 2
+        MAX(CASE WHEN surgery_id = 2 THEN date_of_surgery END)            AS surgery_2_date,
+        MAX(CASE WHEN surgery_id = 2 THEN surgery_intent END)             AS surgery_2_intent,
+        MAX(CASE WHEN surgery_id = 2 THEN margins_after_surgery END)      AS surgery_2_margins_after_surgery,
+
+        -- Surgery 3
+        MAX(CASE WHEN surgery_id = 3 THEN date_of_surgery END)            AS surgery_3_date,
+        MAX(CASE WHEN surgery_id = 3 THEN surgery_intent END)             AS surgery_3_intent,
+        MAX(CASE WHEN surgery_id = 3 THEN margins_after_surgery END)      AS surgery_3_margins_after_surgery,
+
+        -- Surgery 4
+        MAX(CASE WHEN surgery_id = 4 THEN date_of_surgery END)            AS surgery_4_date,
+        MAX(CASE WHEN surgery_id = 4 THEN surgery_intent END)             AS surgery_4_intent,
+        MAX(CASE WHEN surgery_id = 4 THEN margins_after_surgery END)      AS surgery_4_margins_after_surgery,
+
+        -- Surgery 5
+        MAX(CASE WHEN surgery_id = 5 THEN date_of_surgery END)            AS surgery_5_date,
+        MAX(CASE WHEN surgery_id = 5 THEN surgery_intent END)             AS surgery_5_intent,
+        MAX(CASE WHEN surgery_id = 5 THEN margins_after_surgery END)      AS surgery_5_margins_after_surgery
+
+    FROM surgeries_enriched
+    GROUP BY person_id
+    ),
+
 
     -- OBSERVATION table
     person_status AS (
@@ -350,7 +481,7 @@ WITH
                 MAX(
                     CASE
                         WHEN measurement.measurement_concept_id = 36769269
-                            AND measurement.measurement_date = primary_surgery.date_of_surgery
+                            AND measurement.measurement_date = surgeries_wide.surgery_1_date
                         THEN 1 ELSE 0
                     END
                 ),
@@ -361,7 +492,7 @@ WITH
                 MAX(
                     CASE
                         WHEN measurement.measurement_concept_id = 35225724
-                            AND measurement.measurement_date = primary_surgery.date_of_surgery
+                            AND measurement.measurement_date = surgeries_wide.surgery_1_date
                         THEN 1 ELSE 0
                     END
                 ),
@@ -372,7 +503,7 @@ WITH
                 MAX(
                     CASE
                         WHEN measurement.measurement_concept_id = 36769243
-                            AND measurement.measurement_date = primary_surgery.date_of_surgery
+                            AND measurement.measurement_date = surgeries_wide.surgery_1_date
                         THEN 1 ELSE 0
                     END
                 ),
@@ -383,7 +514,7 @@ WITH
                 MAX(
                     CASE
                         WHEN measurement.measurement_concept_id = 36770283
-                            AND measurement.measurement_date = primary_surgery.date_of_surgery
+                            AND measurement.measurement_date = surgeries_wide.surgery_1_date
                         THEN 1 ELSE 0
                     END
                 ),
@@ -394,7 +525,7 @@ WITH
                 MAX(
                     CASE
                         WHEN measurement.measurement_concept_id = 36769301
-                            AND measurement.measurement_date = primary_surgery.date_of_surgery
+                            AND measurement.measurement_date = surgeries_wide.surgery_1_date
                         THEN 1 ELSE 0
                     END
                 ),
@@ -405,7 +536,7 @@ WITH
                 MAX(
                     CASE
                         WHEN measurement.measurement_concept_id = 36770544
-                            AND measurement.measurement_date = primary_surgery.date_of_surgery
+                            AND measurement.measurement_date = surgeries_wide.surgery_1_date
                         THEN 1 ELSE 0
                     END
                 ),
@@ -416,7 +547,7 @@ WITH
                 MAX(
                     CASE
                         WHEN measurement.measurement_concept_id = 35226258
-                            AND measurement.measurement_date = primary_surgery.date_of_surgery
+                            AND measurement.measurement_date = surgeries_wide.surgery_1_date
                         THEN 1 ELSE 0
                     END
                 ),
@@ -427,7 +558,7 @@ WITH
                 MAX(
                     CASE
                         WHEN measurement.measurement_concept_id = 35226253
-                            AND measurement.measurement_date = primary_surgery.date_of_surgery
+                            AND measurement.measurement_date = surgeries_wide.surgery_1_date
                         THEN 1 ELSE 0
                     END
                 ),
@@ -438,7 +569,7 @@ WITH
                 MAX(
                     CASE
                         WHEN measurement.measurement_concept_id = 36768862
-                            AND measurement.measurement_date = primary_surgery.date_of_surgery
+                            AND measurement.measurement_date = surgeries_wide.surgery_1_date
                         THEN 1 ELSE 0
                     END
                 ),
@@ -449,7 +580,7 @@ WITH
                 MAX(
                     CASE
                         WHEN measurement.measurement_concept_id = 36769180
-                            AND measurement.measurement_date = primary_surgery.date_of_surgery
+                            AND measurement.measurement_date = surgeries_wide.surgery_1_date
                         THEN 1 ELSE 0
                     END
                 ),
@@ -460,7 +591,7 @@ WITH
                 MAX(
                     CASE
                         WHEN measurement.measurement_concept_id = 4129922
-                            AND measurement.measurement_date = primary_surgery.date_of_surgery
+                            AND measurement.measurement_date = surgeries_wide.surgery_1_date
                         THEN 1 ELSE 0
                     END
                 ),
@@ -487,8 +618,8 @@ WITH
                 4129922 -- Unknown
             )
         LEFT JOIN
-            primary_surgery
-            ON pid.person_id = primary_surgery.person_id
+            surgeries_wide
+            ON pid.person_id = surgeries_wide.person_id
         GROUP BY
             pid.person_id
     )
@@ -770,7 +901,30 @@ WITH
             ON pid.person_id = primary_tumor.person_id
         GROUP BY
             pid.person_id
-    ),    
+    ),
+
+    pathological_staging_sarcoma AS (
+        SELECT
+            pid.person_id,
+            MAX(
+                CASE WHEN episode.episode_concept_id = 32942 
+                AND episode.episode_start_date = surgeries_wide.surgery_1_date 
+                THEN 1 ELSE 0 END) as pathological_localised,
+            MAX(
+                CASE WHEN episode.episode_concept_id = 32943 
+                AND episode.episode_start_date = surgeries_wide.surgery_1_date 
+                THEN 1 ELSE 0 END) as pathological_loco_regional
+        FROM
+            patient_id_list pid
+        LEFT JOIN
+            {{ cdm_schema }}.episode episode
+            ON pid.person_id = episode.person_id
+        LEFT JOIN
+            surgeries_wide
+            ON pid.person_id = surgeries_wide.person_id
+        GROUP BY
+            pid.person_id
+    ),
 
     -- MEASUREMENT table
     clinical_number_of_tumor_nodules AS (
@@ -789,6 +943,40 @@ WITH
             measurement.measurement_concept_id = 4228659
             AND measurement.measurement_date = primary_tumor.diagnosis_date
     ),
+
+    pathological_features_sarcoma AS (
+        SELECT
+            pid.person_id,
+            MAX(
+                CASE 
+                WHEN measurement.measurement_concept_id = 4228659 
+                AND measurement.measurement_date = surgeries_wide.surgery_1_date
+                THEN measurement.value_as_number END
+            ) as pathological_number_of_tumor_nodules,
+            MAX(
+                CASE 
+                WHEN measurement.measurement_concept_id = 36769249 
+                AND measurement.measurement_date = surgeries_wide.surgery_1_date
+                THEN 1 ELSE 0 END
+            ) as pathological_is_transit_metastasis_with_clinical_confirmation,
+            MAX(
+                CASE 
+                WHEN measurement.measurement_concept_id = 36769933 
+                AND measurement.measurement_date = surgeries_wide.surgery_1_date
+                THEN 1 ELSE 0 END
+            ) as pathological_is_multifocal_tumor
+        FROM
+            patient_id_list pid
+        LEFT JOIN
+            {{ cdm_schema }}.measurement measurement
+            ON pid.person_id = measurement.person_id
+        LEFT JOIN
+            surgeries_wide
+            ON pid.person_id = surgeries_wide.person_id
+        GROUP BY
+            pid.person_id
+    ),
+
 
     -- EPISODE table
     last_contact AS (
@@ -815,18 +1003,33 @@ WITH
 -- Construct final table
 ----------------------------------------------------------------------------------------
 SELECT
-
+    
     person.person_id                                as patient_id,
     COALESCE(person.sex, 'N/A')                     as sex,
     person.year_of_birth                            as year_of_birth,
     primary_tumor.diagnosis_date                    as diagnosis_date,
     primary_tumor.age_at_diagnosis                  as age_at_diagnosis,
-    primary_surgery.date_of_surgery                 as date_of_surgery,
     COALESCE(primary_tumor.diagnosis_code, 'N/A')   as diagnosis_code,
     COALESCE(primary_tumor.morphology, 'N/A')       as morphology,
     COALESCE(primary_tumor.topography, 'N/A')       as topography,
     COALESCE(person_status.status, 'N/A')           as life_status,
     person_status.date                              as life_status_date,
+
+    surgeries_wide.surgery_1_date                                   as surgery_1_date,
+    COALESCE(surgeries_wide.surgery_1_intent, 'N/A')                as surgery_1_intent,
+    COALESCE(surgeries_wide.surgery_1_margins_after_surgery, 'N/A') as surgery_1_margins_after_surgery,
+    surgeries_wide.surgery_2_date                                   as surgery_2_date,
+    COALESCE(surgeries_wide.surgery_2_intent, 'N/A')                as surgery_2_intent,
+    COALESCE(surgeries_wide.surgery_2_margins_after_surgery, 'N/A') as surgery_2_margins_after_surgery,
+    surgeries_wide.surgery_3_date                                   as surgery_3_date,
+    COALESCE(surgeries_wide.surgery_3_intent, 'N/A')                as surgery_3_intent,
+    COALESCE(surgeries_wide.surgery_3_margins_after_surgery, 'N/A') as surgery_3_margins_after_surgery,
+    surgeries_wide.surgery_4_date                                   as surgery_4_date,
+    COALESCE(surgeries_wide.surgery_4_intent, 'N/A')                as surgery_4_intent,
+    COALESCE(surgeries_wide.surgery_4_margins_after_surgery, 'N/A') as surgery_4_margins_after_surgery,
+    surgeries_wide.surgery_5_date                                   as surgery_5_date,
+    COALESCE(surgeries_wide.surgery_5_intent, 'N/A')                as surgery_5_intent,
+    COALESCE(surgeries_wide.surgery_5_margins_after_surgery, 'N/A') as surgery_5_margins_after_surgery,
 
     clinical_staging_flags.is_transit_metastasis_with_clinical_confirmation as clinical_is_transit_metastasis_with_clinical_confirmation,
     clinical_staging_flags.is_multifocal_tumor               as clinical_is_multifocal_tumor,
@@ -866,12 +1069,17 @@ SELECT
 {% endif %}
 
 {% if is_sarcoma %},
-    COALESCE(biopsy.type_of_biopsy, 'N/A')          as type_of_biopsy,
-    biopsy.date_of_biopsy                           as date_of_biopsy,
-    clinical_staging_sarcoma.clinical_localised     as clinical_localised,
-    clinical_number_of_tumor_nodules.number_of_tumor_nodules as number_of_tumor_nodules,
-    clinical_staging_sarcoma.clinical_loco_regional as clinical_loco_regional,
-    last_contact.last_contact                       as last_contact
+    COALESCE(biopsy.type_of_biopsy, 'N/A')                      as type_of_biopsy,
+    -- biopsy.date_of_biopsy                                       as date_of_biopsy,
+    clinical_staging_sarcoma.clinical_localised                 as clinical_localised,
+    clinical_number_of_tumor_nodules.number_of_tumor_nodules    as clinical_number_of_tumor_nodules,
+    clinical_staging_sarcoma.clinical_loco_regional             as clinical_loco_regional,
+    pathological_staging_sarcoma.pathological_localised         as pathological_localised,
+    pathological_staging_sarcoma.pathological_loco_regional     as pathological_loco_regional,
+    pathological_features_sarcoma.pathological_number_of_tumor_nodules                              as pathological_number_of_tumor_nodules,
+    pathological_features_sarcoma.pathological_is_transit_metastasis_with_clinical_confirmation     as pathological_is_transit_metastasis_with_clinical_confirmation,
+    pathological_features_sarcoma.pathological_is_multifocal_tumor                                  as pathological_is_multifocal_tumor
+    -- last_contact.last_contact                                   as last_contact
 {% endif %}
 
 FROM
@@ -879,9 +1087,6 @@ FROM
 LEFT JOIN
     primary_tumor
     ON person.person_id = primary_tumor.person_id
-LEFT JOIN
-    primary_surgery
-    ON person.person_id = primary_surgery.person_id
 LEFT JOIN
     person_status
     ON person.person_id = person_status.person_id
@@ -891,6 +1096,9 @@ LEFT JOIN
 LEFT JOIN
     pathological_staging_flags
     ON person.person_id = pathological_staging_flags.person_id
+LEFT JOIN
+    surgeries_wide
+    ON person.person_id = surgeries_wide.person_id
 
 {% if is_head_and_neck %}
 LEFT JOIN
@@ -929,6 +1137,12 @@ LEFT JOIN
 LEFT JOIN
     clinical_number_of_tumor_nodules
     ON person.person_id = clinical_number_of_tumor_nodules.person_id
+LEFT JOIN
+    pathological_staging_sarcoma
+    ON person.person_id = pathological_staging_sarcoma.person_id
+LEFT JOIN
+    pathological_features_sarcoma
+    ON person.person_id = pathological_features_sarcoma.person_id
 LEFT JOIN
     last_contact
     ON person.person_id = last_contact.person_id

@@ -10,7 +10,10 @@ dependencies = [
     "pandas==2.3.3",
     "pyarrow",
     "parquet-tools",
-    "rpy2",
+    # Python 3.13 requires rpy2 3.6.x
+    "rpy2==3.6.6",
+    "rpy2-rinterface==3.6.5",
+    "rpy2-robjects==3.6.4",
     "numpy==1.26.4",
     "ohdsi-common",
     "ohdsi-database-connector",

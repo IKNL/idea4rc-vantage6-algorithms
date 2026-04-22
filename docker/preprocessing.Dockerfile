@@ -1,10 +1,12 @@
-FROM harbor2.vantage6.ai/infrastructure/algorithm-base:5.0
+FROM ghcr.io/iknl/infrastructure/algorithm-base:idea4rc-5.0
 
 # This is a placeholder that should be overloaded by invoking
 # docker build with '--build-arg PKG_NAME=...'
 ARG PKG_NAME="v6_preprocessing"
 
 # install federated algorithm
+COPY ../v6-idea4rc-common /deps/v6-idea4rc-common
+RUN pip install /deps/v6-idea4rc-common
 COPY v6-preprocessing /app
 RUN pip install /app
 

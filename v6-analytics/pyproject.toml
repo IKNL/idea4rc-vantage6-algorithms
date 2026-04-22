@@ -6,14 +6,11 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "vantage6-algorithm-tools==5.0.0b1",
+    "v6-idea4rc-common",
     "pandas==2.3.3",
     "pyarrow",
     "parquet-tools",
-    "rpy2",
     "numpy==1.26.4",
-    "ohdsi-common",
-    "ohdsi-database-connector",
-    "ohdsi-sqlrender",
     "scipy",
     "statsmodels",
     "formulaic",
@@ -21,6 +18,9 @@ dependencies = [
 
 [tool.setuptools]
 packages = ["v6-analytics"]
+
+[tool.uv.sources]
+v6-idea4rc-common = { path = "../v6-idea4rc-common" }
 
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]

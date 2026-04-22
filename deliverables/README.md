@@ -264,12 +264,12 @@ Variable|Type|Status|Notes
 `radio_total_dose_gy`|`Float64`|*|
 `radio_number_of_fractions`|`Float64`|*|
 `radio_treatment_completed_as_planned`|`CategoricalDtype`|*|
-`systemic_type_of_systemic_treatment`|`CategoricalDtype`|*|
-`systemic_start_date_systemic_treatment`|`datetime64[ns, tz]`|*|
-`systemic_end_date_systemic_treatment`|`datetime64[ns, tz]`|*|
-`systemic_regimen`|`CategoricalDtype`|*|
-`systemic_reason_for_end_of_treatment`|`CategoricalDtype`|*|
-`drugs_for_treatments`|???|*|
+`systemic_type_of_systemic_treatment`|`CategoricalDtype`|🆕|`concept_name` of `procedure_occurrence.procedure_concept_id` where `procedure_occurrence_id` is equal to `episode_event.event_id` and `episode_event.episode_id` is equal to `episode.episode_id` where `episode.episode_concept_id = 32531`
+`systemic_start_date_systemic_treatment`|`datetime64[ns, tz]`|🆕|`episode_start_date` of `episode.episode_concept_id = 32531`
+`systemic_end_date_systemic_treatment`|`datetime64[ns, tz]`|🆕|`episode_end_date` of `episode.episode_concept_id = 32531`
+`systemic_regimen`|`CategoricalDtype`|🆕|`episode_object_concept_id` of `episode.episode_concept_id = 32531`
+`systemic_reason_for_end_of_treatment`|`CategoricalDtype`|🆕|`concept_name` of `observation.observation_concept_id` where `observation_concept_id` is one of `44788181`, `4162594`, `2000100030`, `4240582`, `37017062`, `4306655` and `observation_event_id` is equal to `procedure_occurrence.procedure_occurrence_id` which is equal to `episode_event.event_id` and `episode_event.episode_id` is equal to `episode.episode_id` where `episode.episode_concept_id = 32531`
+`drugs_for_treatments`|???|🆕|`concept_name` of `drug_exposure.drug_concept_id` where `drug_exposure_start_date` is equal to `systemic_start_date_systemic_treatment` and `drug_exposure_end_date` is equal to `systemic_end_date_systemic_treatment` ⚠️ There can be multiple drugs associated with each systemic treatment, we need to define a fixed number 
 `overall_treatment_response_response`|`CategoricalDtype`|*|
 `overall_treatment_response_defined_done`|???||
 Overall treatment response date|???| Still needs to be defined by Unai|
@@ -300,6 +300,14 @@ Overall treatment response date|???| Still needs to be defined by Unai|
 
 ** Assuming that `date_of_surgery` refers to the date of the surgery performed at the primary tumor stage (first surgery), excluding any procedures related to recurrences.
 
+### Treatment settings 🆕
+Treatment|Description|Notes
+--|--|--
+Primary surgery|Surgery performed at the diagnosis|First episode after diagnosis in the EPISODE table where `episode_concept_id = 32939`
+Neo-adjuvant/pre-operative|After the diagnosis but before primary surgery|`episode_start_date` where `episode.episode_concept_id = 32533` (diagnosis date) < treatment date < first `episode_start_date` where `episode.episode_concept_id = 32939` (primary surgery)
+Adjuvant/post-operative|After surgery before recurrence|first `episode_start_date` where `episode.episode_concept_id = 32939` (primary surgery) < treatment date < first `episode_start_date` where `episode.episode_concept_id` is one of `32948`, `2000100002` (first progression or recurrence)
+Recurrence|After first recurrence| treatment date > first `episode_start_date` where `episode.episode_concept_id` is one of `32948`, `2000100002` (first progression or recurrence). If we need to extract treatments for a specific recurrence, we should check that they occur between two episodes where `episode.episode_concept_id` is one of `32948`, `2000100002`
+
 ## Head and Neck variables
 Variable|Type|Status|Notes
 --|--|--|--
@@ -314,10 +322,10 @@ Variable|Type|Status|Notes
 `clinical_stage_cn`|`CategoricalDtype`|✅|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `1635104`, `1633679`, `1634797`, `1633315`, `1633942`, `1634070`, `1635697`, `1634139`, `1633651`, `1635470`, `1635634`, `1633763`, `1634143`, `1635739`, `1633788`, `1633433`, `1635677`, `1633323`, `1634678`, `1634727`, `1633271`, `1635605`, `1634037`, `1633854`, `1633434`, `1635004`, `1635496`, `1635283`, `1635084`, `1635828`.
 `clinical_stage_cm`|`CategoricalDtype`|✅|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `1634194`, `1633468`, `1634757`, `1634829`, `1633276`, `1633974`.
 `clinical_stage_extra_nodal_extension`|`CategoricalDtype`|3|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `36769946`, `36770618`.
-`surgery_extra_nodal_extension`|`CategoricalDtype`|*|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `36769946`, `36770618`.
-`neck_surgery`|`CategoricalDtype`|*|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `4188539`, `4188540`.
-`laterality_of_the_dissection`|`CategoricalDtype`|*|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `4112106`, `4117496`, `4112107`.
-`date_of_neck_surgery`|`datetime64[ns,tz]`|*||
+`surgery_extra_nodal_extension`|`CategoricalDtype`|🆕|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `36769946`, `36770618` and `measurement_event_id` is equal to `procedure_occurrence.procedure_occurrence_id` which is equal to `episode_event.event_id` and `episode_event.episode_id` is equal to `episode.episode_id` where `episode.episode_concept_id = 32939`
+`neck_surgery`|`CategoricalDtype`|🆕|`concept_name` of `procedure_occurrence.procedure_concept_id` where `procedure_concept_id` is equal to `4291481` and `procedure_occurrence_id` is equal to `episode_event.event_id` and `episode_event.episode_id` is equal to `episode.episode_id` where `episode.episode_concept_id = 32939` ⚠️ Maybe this can be represented as a boolean, since only one concept_id is used: `TRUE` if present and `FALSE` if not.
+`laterality_of_the_dissection`|`CategoricalDtype`|🆕|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `4112106`, `4117496`, `4112107` and `measurement_event_id` is equal to `procedure_occurrence.procedure_occurrence_id` which is equal to `episode_event.event_id` and `procedure_occurrence.procedure_concept_id = 4291481` and `episode_event.episode_id` is equal to `episode.episode_id` where `episode.episode_concept_id = 32939`
+`date_of_neck_surgery`|`datetime64[ns,tz]`|🆕|`procedure_date` of `procedure_occurrence.procedure_concept_id = 4291481` where `procedure_occurrence_id` is equal to `episode_event.event_id` and `episode_event.episode_id` is equal to `episode.episode_id` where `episode.episode_concept_id = 32939`
 `radio_beam_quality`|`CategoricalDtype`|*|
 `radio_total_high_dose`|`Float64`|*|
 `radio_treatment_site_primary_only`|`boolean`|*|
@@ -325,8 +333,8 @@ Variable|Type|Status|Notes
 `radio_treatment_site_primary_and_ipsilateral_neck`|`boolean`|*|
 `radio_treatment_site_primary_and_bilateral_neck`|`boolean`|*|
 `radio_treatment_site_distant_metastasis`|`boolean`|*|
-`systemic_intent`|`CategoricalDtype`|*|
-`systemic_setting`|`CategoricalDtype`|*|
+`systemic_intent`|`CategoricalDtype`|🆕|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `4179711`, `4162591` and `measurement_event_id` is equal to `procedure_occurrence.procedure_occurrence_id` which is equal to `episode_event.event_id` and `episode_event.episode_id` is equal to `episode.episode_id` where `episode.episode_concept_id = 32531`
+`systemic_setting`|`CategoricalDtype`|🆕|This will be derived using dates
 
 
 ## Sarcoma variables
