@@ -55,11 +55,11 @@ WITH
 
     -- Define the list of patient IDs to analyze
     patient_id_list AS (
-        SELECT 
-            DISTINCT person_id 
+        SELECT DISTINCT 
+            t.person_id as person_id
         FROM 
             (VALUES {{ patient_ids }}) AS t(person_id)
-        JOIN -- we inner join to remove patients that are not in the cohort.
+        JOIN 
             {{ cdm_schema }}.person person
             ON t.person_id = person.person_id
     ),
