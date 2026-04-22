@@ -262,7 +262,8 @@ def convert_sarcoma_columns(df: pd.DataFrame) -> pd.DataFrame:
     df = _to_int64(
         df, 
         [
-            "number_of_tumor_nodules"
+            "number_of_tumor_nodules",
+            "pathological_number_of_tumor_nodules",
         ],
     )
 
@@ -279,9 +280,10 @@ def convert_sarcoma_columns(df: pd.DataFrame) -> pd.DataFrame:
         [
             "clinical_localised",
             "clinical_loco_regional",
-        ],
+            "pathological_localised",
+            "pathological_loco_regional",
+            "pathological_is_transit_metastasis_with_clinical_confirmation",
+            "pathological_is_multifocal_tumor",
+        ]
     )
     return df
-
-
-
