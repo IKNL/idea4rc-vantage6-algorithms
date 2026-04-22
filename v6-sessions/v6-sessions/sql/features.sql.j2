@@ -1070,16 +1070,16 @@ SELECT
 
 {% if is_sarcoma %},
     COALESCE(biopsy.type_of_biopsy, 'N/A')                      as type_of_biopsy,
-    biopsy.date_of_biopsy                                       as date_of_biopsy,
+    -- biopsy.date_of_biopsy                                       as date_of_biopsy,
     clinical_staging_sarcoma.clinical_localised                 as clinical_localised,
-    clinical_number_of_tumor_nodules.number_of_tumor_nodules    as number_of_tumor_nodules,
+    clinical_number_of_tumor_nodules.number_of_tumor_nodules    as clinical_number_of_tumor_nodules,
     clinical_staging_sarcoma.clinical_loco_regional             as clinical_loco_regional,
     pathological_staging_sarcoma.pathological_localised         as pathological_localised,
     pathological_staging_sarcoma.pathological_loco_regional     as pathological_loco_regional,
     pathological_features_sarcoma.pathological_number_of_tumor_nodules                              as pathological_number_of_tumor_nodules,
     pathological_features_sarcoma.pathological_is_transit_metastasis_with_clinical_confirmation     as pathological_is_transit_metastasis_with_clinical_confirmation,
-    pathological_features_sarcoma.pathological_is_multifocal_tumor                                  as pathological_is_multifocal_tumor,
-    last_contact.last_contact                                   as last_contact
+    pathological_features_sarcoma.pathological_is_multifocal_tumor                                  as pathological_is_multifocal_tumor
+    -- last_contact.last_contact                                   as last_contact
 {% endif %}
 
 FROM
