@@ -5,6 +5,8 @@ FROM ghcr.io/iknl/infrastructure/algorithm-base:idea4rc-5.0
 ARG PKG_NAME="v6_preprocessing"
 
 # install federated algorithm
+COPY ../v6-idea4rc-common /deps/v6-idea4rc-common
+RUN pip install /deps/v6-idea4rc-common
 COPY v6-preprocessing /app
 RUN pip install /app
 

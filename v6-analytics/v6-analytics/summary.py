@@ -1,3 +1,4 @@
+import copy
 import json
 from enum import Enum
 from typing import Any
@@ -178,7 +179,7 @@ def _aggregate_partial_summaries(results: list[dict], lookup_organizations) -> d
         The partial summaries of all nodes.
     """
     info("Aggregating partial summaries")
-    aggregate = {}
+   
     is_first = True
 
     def _merge_numeric_bound(
@@ -278,6 +279,10 @@ def _aggregate_partial_summaries(results: list[dict], lookup_organizations) -> d
 
             is_first = False
             continue
+
+        # add the partial results to the aggregate, which is ofc not really an 
+        # aggregation, but it is needed for the API. of RAVEN.
+        aggregate["partials"] = copy.deepcopy(results)
 
         # aggregate data for numeric columns
         for column in result["numeric"]:

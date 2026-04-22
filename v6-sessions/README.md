@@ -28,7 +28,7 @@ In case you want to push it to the registry, you can do so with:
 make image PUSH_REG=true
 ```
 
-This pushes the image to the `harbor2.vantage6.ai/idea4rc/sessions` registry. It tags
+This pushes the image to the `ghcr.io/iknl/sessions` registry. It tags
 this image both with `latest` and the version number in the format
 `${TAG}-v6-${VANTAGE6_VERSION}`. Both the `TAG` and `VANTAGE6_VERSION` need to be set
 in the `Makefile`.

@@ -2,7 +2,7 @@
     "name": "v6-idea4rc-analytics",
     "reviews": [],
     "partitioning": "horizontal",
-    "image": "harbor2.vantage6.ai/idea4rc/analytics",
+    "image": "ghcr.io/iknl/analytics",
     "documentation_url": "https://github.com/idea4rc/v6-analytics",
     "description": "This algorithm computes summary statistics for a set of cohorts",
     "vantage6_version": "5.0.0a41",

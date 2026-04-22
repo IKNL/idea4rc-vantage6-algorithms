@@ -12,6 +12,8 @@
 -- 1.2      | F. Martin      | 2026-03-10    | Introduced flexible feature selection,
 --          |                |               | using Jinja2 template.
 -- -------------------------------------------------------------------------------------
+-- 1.3      | F. Martin      | 2026-04-22    | Selected only patients that are in the
+--          |                |               | cohort.
 --
 ----------------------------------------------------------------------------------------
 -- BASIC FEATURES
@@ -53,7 +55,13 @@ WITH
 
     -- Define the list of patient IDs to analyze
     patient_id_list AS (
-        SELECT person_id FROM (VALUES {{ patient_ids }}) AS t(person_id)
+        SELECT DISTINCT 
+            t.person_id as person_id
+        FROM 
+            (VALUES {{ patient_ids }}) AS t(person_id)
+        JOIN 
+            {{ cdm_schema }}.person person
+            ON t.person_id = person.person_id
     ),
 
     -- PERSON table
@@ -117,7 +125,10 @@ WITH
             SELECT
                 pid.person_id,
                 episode.episode_id,
-                episode.episode_start_date AS date_of_surgery,
+                CASE
+                    WHEN episode.episode_start_date >= DATE '3000-01-01' THEN NULL
+                    ELSE episode.episode_start_date
+                END AS date_of_surgery,
                 ROW_NUMBER() OVER (
                     PARTITION BY pid.person_id
                     ORDER BY episode.episode_start_date ASC
@@ -130,6 +141,7 @@ WITH
                 ON pid.person_id = primary_tumor.person_id
             WHERE
                 episode.episode_concept_id = 32939 -- Surgery Episode
+                AND episode.episode_start_date < DATE '3000-01-01'
                 AND episode.episode_start_date >= primary_tumor.diagnosis_date
         ) s
         WHERE surgery_id <= 5
@@ -991,7 +1003,7 @@ WITH
 -- Construct final table
 ----------------------------------------------------------------------------------------
 SELECT
-
+    
     person.person_id                                as patient_id,
     COALESCE(person.sex, 'N/A')                     as sex,
     person.year_of_birth                            as year_of_birth,
@@ -1058,16 +1070,16 @@ SELECT
 
 {% if is_sarcoma %},
     COALESCE(biopsy.type_of_biopsy, 'N/A')                      as type_of_biopsy,
-    biopsy.date_of_biopsy                                       as date_of_biopsy,
+    -- biopsy.date_of_biopsy                                       as date_of_biopsy,
     clinical_staging_sarcoma.clinical_localised                 as clinical_localised,
-    clinical_number_of_tumor_nodules.number_of_tumor_nodules    as number_of_tumor_nodules,
+    clinical_number_of_tumor_nodules.number_of_tumor_nodules    as clinical_number_of_tumor_nodules,
     clinical_staging_sarcoma.clinical_loco_regional             as clinical_loco_regional,
     pathological_staging_sarcoma.pathological_localised         as pathological_localised,
     pathological_staging_sarcoma.pathological_loco_regional     as pathological_loco_regional,
     pathological_features_sarcoma.pathological_number_of_tumor_nodules                              as pathological_number_of_tumor_nodules,
     pathological_features_sarcoma.pathological_is_transit_metastasis_with_clinical_confirmation     as pathological_is_transit_metastasis_with_clinical_confirmation,
-    pathological_features_sarcoma.pathological_is_multifocal_tumor                                  as pathological_is_multifocal_tumor,
-    last_contact.last_contact                                   as last_contact
+    pathological_features_sarcoma.pathological_is_multifocal_tumor                                  as pathological_is_multifocal_tumor
+    -- last_contact.last_contact                                   as last_contact
 {% endif %}
 
 FROM

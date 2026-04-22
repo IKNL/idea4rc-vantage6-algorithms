@@ -122,6 +122,11 @@ def __create_cohort_dataframe(
             "life_status_date",
             "date_of_biopsy",
             "last_contact",
+            "surgery_1_date",
+            "surgery_2_date",
+            "surgery_3_date",
+            "surgery_4_date",
+            "surgery_5_date",
         ])
     except Exception as e:
         error(f"Failed to convert dataframe: {e}")
@@ -146,6 +151,13 @@ def __create_cohort_dataframe(
         "keeping the first occurrence. If this number is not 0, please check the data "
         "or adjust the SQL query."
     )
+
+    info(f"Number of rows in dataframe: {len(sub_df)}")
+
+    # Once we checked that there are no duplicates, we can remove
+    # the patient_id column.
+    sub_df = sub_df.drop(columns=["patient_id"])
+    info("Removed patient_id column from dataframe")
 
     info(f"Converting column types for features: {features}")
     sub_df = convert_base_columns(sub_df)
@@ -262,18 +274,18 @@ def convert_sarcoma_columns(df: pd.DataFrame) -> pd.DataFrame:
     df = _to_int64(
         df, 
         [
-            "number_of_tumor_nodules",
+            "clinical_number_of_tumor_nodules",
             "pathological_number_of_tumor_nodules",
         ],
     )
 
-    df = _to_datetime(
-        df,
-        [
-            "date_of_biopsy",
-            "last_contact",
-        ],
-    )
+    # df = _to_datetime(
+    #     df,
+    #     [
+    #         "date_of_biopsy",
+    #         "last_contact",
+    #     ],
+    # )
 
     df = _to_boolean(
         df,
