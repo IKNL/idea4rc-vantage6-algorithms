@@ -180,7 +180,17 @@ def convert_base_columns(df: pd.DataFrame) -> pd.DataFrame:
             "diagnosis_code",
             "morphology",
             "topography",
-            "life_status"
+            "life_status",
+            "surgery_1_intent",
+            "surgery_1_margins_after_surgery",
+            "surgery_2_intent",
+            "surgery_2_margins_after_surgery",
+            "surgery_3_intent",
+            "surgery_3_margins_after_surgery",
+            "surgery_4_intent",
+            "surgery_4_margins_after_surgery",
+            "surgery_5_intent",
+            "surgery_5_margins_after_surgery",
         ],
     )
 
@@ -191,7 +201,11 @@ def convert_base_columns(df: pd.DataFrame) -> pd.DataFrame:
         [
             "diagnosis_date",
             "life_status_date",
-            "date_of_surgery",
+            "surgery_1_date",
+            "surgery_2_date",
+            "surgery_3_date",
+            "surgery_4_date",
+            "surgery_5_date",
         ],
     )
 
