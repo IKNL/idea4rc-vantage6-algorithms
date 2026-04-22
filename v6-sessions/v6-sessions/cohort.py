@@ -147,9 +147,12 @@ def __create_cohort_dataframe(
         "or adjust the SQL query."
     )
 
+    info(f"Number of rows in dataframe: {len(sub_df)}")
+
     # Once we checked that there are no duplicates, we can remove
     # the patient_id column.
     sub_df = sub_df.drop(columns=["patient_id"])
+    info("Removed patient_id column from dataframe")
 
     info(f"Converting column types for features: {features}")
     sub_df = convert_base_columns(sub_df)
