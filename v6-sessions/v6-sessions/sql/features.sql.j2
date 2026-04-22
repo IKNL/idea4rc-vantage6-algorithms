@@ -960,7 +960,7 @@ SELECT
     COALESCE(surgeries_wide.surgery_4_margins_after_surgery, 'N/A') as surgery_4_margins_after_surgery,
     surgeries_wide.surgery_5_date                                   as surgery_5_date,
     COALESCE(surgeries_wide.surgery_5_intent, 'N/A')                as surgery_5_intent,
-    COALESCE(surgeries_wide.surgery_5_margins_after_surgery, 'N/A') as surgery_5_margins_after_surgery
+    COALESCE(surgeries_wide.surgery_5_margins_after_surgery, 'N/A') as surgery_5_margins_after_surgery,
 
     clinical_staging_flags.is_transit_metastasis_with_clinical_confirmation as clinical_is_transit_metastasis_with_clinical_confirmation,
     clinical_staging_flags.is_multifocal_tumor               as clinical_is_multifocal_tumor,
