@@ -477,7 +477,7 @@ WITH
                 MAX(
                     CASE
                         WHEN measurement.measurement_concept_id = 36769269
-                            AND measurement.measurement_date = primary_surgery.date_of_surgery
+                            AND measurement.measurement_date = surgeries_wide.surgery_1_date
                         THEN 1 ELSE 0
                     END
                 ),
@@ -488,7 +488,7 @@ WITH
                 MAX(
                     CASE
                         WHEN measurement.measurement_concept_id = 35225724
-                            AND measurement.measurement_date = primary_surgery.date_of_surgery
+                            AND measurement.measurement_date = surgeries_wide.surgery_1_date
                         THEN 1 ELSE 0
                     END
                 ),
@@ -499,7 +499,7 @@ WITH
                 MAX(
                     CASE
                         WHEN measurement.measurement_concept_id = 36769243
-                            AND measurement.measurement_date = primary_surgery.date_of_surgery
+                            AND measurement.measurement_date = surgeries_wide.surgery_1_date
                         THEN 1 ELSE 0
                     END
                 ),
@@ -510,7 +510,7 @@ WITH
                 MAX(
                     CASE
                         WHEN measurement.measurement_concept_id = 36770283
-                            AND measurement.measurement_date = primary_surgery.date_of_surgery
+                            AND measurement.measurement_date = surgeries_wide.surgery_1_date
                         THEN 1 ELSE 0
                     END
                 ),
@@ -521,7 +521,7 @@ WITH
                 MAX(
                     CASE
                         WHEN measurement.measurement_concept_id = 36769301
-                            AND measurement.measurement_date = primary_surgery.date_of_surgery
+                            AND measurement.measurement_date = surgeries_wide.surgery_1_date
                         THEN 1 ELSE 0
                     END
                 ),
@@ -532,7 +532,7 @@ WITH
                 MAX(
                     CASE
                         WHEN measurement.measurement_concept_id = 36770544
-                            AND measurement.measurement_date = primary_surgery.date_of_surgery
+                            AND measurement.measurement_date = surgeries_wide.surgery_1_date
                         THEN 1 ELSE 0
                     END
                 ),
@@ -543,7 +543,7 @@ WITH
                 MAX(
                     CASE
                         WHEN measurement.measurement_concept_id = 35226258
-                            AND measurement.measurement_date = primary_surgery.date_of_surgery
+                            AND measurement.measurement_date = surgeries_wide.surgery_1_date
                         THEN 1 ELSE 0
                     END
                 ),
@@ -554,7 +554,7 @@ WITH
                 MAX(
                     CASE
                         WHEN measurement.measurement_concept_id = 35226253
-                            AND measurement.measurement_date = primary_surgery.date_of_surgery
+                            AND measurement.measurement_date = surgeries_wide.surgery_1_date
                         THEN 1 ELSE 0
                     END
                 ),
@@ -565,7 +565,7 @@ WITH
                 MAX(
                     CASE
                         WHEN measurement.measurement_concept_id = 36768862
-                            AND measurement.measurement_date = primary_surgery.date_of_surgery
+                            AND measurement.measurement_date = surgeries_wide.surgery_1_date
                         THEN 1 ELSE 0
                     END
                 ),
@@ -576,7 +576,7 @@ WITH
                 MAX(
                     CASE
                         WHEN measurement.measurement_concept_id = 36769180
-                            AND measurement.measurement_date = primary_surgery.date_of_surgery
+                            AND measurement.measurement_date = surgeries_wide.surgery_1_date
                         THEN 1 ELSE 0
                     END
                 ),
@@ -587,7 +587,7 @@ WITH
                 MAX(
                     CASE
                         WHEN measurement.measurement_concept_id = 4129922
-                            AND measurement.measurement_date = primary_surgery.date_of_surgery
+                            AND measurement.measurement_date = surgeries_wide.surgery_1_date
                         THEN 1 ELSE 0
                     END
                 ),
@@ -614,8 +614,8 @@ WITH
                 4129922 -- Unknown
             )
         LEFT JOIN
-            primary_surgery
-            ON pid.person_id = primary_surgery.person_id
+            surgeries_wide
+            ON pid.person_id = surgeries_wide.person_id
         GROUP BY
             pid.person_id
     )
@@ -948,7 +948,6 @@ SELECT
     person.year_of_birth                            as year_of_birth,
     primary_tumor.diagnosis_date                    as diagnosis_date,
     primary_tumor.age_at_diagnosis                  as age_at_diagnosis,
-    primary_surgery.date_of_surgery                 as date_of_surgery,
     COALESCE(primary_tumor.diagnosis_code, 'N/A')   as diagnosis_code,
     COALESCE(primary_tumor.morphology, 'N/A')       as morphology,
     COALESCE(primary_tumor.topography, 'N/A')       as topography,
@@ -969,7 +968,7 @@ SELECT
     COALESCE(surgeries_wide.surgery_4_margins_after_surgery, 'N/A') as surgery_4_margins_after_surgery,
     surgeries_wide.surgery_5_date                                   as surgery_5_date,
     COALESCE(surgeries_wide.surgery_5_intent, 'N/A')                as surgery_5_intent,
-    COALESCE(surgeries_wide.surgery_5_margins_after_surgery, 'N/A') as surgery_5_margins_after_surgery
+    COALESCE(surgeries_wide.surgery_5_margins_after_surgery, 'N/A') as surgery_5_margins_after_surgery,
 
     clinical_staging_flags.is_transit_metastasis_with_clinical_confirmation as clinical_is_transit_metastasis_with_clinical_confirmation,
     clinical_staging_flags.is_multifocal_tumor               as clinical_is_multifocal_tumor,
@@ -1022,9 +1021,6 @@ FROM
 LEFT JOIN
     primary_tumor
     ON person.person_id = primary_tumor.person_id
-LEFT JOIN
-    primary_surgery
-    ON person.person_id = primary_surgery.person_id
 LEFT JOIN
     person_status
     ON person.person_id = person_status.person_id
