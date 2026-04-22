@@ -125,7 +125,10 @@ WITH
             SELECT
                 pid.person_id,
                 episode.episode_id,
-                episode.episode_start_date AS date_of_surgery,
+                CASE
+                    WHEN episode.episode_start_date >= DATE '3000-01-01' THEN NULL
+                    ELSE episode.episode_start_date
+                END AS date_of_surgery,
                 ROW_NUMBER() OVER (
                     PARTITION BY pid.person_id
                     ORDER BY episode.episode_start_date ASC
@@ -138,6 +141,7 @@ WITH
                 ON pid.person_id = primary_tumor.person_id
             WHERE
                 episode.episode_concept_id = 32939 -- Surgery Episode
+                AND episode.episode_start_date < DATE '3000-01-01'
                 AND episode.episode_start_date >= primary_tumor.diagnosis_date
         ) s
         WHERE surgery_id <= 5
@@ -178,8 +182,8 @@ WITH
     -- Assumption: first margins after surgery is the relevant one
     margins_after_surgery AS (
         SELECT
-            ee.episode_id,
-            m.measurement_concept_id,
+            episode_id,
+            measurement_concept_id,
             margins_after_surgery
         FROM (
             SELECT

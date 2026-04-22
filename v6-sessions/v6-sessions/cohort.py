@@ -122,6 +122,11 @@ def __create_cohort_dataframe(
             "life_status_date",
             "date_of_biopsy",
             "last_contact",
+            "surgery_1_date",
+            "surgery_2_date",
+            "surgery_3_date",
+            "surgery_4_date",
+            "surgery_5_date",
         ])
     except Exception as e:
         error(f"Failed to convert dataframe: {e}")
