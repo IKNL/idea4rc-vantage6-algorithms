@@ -901,7 +901,30 @@ WITH
             ON pid.person_id = primary_tumor.person_id
         GROUP BY
             pid.person_id
-    ),    
+    ),
+
+    pathological_staging_sarcoma AS (
+        SELECT
+            pid.person_id,
+            MAX(
+                CASE WHEN episode.episode_concept_id = 32942 
+                AND episode.episode_start_date = surgeries_wide.surgery_1_date 
+                THEN 1 ELSE 0 END) as pathological_localised,
+            MAX(
+                CASE WHEN episode.episode_concept_id = 32943 
+                AND episode.episode_start_date = surgeries_wide.surgery_1_date 
+                THEN 1 ELSE 0 END) as pathological_loco_regional
+        FROM
+            patient_id_list pid
+        LEFT JOIN
+            {{ cdm_schema }}.episode episode
+            ON pid.person_id = episode.person_id
+        LEFT JOIN
+            surgeries_wide
+            ON pid.person_id = surgeries_wide.person_id
+        GROUP BY
+            pid.person_id
+    ),
 
     -- MEASUREMENT table
     clinical_number_of_tumor_nodules AS (
@@ -920,6 +943,40 @@ WITH
             measurement.measurement_concept_id = 4228659
             AND measurement.measurement_date = primary_tumor.diagnosis_date
     ),
+
+    pathological_features_sarcoma AS (
+        SELECT
+            pid.person_id,
+            MAX(
+                CASE 
+                WHEN measurement.measurement_concept_id = 4228659 
+                AND measurement.measurement_date = surgeries_wide.surgery_1_date
+                THEN measurement.value_as_number END
+            ) as pathological_number_of_tumor_nodules,
+            MAX(
+                CASE 
+                WHEN measurement.measurement_concept_id = 36769249 
+                AND measurement.measurement_date = surgeries_wide.surgery_1_date
+                THEN 1 ELSE 0 END
+            ) as pathological_is_transit_metastasis_with_clinical_confirmation,
+            MAX(
+                CASE 
+                WHEN measurement.measurement_concept_id = 36769933 
+                AND measurement.measurement_date = surgeries_wide.surgery_1_date
+                THEN 1 ELSE 0 END
+            ) as pathological_is_multifocal_tumor
+        FROM
+            patient_id_list pid
+        LEFT JOIN
+            {{ cdm_schema }}.measurement measurement
+            ON pid.person_id = measurement.person_id
+        LEFT JOIN
+            surgeries_wide
+            ON pid.person_id = surgeries_wide.person_id
+        GROUP BY
+            pid.person_id
+    ),
+
 
     -- EPISODE table
     last_contact AS (
@@ -1012,12 +1069,17 @@ SELECT
 {% endif %}
 
 {% if is_sarcoma %},
-    COALESCE(biopsy.type_of_biopsy, 'N/A')          as type_of_biopsy,
-    biopsy.date_of_biopsy                           as date_of_biopsy,
-    clinical_staging_sarcoma.clinical_localised     as clinical_localised,
-    clinical_number_of_tumor_nodules.number_of_tumor_nodules as number_of_tumor_nodules,
-    clinical_staging_sarcoma.clinical_loco_regional as clinical_loco_regional,
-    last_contact.last_contact                       as last_contact
+    COALESCE(biopsy.type_of_biopsy, 'N/A')                      as type_of_biopsy,
+    biopsy.date_of_biopsy                                       as date_of_biopsy,
+    clinical_staging_sarcoma.clinical_localised                 as clinical_localised,
+    clinical_number_of_tumor_nodules.number_of_tumor_nodules    as number_of_tumor_nodules,
+    clinical_staging_sarcoma.clinical_loco_regional             as clinical_loco_regional,
+    pathological_staging_sarcoma.pathological_localised         as pathological_localised,
+    pathological_staging_sarcoma.pathological_loco_regional     as pathological_loco_regional,
+    pathological_features_sarcoma.pathological_number_of_tumor_nodules                              as pathological_number_of_tumor_nodules,
+    pathological_features_sarcoma.pathological_is_transit_metastasis_with_clinical_confirmation     as pathological_is_transit_metastasis_with_clinical_confirmation,
+    pathological_features_sarcoma.pathological_is_multifocal_tumor                                  as pathological_is_multifocal_tumor,
+    last_contact.last_contact                                   as last_contact
 {% endif %}
 
 FROM
@@ -1075,6 +1137,12 @@ LEFT JOIN
 LEFT JOIN
     clinical_number_of_tumor_nodules
     ON person.person_id = clinical_number_of_tumor_nodules.person_id
+LEFT JOIN
+    pathological_staging_sarcoma
+    ON person.person_id = pathological_staging_sarcoma.person_id
+LEFT JOIN
+    pathological_features_sarcoma
+    ON person.person_id = pathological_features_sarcoma.person_id
 LEFT JOIN
     last_contact
     ON person.person_id = last_contact.person_id
