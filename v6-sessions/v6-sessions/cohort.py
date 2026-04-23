@@ -127,6 +127,16 @@ def __create_cohort_dataframe(
             "surgery_3_date",
             "surgery_4_date",
             "surgery_5_date",
+            "pre_operative_systemic_treatment_start_date",
+            "pre_operative_systemic_treatment_end_date",
+            "post_operative_systemic_treatment_1_start_date",
+            "post_operative_systemic_treatment_1_end_date",
+            "post_operative_systemic_treatment_2_start_date",
+            "post_operative_systemic_treatment_2_end_date",
+            "recurrence_systemic_treatment_1_start_date",
+            "recurrence_systemic_treatment_1_end_date",
+            "recurrence_systemic_treatment_2_start_date",
+            "recurrence_systemic_treatment_2_end_date",
         ])
     except Exception as e:
         error(f"Failed to convert dataframe: {e}")
@@ -196,6 +206,21 @@ def convert_base_columns(df: pd.DataFrame) -> pd.DataFrame:
             "surgery_4_margins_after_surgery",
             "surgery_5_intent",
             "surgery_5_margins_after_surgery",
+            "pre_operative_systemic_treatment_regimen",
+            "pre_operative_systemic_treatment_type",
+            "pre_operative_systemic_treatment_reason_for_end_of_treatment",
+            "post_operative_systemic_treatment_1_regimen",
+            "post_operative_systemic_treatment_1_type",
+            "post_operative_systemic_treatment_1_reason_for_end_of_treatment",
+            "post_operative_systemic_treatment_2_regimen",
+            "post_operative_systemic_treatment_2_type",
+            "post_operative_systemic_treatment_2_reason_for_end_of_treatment",
+            "recurrence_systemic_treatment_1_regimen",
+            "recurrence_systemic_treatment_1_type",
+            "recurrence_systemic_treatment_1_reason_for_end_of_treatment",
+            "recurrence_systemic_treatment_2_regimen",
+            "recurrence_systemic_treatment_2_type",
+            "recurrence_systemic_treatment_2_reason_for_end_of_treatment",
         ],
     )
 
@@ -211,6 +236,16 @@ def convert_base_columns(df: pd.DataFrame) -> pd.DataFrame:
             "surgery_3_date",
             "surgery_4_date",
             "surgery_5_date",
+            "pre_operative_systemic_treatment_start_date",
+            "pre_operative_systemic_treatment_end_date",
+            "post_operative_systemic_treatment_1_start_date",
+            "post_operative_systemic_treatment_1_end_date",
+            "post_operative_systemic_treatment_2_start_date",
+            "post_operative_systemic_treatment_2_end_date",
+            "recurrence_systemic_treatment_1_start_date",
+            "recurrence_systemic_treatment_1_end_date",
+            "recurrence_systemic_treatment_2_start_date",
+            "recurrence_systemic_treatment_2_end_date",
         ],
     )
 
@@ -239,7 +274,7 @@ def convert_base_columns(df: pd.DataFrame) -> pd.DataFrame:
             "pathological_peritoneum",
             "pathological_brain",
             "pathological_other_viscera",
-            "pathological_unknown"
+            "pathological_unknown",
         ]
     )
 
