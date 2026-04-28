@@ -594,11 +594,12 @@ A GLM (Generalized Linear Model) lets you model relationships between variables 
 |`max_iterations`|No|No|`numeric`|Do not supply as the default value should be used for now|
 | `organizations_to_include` |No|No| `list[int]` | List of vantage6 organization IDs that need to be included in the analysis|
 
-|Family|`outcome_variable` type|	constraints
-|Gaussian|`Int64` or `Float64`|	Any real value
-|Binomial|`boolean` or `Int64`| In case of `Int64` only `0` and `1`s are allowed in the column.
-|Poisson|`Int64`| Positive Ints
-|Survival|`Int64` or `Float64`|	Any real positive value
+|Family|`outcome_variable` type|constraints|
+|---|---|---|
+|Gaussian|`Int64` or `Float64`|Any real value.|
+|Binomial|`boolean` or `Int64`|In case of `Int64` only `0` and `1`s are allowed in the column.|
+|Poisson|`Int64`|Positive Ints.|
+|Survival|`Int64` or `Float64`|Any real positive value.|
 
 ### CoxPH
 The Cox algorithm looks at how different factors (like age or treatment) change a person’s chance of experiencing something over time, for example dying or having a complication. It tells you whether a factor seems to increase, decrease, or not really affect that chance, while using all the follow-up time information instead of just "event yes/no".
