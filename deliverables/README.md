@@ -576,10 +576,16 @@ A GLM (Generalized Linear Model) lets you model relationships between variables 
 |`formula`|No|No|`str`|A text based formula for extra flexibility, I recommend hiding this at least for now|
 |`categorical_predictors`|No|No|`list[str]`|The column names of the predictor variables that are categorical. In IDEA4RC we do not supply this as the types are clearly defined in the local datasets, so the algorithm can infer them.
 |`category_reference_values`|No|✅|`dict[str, str]`|A dictonairy that contains variable names as keys and the reference value as the value. *For now we do not know which levels each category has, thus the values need to be able to specify as a free text field*. The variable names that are supplied as keys, need to be of type `category`.|
-|`survival_sensor_column`|No*|No*|`str`|The variable name of the survival censor. *Required if the `family` is set to `Survival`. The type of the variable should be `bool`.
+|`survival_sensor_column`|No*|No*|`str`|The variable name of the survival censor. *Required if the `family` is set to `Survival`. The type of the variable should be `bool` or `Int64` only containing 0 and 1s.
 |`tolerance_level`|No|No|`numeric`|Do not supply as the default value should be used for now|
 |`max_iterations`|No|No|`numeric`|Do not supply as the default value should be used for now|
 | `organizations_to_include` |No|No| `list[int]` | List of vantage6 organization IDs that need to be included in the analysis|
+
+|Family|`outcome_variable` type|	constraints
+|Gaussian|`Int64` or `Float64`|	Any real value
+|Binomial|`boolean` or `Int64`| In case of `Int64` only `0` and `1`s are allowed in the column.
+|Poisson|`Int64`| Positive Ints
+|Survival|`Int64` or `Float64`|	Any real positive value
 
 ### CoxPH
 The Cox algorithm looks at how different factors (like age or treatment) change a person’s chance of experiencing something over time, for example dying or having a complication. It tells you whether a factor seems to increase, decrease, or not really affect that chance, while using all the follow-up time information instead of just "event yes/no".
