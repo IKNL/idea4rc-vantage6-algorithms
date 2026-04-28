@@ -10,6 +10,7 @@ This folder contains all documentation required for the vantage6 components to b
 - [Task Creation](#task-creation)
 - [Data Types](#data-types)
 - [Data Extraction](#data-Extraction)
+  - [Basic variables](#basic-variables)
   - [Head and Neck](#head-and-neck-variables)
   - [Sarcoma](#sarcoma-variables)
 - [Authentication](#authentication)
@@ -24,6 +25,9 @@ This folder contains all documentation required for the vantage6 components to b
   - [Merge categories](#merge-categories)
   - [One hot encoding](#one-hot-encoding)
   - [Merge variables](#merge-variables)
+  - [Basic Arithmetic](#basic-arithmetic)
+  - [Drop column](#drop-column)
+  - [To boolean](#to-boolean)
   
 
 ## Introduction
