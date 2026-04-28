@@ -20,6 +20,7 @@ This folder contains all documentation required for the vantage6 components to b
   - [T-test](#t-test)
   - [Kaplan Meier and Log Rank](#kaplan-meier-and-log-rank)
   - [GLM](#glm)
+  - [CoxPH](#coxph)
 - [Preprocessing Algorithms](#preprocessing-algorithms)
   - [Timedelta](#timedelta)
   - [Merge categories](#merge-categories)
