@@ -511,6 +511,14 @@ The input parameters are as follows:
 |---|---|---|---|---|
 |`column`|✅|✅|`str`|The column name to drop.
 
+### To boolean
+
+|Argument|Required|Display as argument|Type|Description|
+|---|---|---|---|---|
+|`column`|✅|✅|`str`|The column to use to compute the boolean value from, should be of `category` type.
+|`output_column`|✅|✅|`str`|The name of the new column.
+|`true_values`|⚠️|✅|`list[str]`|List of categories that are considered to be `true`. If not set, `false_values` should be provided. Can not be used when `false_values` is provided.
+|`false_values`|⚠️|✅|`list[str]`|List of categories that are considered to be `false`. If not set, `true_values` should be provided. Can not be used when `true_values` is provided.
 
 ## Analytics Algorithms 
 
