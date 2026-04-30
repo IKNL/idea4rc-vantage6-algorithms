@@ -669,7 +669,7 @@ WITH
         ) progression_recurrence
         ON pid.person_id = progression_recurrence.person_id
         WHERE episode.episode_concept_id = 32531 -- Systemic therapy episode
-    )
+    ),
 
     systemic_therapy_enriched AS (
         SELECT
@@ -692,7 +692,18 @@ WITH
             ON observation.observation_concept_id = reason_concept.concept_id
             AND observation.observation_concept_id IN (44788181, 4162594, 2000100030, 4240582, 37017062, 4306655)
         ORDER BY stb.person_id, stb.systemic_treatment_start_date ASC
-    )
+    ),
+
+    systemic_therapy_ranked AS (
+        SELECT
+            ste.*,
+            ROW_NUMBER() OVER (
+                PARTITION BY ste.person_id
+                ORDER BY ste.systemic_treatment_start_date
+            ) AS systemic_treatment_row_number
+        FROM
+            systemic_therapy_enriched ste
+    ),
 
     systemic_therapy_wide AS (
         SELECT
@@ -706,34 +717,34 @@ WITH
             MAX(CASE WHEN treatment_setting = 'pre-operative' THEN systemic_treatment_reason_for_end_of_treatment END) AS pre_operative_systemic_treatment_reason_for_end_of_treatment,
 
             -- Post-operative systemic therapy 1
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND ROW_NUMBER() OVER (PARTITION BY person_id ORDER BY systemic_treatment_start_date) = 1 THEN systemic_treatment_start_date END) AS post_operative_systemic_treatment_1_start_date,
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND ROW_NUMBER() OVER (PARTITION BY person_id ORDER BY systemic_treatment_start_date) = 1 THEN systemic_treatment_end_date END) AS post_operative_systemic_treatment_1_end_date,
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND ROW_NUMBER() OVER (PARTITION BY person_id ORDER BY systemic_treatment_start_date) = 1 THEN systemic_treatment_regimen END) AS post_operative_systemic_treatment_1_regimen,
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND ROW_NUMBER() OVER (PARTITION BY person_id ORDER BY systemic_treatment_start_date) = 1 THEN systemic_treatment_type END) AS post_operative_systemic_treatment_1_type,
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND ROW_NUMBER() OVER (PARTITION BY person_id ORDER BY systemic_treatment_start_date) = 1 THEN systemic_treatment_reason_for_end_of_treatment END) AS post_operative_systemic_treatment_1_reason_for_end_of_treatment,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 1 THEN systemic_treatment_start_date END) AS post_operative_systemic_treatment_1_start_date,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 1 THEN systemic_treatment_end_date END) AS post_operative_systemic_treatment_1_end_date,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 1 THEN systemic_treatment_regimen END) AS post_operative_systemic_treatment_1_regimen,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 1 THEN systemic_treatment_type END) AS post_operative_systemic_treatment_1_type,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 1 THEN systemic_treatment_reason_for_end_of_treatment END) AS post_operative_systemic_treatment_1_reason_for_end_of_treatment,
 
             -- Post-operative systemic therapy 2
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND ROW_NUMBER() OVER (PARTITION BY person_id ORDER BY systemic_treatment_start_date) = 2 THEN systemic_treatment_start_date END) AS post_operative_systemic_treatment_2_start_date,
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND ROW_NUMBER() OVER (PARTITION BY person_id ORDER BY systemic_treatment_start_date) = 2 THEN systemic_treatment_end_date END) AS post_operative_systemic_treatment_2_end_date,
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND ROW_NUMBER() OVER (PARTITION BY person_id ORDER BY systemic_treatment_start_date) = 2 THEN systemic_treatment_regimen END) AS post_operative_systemic_treatment_2_regimen,
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND ROW_NUMBER() OVER (PARTITION BY person_id ORDER BY systemic_treatment_start_date) = 2 THEN systemic_treatment_type END) AS post_operative_systemic_treatment_2_type,
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND ROW_NUMBER() OVER (PARTITION BY person_id ORDER BY systemic_treatment_start_date) = 2 THEN systemic_treatment_reason_for_end_of_treatment END) AS post_operative_systemic_treatment_2_reason_for_end_of_treatment,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 2 THEN systemic_treatment_start_date END) AS post_operative_systemic_treatment_2_start_date,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 2 THEN systemic_treatment_end_date END) AS post_operative_systemic_treatment_2_end_date,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 2 THEN systemic_treatment_regimen END) AS post_operative_systemic_treatment_2_regimen,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 2 THEN systemic_treatment_type END) AS post_operative_systemic_treatment_2_type,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 2 THEN systemic_treatment_reason_for_end_of_treatment END) AS post_operative_systemic_treatment_2_reason_for_end_of_treatment,
 
             -- Recurrence systemic therapy 1
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND ROW_NUMBER() OVER (PARTITION BY person_id ORDER BY systemic_treatment_start_date) = 1 THEN systemic_treatment_start_date END) AS recurrence_systemic_treatment_1_start_date,
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND ROW_NUMBER() OVER (PARTITION BY person_id ORDER BY systemic_treatment_start_date) = 1 THEN systemic_treatment_end_date END) AS recurrence_systemic_treatment_1_end_date,
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND ROW_NUMBER() OVER (PARTITION BY person_id ORDER BY systemic_treatment_start_date) = 1 THEN systemic_treatment_regimen END) AS recurrence_systemic_treatment_1_regimen,
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND ROW_NUMBER() OVER (PARTITION BY person_id ORDER BY systemic_treatment_start_date) = 1 THEN systemic_treatment_type END) AS recurrence_systemic_treatment_1_type,
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND ROW_NUMBER() OVER (PARTITION BY person_id ORDER BY systemic_treatment_start_date) = 1 THEN systemic_treatment_reason_for_end_of_treatment END) AS recurrence_systemic_treatment_1_reason_for_end_of_treatment,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 1 THEN systemic_treatment_start_date END) AS recurrence_systemic_treatment_1_start_date,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 1 THEN systemic_treatment_end_date END) AS recurrence_systemic_treatment_1_end_date,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 1 THEN systemic_treatment_regimen END) AS recurrence_systemic_treatment_1_regimen,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 1 THEN systemic_treatment_type END) AS recurrence_systemic_treatment_1_type,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 1 THEN systemic_treatment_reason_for_end_of_treatment END) AS recurrence_systemic_treatment_1_reason_for_end_of_treatment,
 
             -- Recurrence systemic therapy 2
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND ROW_NUMBER() OVER (PARTITION BY person_id ORDER BY systemic_treatment_start_date) = 2 THEN systemic_treatment_start_date END) AS recurrence_systemic_treatment_2_start_date,
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND ROW_NUMBER() OVER (PARTITION BY person_id ORDER BY systemic_treatment_start_date) = 2 THEN systemic_treatment_end_date END) AS recurrence_systemic_treatment_2_end_date,
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND ROW_NUMBER() OVER (PARTITION BY person_id ORDER BY systemic_treatment_start_date) = 2 THEN systemic_treatment_regimen END) AS recurrence_systemic_treatment_2_regimen,
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND ROW_NUMBER() OVER (PARTITION BY person_id ORDER BY systemic_treatment_start_date) = 2 THEN systemic_treatment_type END) AS recurrence_systemic_treatment_2_type,
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND ROW_NUMBER() OVER (PARTITION BY person_id ORDER BY systemic_treatment_start_date) = 2 THEN systemic_treatment_reason_for_end_of_treatment END) AS recurrence_systemic_treatment_2_reason_for_end_of_treatment
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 2 THEN systemic_treatment_start_date END) AS recurrence_systemic_treatment_2_start_date,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 2 THEN systemic_treatment_end_date END) AS recurrence_systemic_treatment_2_end_date,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 2 THEN systemic_treatment_regimen END) AS recurrence_systemic_treatment_2_regimen,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 2 THEN systemic_treatment_type END) AS recurrence_systemic_treatment_2_type,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 2 THEN systemic_treatment_reason_for_end_of_treatment END) AS recurrence_systemic_treatment_2_reason_for_end_of_treatment
         FROM
-            systemic_therapy_enriched
+            systemic_therapy_ranked
         GROUP BY
             person_id
     )

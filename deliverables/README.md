@@ -252,8 +252,8 @@ Variable|Type|Status|Notes
 `sex`|`CategoricalDtype`|✅|`concept_name` of `person.gender_concept_id`
 `year_of_birth`|`Int64`|✅|`person.year_of_birth`
 `diagnosis_date`|`datetime64[ns, tz]`|✅| `episode.episode_start_date` where `episode.episode_concept_id = 32533`
-`age_at_diagnosis`|`Int64`|🐧|Year of `episode.episode_start_date` where `episode.episode_concept_id = 32533` - `person.year_of_birth`
-`diagnosisCode`|`CategoricalDtype`|🐧|`concept_code` of `episode.episode_object_concept_id` where `episode.episode_concept_id = 32533`
+`age_at_diagnosis`|`Int64`|✅|Year of `episode.episode_start_date` where `episode.episode_concept_id = 32533` - `person.year_of_birth`
+`diagnosis_code`|`CategoricalDtype`|✅|`concept_code` of `episode.episode_object_concept_id` where `episode.episode_concept_id = 32533`
 `morphology`|`CategoricalDtype`|✅|First part of `concept_code` of `episode.episode_object_concept_id` where `episode.episode_concept_id = 32533`
 `topography`|`CategoricalDtype`|✅|Second part of `concept_code` of `episode.episode_object_concept_id` where `episode.episode_concept_id = 32533`
 `life_status`|`CategoricalDtype`|✅|`concept_name` of latest observation where `observation.observation_concept_id` is one of `2000100071`, `4230556`, `2000100072`,`2000100073`, `2000100074`, `2000100075`, `4163894`.
@@ -269,11 +269,12 @@ Variable|Type|Status|Notes
 `radio_total_dose_gy`|`Float64`|*|
 `radio_number_of_fractions`|`Float64`|*|
 `radio_treatment_completed_as_planned`|`CategoricalDtype`|*|
-`systemic_type_of_systemic_treatment`|`CategoricalDtype`|🆕|`concept_name` of `procedure_occurrence.procedure_concept_id` where `procedure_occurrence_id` is equal to `episode_event.event_id` and `episode_event.episode_id` is equal to `episode.episode_id` where `episode.episode_concept_id = 32531`
-`systemic_start_date_systemic_treatment`|`datetime64[ns, tz]`|🆕|`episode_start_date` of `episode.episode_concept_id = 32531`
-`systemic_end_date_systemic_treatment`|`datetime64[ns, tz]`|🆕|`episode_end_date` of `episode.episode_concept_id = 32531`
-`systemic_regimen`|`CategoricalDtype`|🆕|`episode_object_concept_id` of `episode.episode_concept_id = 32531`
-`systemic_reason_for_end_of_treatment`|`CategoricalDtype`|🆕|`concept_name` of `observation.observation_concept_id` where `observation_concept_id` is one of `44788181`, `4162594`, `2000100030`, `4240582`, `37017062`, `4306655` and `observation_event_id` is equal to `procedure_occurrence.procedure_occurrence_id` which is equal to `episode_event.event_id` and `episode_event.episode_id` is equal to `episode.episode_id` where `episode.episode_concept_id = 32531`
+`[pre_operative/post_operative/recurrence]_systemic_treatment[_[i]]_type`|`CategoricalDtype`|✅|`concept_name` of `procedure_occurrence.procedure_concept_id` where `procedure_occurrence_id` is equal to `episode_event.event_id` and `episode_event.episode_id` is equal to `episode.episode_id` where `episode.episode_concept_id = 32531`
+`[pre_operative/post_operative/recurrence]_systemic_treatment[_[i]]_start_date`|`datetime64[ns, tz]`|✅|`episode_start_date` of `episode.episode_concept_id = 32531`
+`[pre_operative/post_operative/recurrence]_systemic_treatment[_[i]]_end_date`|`datetime64[ns, tz]`|✅|`episode_end_date` of `episode.episode_concept_id = 32531`
+`[pre_operative/post_operative/recurrence]_systemic_treatment[_[i]]_regimen`|`CategoricalDtype`|✅|`episode_object_concept_id` of `episode.episode_concept_id = 32531`
+`[pre_operative/post_operative/recurrence]_systemic_treatment[_[i]]_reason_for_end_of_treatment`|`CategoricalDtype`|✅|`concept_name` of `observation.observation_concept_id` where `observation_concept_id` is one of `44788181`, `4162594`, `2000100030`, `4240582`, `37017062`, `4306655` and `observation_event_id` is equal to `procedure_occurrence.procedure_occurrence_id` which is equal to `episode_event.event_id` and `episode_event.episode_id` is equal to `episode.episode_id` where `episode.episode_concept_id = 32531`
+
 `drugs_for_treatments`|???|🆕|`concept_name` of `drug_exposure.drug_concept_id` where `drug_exposure_start_date` is equal to `systemic_start_date_systemic_treatment` and `drug_exposure_end_date` is equal to `systemic_end_date_systemic_treatment` ⚠️ There can be multiple drugs associated with each systemic treatment, we need to define a fixed number 
 `overall_treatment_response_response`|`CategoricalDtype`|*|
 `overall_treatment_response_defined_done`|???||
