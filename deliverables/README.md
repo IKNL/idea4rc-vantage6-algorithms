@@ -274,7 +274,6 @@ Variable|Type|Status|Notes
 `[pre_operative/post_operative/recurrence]_systemic_treatment[_[i]]_end_date`|`datetime64[ns, tz]`|✅|`episode_end_date` of `episode.episode_concept_id = 32531`
 `[pre_operative/post_operative/recurrence]_systemic_treatment[_[i]]_regimen`|`CategoricalDtype`|✅|`episode_object_concept_id` of `episode.episode_concept_id = 32531`
 `[pre_operative/post_operative/recurrence]_systemic_treatment[_[i]]_reason_for_end_of_treatment`|`CategoricalDtype`|✅|`concept_name` of `observation.observation_concept_id` where `observation_concept_id` is one of `44788181`, `4162594`, `2000100030`, `4240582`, `37017062`, `4306655` and `observation_event_id` is equal to `procedure_occurrence.procedure_occurrence_id` which is equal to `episode_event.event_id` and `episode_event.episode_id` is equal to `episode.episode_id` where `episode.episode_concept_id = 32531`
-
 `drugs_for_treatments`|???|🆕|`concept_name` of `drug_exposure.drug_concept_id` where `drug_exposure_start_date` is equal to `systemic_start_date_systemic_treatment` and `drug_exposure_end_date` is equal to `systemic_end_date_systemic_treatment` ⚠️ There can be multiple drugs associated with each systemic treatment, we need to define a fixed number 
 `overall_treatment_response_response`|`CategoricalDtype`|*|
 `overall_treatment_response_defined_done`|???||
