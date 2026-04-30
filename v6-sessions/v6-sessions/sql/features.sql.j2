@@ -874,6 +874,22 @@ WITH
             )
     ),
 
+    pathological_staging_ene AS (
+        SELECT
+            pid.person_id,
+            measurement_concept.concept_name as pathological_stage_extra_nodal_extension
+        FROM 
+            patient_id_list pid
+        LEFT JOIN
+            {{ cdm_schema }}.measurement measurement
+            ON pid.person_id = measurement.person_id
+        LEFT JOIN
+            {{ cdm_schema }}.concept measurement_concept
+            ON measurement.measurement_concept_id = measurement_concept.concept_id
+        WHERE
+            measurement.measurement_concept_id IN (36769946, 36770618)
+    ),
+
     clinical_staging AS (
         SELECT
             pid.person_id,
@@ -954,6 +970,22 @@ WITH
             measurement.measurement_concept_id IN (
                 1634194, 1633468, 1634757, 1634829, 1633276, 1633974
             )
+    ),
+
+    clinical_staging_ene AS (
+        SELECT
+            pid.person_id,
+            measurement_concept.concept_name as clinical_stage_extra_nodal_extension
+        FROM 
+            patient_id_list pid
+        LEFT JOIN
+            {{ cdm_schema }}.measurement measurement
+            ON pid.person_id = measurement.person_id
+        LEFT JOIN
+            {{ cdm_schema }}.concept measurement_concept
+            ON measurement.measurement_concept_id = measurement_concept.concept_id
+        WHERE
+            measurement.measurement_concept_id IN (36769946, 36770618)
     )
 
 {% endif %}
@@ -1215,10 +1247,12 @@ SELECT
     COALESCE(pathological_staging_pt.stage, 'N/A')  as pathological_stage_pt,
     COALESCE(pathological_staging_pn.stage, 'N/A')  as pathological_stage_pn,
     COALESCE(pathological_staging_pm.stage, 'N/A')  as pathological_stage_pm,
+    COALESCE(pathological_staging_ene.pathological_stage_extra_nodal_extension, 'N/A') as pathological_stage_extra_nodal_extension,
     COALESCE(clinical_staging.stage, 'N/A')         as clinical_stage,
     COALESCE(clinical_staging_ct.stage, 'N/A')      as clinical_stage_ct,
     COALESCE(clinical_staging_cn.stage, 'N/A')      as clinical_stage_cn,
-    COALESCE(clinical_staging_cm.stage, 'N/A')      as clinical_stage_cm
+    COALESCE(clinical_staging_cm.stage, 'N/A')      as clinical_stage_cm,
+    COALESCE(clinical_staging_ene.clinical_stage_extra_nodal_extension, 'N/A') as clinical_stage_extra_nodal_extension
 {% endif %}
 
 {% if is_sarcoma %},
@@ -1270,6 +1304,9 @@ LEFT JOIN
     pathological_staging_pm
     ON person.person_id = pathological_staging_pm.person_id
 LEFT JOIN
+    pathological_staging_ene
+    ON person.person_id = pathological_staging_ene.person_id
+LEFT JOIN
     clinical_staging
     ON person.person_id = clinical_staging.person_id
 LEFT JOIN
@@ -1281,6 +1318,9 @@ LEFT JOIN
 LEFT JOIN
     clinical_staging_cm
     ON person.person_id = clinical_staging_cm.person_id
+LEFT JOIN
+    clinical_staging_ene
+    ON person.person_id = clinical_staging_ene.person_id
 {% endif %}
 
 {% if is_sarcoma %}
