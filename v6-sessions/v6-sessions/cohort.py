@@ -316,13 +316,13 @@ def convert_sarcoma_columns(df: pd.DataFrame) -> pd.DataFrame:
         ],
     )
 
-    # df = _to_datetime(
-    #     df,
-    #     [
-    #         "date_of_biopsy",
-    #         "last_contact",
-    #     ],
-    # )
+    df = _to_datetime(
+        df,
+        [
+            "date_of_biopsy",
+            "last_contact",
+        ],
+    )
 
     df = _to_boolean(
         df,

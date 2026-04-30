@@ -86,11 +86,11 @@ WITH
             pid.person_id,
             episode.episode_id                                                      as episode_id,
             CASE
-                WHEN episode.episode_start_date >= DATE '3000-01-01' THEN NULL
+                WHEN episode.episode_start_date >= DATE '2030-01-01' THEN NULL
                 ELSE episode.episode_start_date
             END                                                                    as diagnosis_date, -- e.g. 2020-01-01
             CASE
-                WHEN episode.episode_start_date >= DATE '3000-01-01' THEN NULL
+                WHEN episode.episode_start_date >= DATE '2030-01-01' THEN NULL
                 ELSE EXTRACT(YEAR FROM episode.episode_start_date) - person.year_of_birth
             END                                                                    as age_at_diagnosis, -- e.g. 67
             diagnosis_concept.concept_name                                          as diagnosis_code, -- e.g. "C34.1-8888/8"
@@ -124,7 +124,7 @@ WITH
                 pid.person_id,
                 episode.episode_id,
                 CASE
-                    WHEN episode.episode_start_date >= DATE '3000-01-01' THEN NULL
+                    WHEN episode.episode_start_date >= DATE '2030-01-01' THEN NULL
                     ELSE episode.episode_start_date
                 END AS date_of_surgery,
                 ROW_NUMBER() OVER (
@@ -139,7 +139,7 @@ WITH
                 ON pid.person_id = primary_tumor.person_id
             WHERE
                 episode.episode_concept_id = 32939 -- Surgery Episode
-                AND episode.episode_start_date < DATE '3000-01-01'
+                AND episode.episode_start_date < DATE '2030-01-01'
                 AND episode.episode_start_date >= primary_tumor.diagnosis_date
         ) s
         WHERE surgery_id <= 5
@@ -264,7 +264,7 @@ WITH
             person_id,
             status,
             CASE
-                WHEN observation_date >= DATE '3000-01-01' THEN NULL
+                WHEN observation_date >= DATE '2030-01-01' THEN NULL
                 ELSE observation_date
             END as date
         FROM (
@@ -628,11 +628,11 @@ WITH
             pid.person_id,
             episode.episode_id,
             CASE
-                WHEN episode.episode_start_date >= DATE '3000-01-01' THEN NULL
+                WHEN episode.episode_start_date >= DATE '2030-01-01' THEN NULL
                 ELSE episode.episode_start_date
             END AS systemic_treatment_start_date,
             CASE
-                WHEN episode.episode_end_date >= DATE '3000-01-01' THEN NULL
+                WHEN episode.episode_end_date >= DATE '2030-01-01' THEN NULL
                 ELSE episode.episode_end_date
             END AS systemic_treatment_end_date,
             regimen_concept.concept_id AS systemic_treatment_regimen_concept_id,
@@ -641,8 +641,8 @@ WITH
                 WHEN episode.episode_start_date > primary_tumor.diagnosis_date
                     AND episode.episode_start_date < surgeries_wide.surgery_1_date THEN 'pre-operative'
                 WHEN episode.episode_start_date > surgeries_wide.surgery_1_date
-                    AND episode.episode_start_date < COALESCE(progression_recurrence.first_progression_recurrence_date, DATE '3000-01-01') THEN 'post-operative'
-                WHEN episode.episode_start_date > COALESCE(progression_recurrence.first_progression_recurrence_date, DATE '3000-01-01') THEN 'recurrence'
+                    AND episode.episode_start_date < COALESCE(progression_recurrence.first_progression_recurrence_date, DATE '2030-01-01') THEN 'post-operative'
+                WHEN episode.episode_start_date > COALESCE(progression_recurrence.first_progression_recurrence_date, DATE '2030-01-01') THEN 'recurrence'
                 ELSE 'other'
             END AS treatment_setting
         FROM
@@ -1008,7 +1008,7 @@ WITH
             all_biopsies.person_id,
             all_biopsies.concept_name as type_of_biopsy,
             CASE
-                WHEN all_biopsies.procedure_date >= DATE '3000-01-01' THEN NULL
+                WHEN all_biopsies.procedure_date >= DATE '2030-01-01' THEN NULL
                 ELSE all_biopsies.procedure_date
             END as date_of_biopsy
         FROM (
@@ -1140,7 +1140,7 @@ WITH
         SELECT
             pid.person_id,
             CASE
-                WHEN episode.episode_end_date >= DATE '3000-01-01' THEN NULL
+                WHEN episode.episode_end_date >= DATE '2030-01-01' THEN NULL
                 ELSE episode.episode_end_date
             END as last_contact
         FROM
@@ -1257,7 +1257,7 @@ SELECT
 
 {% if is_sarcoma %},
     COALESCE(biopsy.type_of_biopsy, 'N/A')                      as type_of_biopsy,
-    -- biopsy.date_of_biopsy                                       as date_of_biopsy,
+    biopsy.date_of_biopsy                                       as date_of_biopsy,
     clinical_staging_sarcoma.clinical_localised                 as clinical_localised,
     clinical_number_of_tumor_nodules.number_of_tumor_nodules    as clinical_number_of_tumor_nodules,
     clinical_staging_sarcoma.clinical_loco_regional             as clinical_loco_regional,
@@ -1265,8 +1265,8 @@ SELECT
     pathological_staging_sarcoma.pathological_loco_regional     as pathological_loco_regional,
     pathological_features_sarcoma.pathological_number_of_tumor_nodules                              as pathological_number_of_tumor_nodules,
     pathological_features_sarcoma.pathological_is_transit_metastasis_with_clinical_confirmation     as pathological_is_transit_metastasis_with_clinical_confirmation,
-    pathological_features_sarcoma.pathological_is_multifocal_tumor                                  as pathological_is_multifocal_tumor
-    -- last_contact.last_contact                                   as last_contact
+    pathological_features_sarcoma.pathological_is_multifocal_tumor                                  as pathological_is_multifocal_tumor,
+    last_contact.last_contact                                   as last_contact
 {% endif %}
 
 FROM
