@@ -351,7 +351,7 @@ Variable|Type|Status|Notes
 `clinical_number_of_tumor_nodules`|`Int64`|✅|`value_as_number` of `measurement.measurement_concept_id = 4228659` where `measurement.measurement_date` is equal to `diagnosis_date`
 `clinical_loco_regional`|`boolean`|✅|`TRUE` if is present `episode.episode_concept_id = 32943` where `episode.episode_start_date` is equal to `diagnosis_date`
 `pathological_localised`|`boolean`|✅|`TRUE` if is present `episode.episode_concept_id = 32942` where `episode.episode_start_date` is equal to `date_of_surgery`**
-`pathological_number_of_tumor_nodules`|`Int64`|🐧|`value_as_number` of `measurement.measurement_concept_id = 4228659` where `measurement.measurement_date` is equal to `date_of_surgery`**
+`pathological_number_of_tumor_nodules`|`Int64`|✅|`value_as_number` of `measurement.measurement_concept_id = 4228659` where `measurement.measurement_date` is equal to `date_of_surgery`**
 `pathological_loco_regional`|`boolean`|✅|`TRUE` if is present `episode.episode_concept_id = 32943` where `episode.episode_start_date` is equal to `date_of_surgery`**
 `pathological_is_transit_metastasis_with_clinical_confirmation`|`boolean`|✅|`TRUE` if is present `measurement.measurement_concept_id = 36769249` where `measurement.measurement_date` is equal to `date_of_surgery`**
 `pathological_is_multifocal_tumor`|`boolean`|✅|`TRUE` if is present `measurement.measurement_concept_id = 36769933` where `measurement.measurement_date` is equal to `date_of_surgery`**
