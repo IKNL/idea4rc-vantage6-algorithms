@@ -51,6 +51,17 @@
 -- `observation.observation_date` of the latest observation where `observation.observation_concept_id` is one of `2000100071`, `4230556`, `2000100072`,`2000100073`, `2000100074`, `2000100075`, `4163894`.
 ----------------------------------------------------------------------------------------
 
+{# Valid OMOP calendars for cohort export; outliers break R/Python date conversion #}
+{% set COHORT_DATE_MIN = "DATE '1900-01-01'" %}
+{% set COHORT_DATE_MAX = "DATE '2030-01-01'" %}
+{% macro cohort_safe_date(expr) -%}
+(CASE
+    WHEN ({{ expr }}) IS NULL THEN NULL
+    WHEN ({{ expr }}) < {{ COHORT_DATE_MIN }} OR ({{ expr }}) >= {{ COHORT_DATE_MAX }} THEN NULL
+    ELSE ({{ expr }})::date
+END)
+{%- endmacro %}
+
 WITH
 
     -- Define the list of patient IDs to analyze
@@ -85,14 +96,14 @@ WITH
         SELECT
             pid.person_id,
             episode.episode_id                                                      as episode_id,
+            {{ cohort_safe_date('episode.episode_start_date') }}
+                                                                                AS diagnosis_date, -- e.g. 2020-01-01
             CASE
-                WHEN episode.episode_start_date >= DATE '2030-01-01' THEN NULL
-                ELSE episode.episode_start_date
-            END                                                                    as diagnosis_date, -- e.g. 2020-01-01
-            CASE
-                WHEN episode.episode_start_date >= DATE '2030-01-01' THEN NULL
+                WHEN episode.episode_start_date IS NULL THEN NULL
+                WHEN episode.episode_start_date < {{ COHORT_DATE_MIN }}
+                    OR episode.episode_start_date >= {{ COHORT_DATE_MAX }} THEN NULL
                 ELSE EXTRACT(YEAR FROM episode.episode_start_date) - person.year_of_birth
-            END                                                                    as age_at_diagnosis, -- e.g. 67
+            END                                                                    AS age_at_diagnosis, -- e.g. 67
             diagnosis_concept.concept_name                                          as diagnosis_code, -- e.g. "C34.1-8888/8"
             split_part(diagnosis_concept.concept_code, '-', 1)                      as morphology, -- e.g. 8888/8
             split_part(diagnosis_concept.concept_code, '-', 2)                      as topography -- e.g. C34.1
@@ -123,10 +134,7 @@ WITH
             SELECT
                 pid.person_id,
                 episode.episode_id,
-                CASE
-                    WHEN episode.episode_start_date >= DATE '2030-01-01' THEN NULL
-                    ELSE episode.episode_start_date
-                END AS date_of_surgery,
+                {{ cohort_safe_date('episode.episode_start_date') }} AS date_of_surgery,
                 ROW_NUMBER() OVER (
                     PARTITION BY pid.person_id
                     ORDER BY episode.episode_start_date ASC
@@ -139,7 +147,8 @@ WITH
                 ON pid.person_id = primary_tumor.person_id
             WHERE
                 episode.episode_concept_id = 32939 -- Surgery Episode
-                AND episode.episode_start_date < DATE '2030-01-01'
+                AND episode.episode_start_date >= {{ COHORT_DATE_MIN }}
+                AND episode.episode_start_date < {{ COHORT_DATE_MAX }}
                 AND episode.episode_start_date >= primary_tumor.diagnosis_date
         ) s
         WHERE surgery_id <= 5
@@ -173,6 +182,8 @@ WITH
             WHERE
                 episode.episode_concept_id = 32939 -- Surgery episode
                 AND m.measurement_concept_id IN (4179711, 4162591)
+                AND m.measurement_date >= {{ COHORT_DATE_MIN }}
+                AND m.measurement_date < {{ COHORT_DATE_MAX }}
         ) si
         WHERE rn = 1
     ),
@@ -204,6 +215,8 @@ WITH
             WHERE
                 episode.episode_concept_id = 32939 -- Surgery episode
                 AND m.measurement_concept_id IN (1634643, 1633801, 1634484)
+                AND m.measurement_date >= {{ COHORT_DATE_MIN }}
+                AND m.measurement_date < {{ COHORT_DATE_MAX }}
         ) mas
         WHERE rn = 1
     ),
@@ -263,10 +276,7 @@ WITH
         SELECT 
             person_id,
             status,
-            CASE
-                WHEN observation_date >= DATE '2030-01-01' THEN NULL
-                ELSE observation_date
-            END as date
+            {{ cohort_safe_date('observation_date') }} AS date
         FROM (
             SELECT 
                 pid.person_id,
@@ -294,6 +304,8 @@ WITH
                     2000100075,     -- Alive With Disease (AWD) 
                     4163894         -- Lost to follow-up 
                 )
+                AND observation.observation_date >= {{ COHORT_DATE_MIN }}
+                AND observation.observation_date < {{ COHORT_DATE_MAX }}
         ) AS all_observations
         WHERE all_observations.observation_position = 1 -- get last observation
     ),
@@ -465,6 +477,8 @@ WITH
                 36769180, -- Other viscera
                 4129922 -- Unknown
             )
+            AND measurement.measurement_date >= {{ COHORT_DATE_MIN }}
+            AND measurement.measurement_date < {{ COHORT_DATE_MAX }}
         LEFT JOIN
             primary_tumor
             ON pid.person_id = primary_tumor.person_id
@@ -615,6 +629,8 @@ WITH
                 36769180, -- Other viscera
                 4129922 -- Unknown
             )
+            AND measurement.measurement_date >= {{ COHORT_DATE_MIN }}
+            AND measurement.measurement_date < {{ COHORT_DATE_MAX }}
         LEFT JOIN
             surgeries_wide
             ON pid.person_id = surgeries_wide.person_id
@@ -627,14 +643,8 @@ WITH
         SELECT
             pid.person_id,
             episode.episode_id,
-            CASE
-                WHEN episode.episode_start_date >= DATE '2030-01-01' THEN NULL
-                ELSE episode.episode_start_date
-            END AS systemic_treatment_start_date,
-            CASE
-                WHEN episode.episode_end_date >= DATE '2030-01-01' THEN NULL
-                ELSE episode.episode_end_date
-            END AS systemic_treatment_end_date,
+            {{ cohort_safe_date('episode.episode_start_date') }} AS systemic_treatment_start_date,
+            {{ cohort_safe_date('episode.episode_end_date') }} AS systemic_treatment_end_date,
             regimen_concept.concept_id AS systemic_treatment_regimen_concept_id,
             regimen_concept.concept_name AS systemic_treatment_regimen,
             CASE
@@ -665,10 +675,14 @@ WITH
                 MIN(episode_start_date) AS first_progression_recurrence_date
             FROM {{ cdm_schema }}.episode 
             WHERE episode_concept_id IN (32948, 2000100002) -- Progression or recurrence episodes
+              AND episode_start_date >= {{ COHORT_DATE_MIN }}
+              AND episode_start_date < {{ COHORT_DATE_MAX }}
             GROUP BY person_id
         ) progression_recurrence
         ON pid.person_id = progression_recurrence.person_id
         WHERE episode.episode_concept_id = 32531 -- Systemic therapy episode
+          AND episode.episode_start_date >= {{ COHORT_DATE_MIN }}
+          AND episode.episode_start_date < {{ COHORT_DATE_MAX }}
     ),
 
     systemic_therapy_enriched AS (
@@ -773,6 +787,8 @@ WITH
         LEFT JOIN
             {{ cdm_schema }}.measurement measurement
             ON pid.person_id = measurement.person_id
+            AND measurement.measurement_date >= {{ COHORT_DATE_MIN }}
+            AND measurement.measurement_date < {{ COHORT_DATE_MAX }}
         LEFT JOIN
             {{ cdm_schema }}.concept measurement_concept
             ON measurement.measurement_concept_id = measurement_concept.concept_id
@@ -822,6 +838,8 @@ WITH
         LEFT JOIN
             {{ cdm_schema }}.measurement measurement
             ON pid.person_id = measurement.person_id
+            AND measurement.measurement_date >= {{ COHORT_DATE_MIN }}
+            AND measurement.measurement_date < {{ COHORT_DATE_MAX }}
         LEFT JOIN
             {{ cdm_schema }}.concept measurement_concept
             ON measurement.measurement_concept_id = measurement_concept.concept_id
@@ -843,6 +861,8 @@ WITH
         LEFT JOIN
             {{ cdm_schema }}.measurement measurement
             ON pid.person_id = measurement.person_id
+            AND measurement.measurement_date >= {{ COHORT_DATE_MIN }}
+            AND measurement.measurement_date < {{ COHORT_DATE_MAX }}
         LEFT JOIN
             {{ cdm_schema }}.concept measurement_concept
             ON measurement.measurement_concept_id = measurement_concept.concept_id
@@ -865,6 +885,8 @@ WITH
         LEFT JOIN
             {{ cdm_schema }}.measurement measurement
             ON pid.person_id = measurement.person_id
+            AND measurement.measurement_date >= {{ COHORT_DATE_MIN }}
+            AND measurement.measurement_date < {{ COHORT_DATE_MAX }}
         LEFT JOIN
             {{ cdm_schema }}.concept measurement_concept
             ON measurement.measurement_concept_id = measurement_concept.concept_id
@@ -883,6 +905,8 @@ WITH
         LEFT JOIN
             {{ cdm_schema }}.measurement measurement
             ON pid.person_id = measurement.person_id
+            AND measurement.measurement_date >= {{ COHORT_DATE_MIN }}
+            AND measurement.measurement_date < {{ COHORT_DATE_MAX }}
         LEFT JOIN
             {{ cdm_schema }}.concept measurement_concept
             ON measurement.measurement_concept_id = measurement_concept.concept_id
@@ -899,6 +923,8 @@ WITH
         LEFT JOIN
             {{ cdm_schema }}.measurement measurement
             ON pid.person_id = measurement.person_id
+            AND measurement.measurement_date >= {{ COHORT_DATE_MIN }}
+            AND measurement.measurement_date < {{ COHORT_DATE_MAX }}
         LEFT JOIN
             {{ cdm_schema }}.concept measurement_concept
             ON measurement.measurement_concept_id = measurement_concept.concept_id
@@ -920,6 +946,8 @@ WITH
         LEFT JOIN
             {{ cdm_schema }}.measurement measurement
             ON pid.person_id = measurement.person_id
+            AND measurement.measurement_date >= {{ COHORT_DATE_MIN }}
+            AND measurement.measurement_date < {{ COHORT_DATE_MAX }}
         LEFT JOIN
             {{ cdm_schema }}.concept measurement_concept
             ON measurement.measurement_concept_id = measurement_concept.concept_id
@@ -941,6 +969,8 @@ WITH
         LEFT JOIN
             {{ cdm_schema }}.measurement measurement
             ON pid.person_id = measurement.person_id
+            AND measurement.measurement_date >= {{ COHORT_DATE_MIN }}
+            AND measurement.measurement_date < {{ COHORT_DATE_MAX }}
         LEFT JOIN
             {{ cdm_schema }}.concept measurement_concept
             ON measurement.measurement_concept_id = measurement_concept.concept_id
@@ -963,6 +993,8 @@ WITH
         LEFT JOIN
             {{ cdm_schema }}.measurement measurement
             ON pid.person_id = measurement.person_id
+            AND measurement.measurement_date >= {{ COHORT_DATE_MIN }}
+            AND measurement.measurement_date < {{ COHORT_DATE_MAX }}
         LEFT JOIN
             {{ cdm_schema }}.concept measurement_concept
             ON measurement.measurement_concept_id = measurement_concept.concept_id
@@ -981,6 +1013,8 @@ WITH
         LEFT JOIN
             {{ cdm_schema }}.measurement measurement
             ON pid.person_id = measurement.person_id
+            AND measurement.measurement_date >= {{ COHORT_DATE_MIN }}
+            AND measurement.measurement_date < {{ COHORT_DATE_MAX }}
         LEFT JOIN
             {{ cdm_schema }}.concept measurement_concept
             ON measurement.measurement_concept_id = measurement_concept.concept_id
@@ -1007,10 +1041,7 @@ WITH
         SELECT
             all_biopsies.person_id,
             all_biopsies.concept_name as type_of_biopsy,
-            CASE
-                WHEN all_biopsies.procedure_date >= DATE '2030-01-01' THEN NULL
-                ELSE all_biopsies.procedure_date
-            END as date_of_biopsy
+            {{ cohort_safe_date('all_biopsies.procedure_date') }} AS date_of_biopsy
         FROM (
             SELECT
                 pid.person_id,
@@ -1032,6 +1063,8 @@ WITH
                 procedure_occurrence.procedure_concept_id IN (
                     4171863, 4321878,4321986, 4228202, 4279903, 4311405
                 )
+                AND procedure_occurrence.procedure_date >= {{ COHORT_DATE_MIN }}
+                AND procedure_occurrence.procedure_date < {{ COHORT_DATE_MAX }}
         ) AS all_biopsies
         WHERE all_biopsies.biopsy_position = 1 -- get first biopsy
     ),
@@ -1042,10 +1075,14 @@ WITH
             pid.person_id,
             MAX(
                 CASE WHEN episode.episode_concept_id = 32942 
+                AND episode.episode_start_date >= {{ COHORT_DATE_MIN }}
+                AND episode.episode_start_date < {{ COHORT_DATE_MAX }}
                 AND episode.episode_start_date = primary_tumor.diagnosis_date 
                 THEN 1 ELSE 0 END) as clinical_localised,
             MAX(
                 CASE WHEN episode.episode_concept_id = 32943 
+                AND episode.episode_start_date >= {{ COHORT_DATE_MIN }}
+                AND episode.episode_start_date < {{ COHORT_DATE_MAX }}
                 AND episode.episode_start_date = primary_tumor.diagnosis_date 
                 THEN 1 ELSE 0 END) as clinical_loco_regional
         FROM
@@ -1065,10 +1102,14 @@ WITH
             pid.person_id,
             MAX(
                 CASE WHEN episode.episode_concept_id = 32942 
+                AND episode.episode_start_date >= {{ COHORT_DATE_MIN }}
+                AND episode.episode_start_date < {{ COHORT_DATE_MAX }}
                 AND episode.episode_start_date = surgeries_wide.surgery_1_date 
                 THEN 1 ELSE 0 END) as pathological_localised,
             MAX(
                 CASE WHEN episode.episode_concept_id = 32943 
+                AND episode.episode_start_date >= {{ COHORT_DATE_MIN }}
+                AND episode.episode_start_date < {{ COHORT_DATE_MAX }}
                 AND episode.episode_start_date = surgeries_wide.surgery_1_date 
                 THEN 1 ELSE 0 END) as pathological_loco_regional
         FROM
@@ -1098,6 +1139,8 @@ WITH
             ON pid.person_id = primary_tumor.person_id
         WHERE
             measurement.measurement_concept_id = 4228659
+            AND measurement.measurement_date >= {{ COHORT_DATE_MIN }}
+            AND measurement.measurement_date < {{ COHORT_DATE_MAX }}
             AND measurement.measurement_date = primary_tumor.diagnosis_date
     ),
 
@@ -1127,6 +1170,8 @@ WITH
         LEFT JOIN
             {{ cdm_schema }}.measurement measurement
             ON pid.person_id = measurement.person_id
+            AND measurement.measurement_date >= {{ COHORT_DATE_MIN }}
+            AND measurement.measurement_date < {{ COHORT_DATE_MAX }}
         LEFT JOIN
             surgeries_wide
             ON pid.person_id = surgeries_wide.person_id
@@ -1139,10 +1184,7 @@ WITH
     last_contact AS (
         SELECT
             pid.person_id,
-            CASE
-                WHEN episode.episode_end_date >= DATE '2030-01-01' THEN NULL
-                ELSE episode.episode_end_date
-            END as last_contact
+            {{ cohort_safe_date('episode.episode_end_date') }} AS last_contact
         FROM
             patient_id_list pid
         LEFT JOIN

@@ -18,6 +18,61 @@ from vantage6.algorithm.decorator import data_extraction
 from vantage6.algorithm.tools.util import error, get_env_var, info
 
 
+COHORT_R_DATE_COLUMNS = [
+    "date_of_surgery",
+    "diagnosis_date",
+    "life_status_date",
+    "date_of_biopsy",
+    "last_contact",
+    "surgery_1_date",
+    "surgery_2_date",
+    "surgery_3_date",
+    "surgery_4_date",
+    "surgery_5_date",
+    "pre_operative_systemic_treatment_start_date",
+    "pre_operative_systemic_treatment_end_date",
+    "post_operative_systemic_treatment_1_start_date",
+    "post_operative_systemic_treatment_1_end_date",
+    "post_operative_systemic_treatment_2_start_date",
+    "post_operative_systemic_treatment_2_end_date",
+    "recurrence_systemic_treatment_1_start_date",
+    "recurrence_systemic_treatment_1_end_date",
+    "recurrence_systemic_treatment_2_start_date",
+    "recurrence_systemic_treatment_2_end_date",
+]
+
+
+def _convert_r_date_columns_safe(df: pd.DataFrame, cols: list[str], max_abs_days: float = 120_000) -> pd.DataFrame:
+    """R Date is days since 1970-01-01. Outliers overflow vectorized ohdsi/pandas conversion."""
+    colmap = {str(c).lower(): c for c in df.columns}
+    for want in cols:
+        col = colmap.get(want.lower())
+        if col is None:
+            continue
+        s = pd.to_numeric(df[col], errors="coerce")
+        fv = np.asarray(s, dtype=np.float64)
+        finite = np.isfinite(fv)
+        plausible = finite & (np.abs(fv) <= max_abs_days)
+        # Only convert plausible rows: full-column vectorized unit="D" can overflow
+        # if cast_from_unit_vectorized still touches masked outliers (pandas 3.x).
+        out = pd.Series(pd.NaT, index=df.index, dtype="datetime64[ns, UTC]")
+        pos = np.flatnonzero(plausible)
+        if pos.size:
+            parsed = pd.to_datetime(
+                fv[plausible],
+                unit="D",
+                origin="1970-01-01",
+                utc=True,
+                errors="coerce",
+            )
+            chunk = pd.Series(parsed, dtype="datetime64[ns, UTC]", copy=False)
+            out.iloc[pos] = chunk.to_numpy()
+        col_idx = list(df.columns).index(col)
+        df.drop(columns=[col], inplace=True)
+        df.insert(col_idx, col, out)
+    return df
+
+
 @data_extraction
 def create_cohort(
     connection_details: dict, patient_ids: list[int], features: str
@@ -116,28 +171,8 @@ def __create_cohort_dataframe(
 
     info("Converting dataframe to pandas")
     try:
-        converted_df = common.convert_from_r(df, date_cols=[
-            "date_of_surgery",
-            "diagnosis_date",
-            "life_status_date",
-            "date_of_biopsy",
-            "last_contact",
-            "surgery_1_date",
-            "surgery_2_date",
-            "surgery_3_date",
-            "surgery_4_date",
-            "surgery_5_date",
-            "pre_operative_systemic_treatment_start_date",
-            "pre_operative_systemic_treatment_end_date",
-            "post_operative_systemic_treatment_1_start_date",
-            "post_operative_systemic_treatment_1_end_date",
-            "post_operative_systemic_treatment_2_start_date",
-            "post_operative_systemic_treatment_2_end_date",
-            "recurrence_systemic_treatment_1_start_date",
-            "recurrence_systemic_treatment_1_end_date",
-            "recurrence_systemic_treatment_2_start_date",
-            "recurrence_systemic_treatment_2_end_date",
-        ])
+        converted_df = common.convert_from_r(df, date_cols=[])
+        converted_df = _convert_r_date_columns_safe(converted_df, COHORT_R_DATE_COLUMNS)
     except Exception as e:
         error(f"Failed to convert dataframe: {e}")
         traceback.print_exc()
