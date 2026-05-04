@@ -338,6 +338,12 @@ def convert_head_neck_columns(df: pd.DataFrame) -> pd.DataFrame:
             "surgery_4_extra_nodal_extension",
             "surgery_5_extra_nodal_extension",
 
+            "surgery_1_laterality_of_the_dissection",
+            "surgery_2_laterality_of_the_dissection",
+            "surgery_3_laterality_of_the_dissection",
+            "surgery_4_laterality_of_the_dissection",
+            "surgery_5_laterality_of_the_dissection",
+
             "pre_operative_systemic_treatment_intent",
             "post_operative_systemic_treatment_1_intent",
             "post_operative_systemic_treatment_2_intent",
