@@ -694,15 +694,45 @@ WITH
         ORDER BY stb.person_id, stb.systemic_treatment_start_date ASC
     ),
 
-    systemic_therapy_ranked AS (
+{% if is_head_and_neck %},
+    systemic_therapy_enriched_with_intent AS (
         SELECT
             ste.*,
-            ROW_NUMBER() OVER (
-                PARTITION BY ste.person_id
-                ORDER BY ste.systemic_treatment_start_date
-            ) AS systemic_treatment_row_number
+            c.concept_name AS systemic_treatment_intent
         FROM
             systemic_therapy_enriched ste
+        LEFT JOIN {{ cdm_schema }}.episode episode
+            ON ste.episode_id = episode.episode_id
+        LEFT JOIN {{ cdm_schema }}.episode_event ee
+            ON episode.episode_id = ee.episode_id
+        LEFT JOIN {{ cdm_schema }}.procedure_occurrence po
+            ON ee.event_id = po.procedure_occurrence_id
+        LEFT JOIN {{ cdm_schema }}.measurement m
+            ON m.measurement_event_id = po.procedure_occurrence_id
+            AND m.measurement_concept_id IN (4179711, 4162591) -- Surgery intent concepts
+        LEFT JOIN {{ cdm_schema }}.concept c
+            ON c.concept_id = m.measurement_concept_id
+        ORDER BY ste.person_id, ste.systemic_treatment_start_date ASC
+    )
+{% else %},
+    systemic_therapy_enriched_with_intent AS (
+        SELECT
+            ste.*,
+            NULL AS systemic_treatment_intent
+        FROM
+            systemic_therapy_enriched ste
+    )
+{% endif %}
+
+    systemic_therapy_ranked AS (
+        SELECT
+            stewi.*,
+            ROW_NUMBER() OVER (
+                PARTITION BY stewi.person_id
+                ORDER BY stewi.systemic_treatment_start_date
+            ) AS systemic_treatment_row_number
+        FROM
+            systemic_therapy_enriched_with_intent stewi
     ),
 
     systemic_therapy_wide AS (
@@ -715,6 +745,9 @@ WITH
             MAX(CASE WHEN treatment_setting = 'pre-operative' THEN systemic_treatment_regimen END) AS pre_operative_systemic_treatment_regimen,
             MAX(CASE WHEN treatment_setting = 'pre-operative' THEN systemic_treatment_type END) AS pre_operative_systemic_treatment_type,
             MAX(CASE WHEN treatment_setting = 'pre-operative' THEN systemic_treatment_reason_for_end_of_treatment END) AS pre_operative_systemic_treatment_reason_for_end_of_treatment,
+            {% if is_head_and_neck %},
+            MAX(CASE WHEN treatment_setting = 'pre-operative' THEN systemic_treatment_intent END) AS pre_operative_systemic_treatment_intent,
+            {% endif %}
 
             -- Post-operative systemic therapy 1
             MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 1 THEN systemic_treatment_start_date END) AS post_operative_systemic_treatment_1_start_date,
@@ -722,6 +755,9 @@ WITH
             MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 1 THEN systemic_treatment_regimen END) AS post_operative_systemic_treatment_1_regimen,
             MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 1 THEN systemic_treatment_type END) AS post_operative_systemic_treatment_1_type,
             MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 1 THEN systemic_treatment_reason_for_end_of_treatment END) AS post_operative_systemic_treatment_1_reason_for_end_of_treatment,
+            {% if is_head_and_neck %},
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 1 THEN systemic_treatment_intent END) AS post_operative_systemic_treatment_1_intent,
+            {% endif %}
 
             -- Post-operative systemic therapy 2
             MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 2 THEN systemic_treatment_start_date END) AS post_operative_systemic_treatment_2_start_date,
@@ -729,6 +765,9 @@ WITH
             MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 2 THEN systemic_treatment_regimen END) AS post_operative_systemic_treatment_2_regimen,
             MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 2 THEN systemic_treatment_type END) AS post_operative_systemic_treatment_2_type,
             MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 2 THEN systemic_treatment_reason_for_end_of_treatment END) AS post_operative_systemic_treatment_2_reason_for_end_of_treatment,
+            {% if is_head_and_neck %},
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 2 THEN systemic_treatment_intent END) AS post_operative_systemic_treatment_2_intent,
+            {% endif %}
 
             -- Recurrence systemic therapy 1
             MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 1 THEN systemic_treatment_start_date END) AS recurrence_systemic_treatment_1_start_date,
@@ -736,6 +775,9 @@ WITH
             MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 1 THEN systemic_treatment_regimen END) AS recurrence_systemic_treatment_1_regimen,
             MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 1 THEN systemic_treatment_type END) AS recurrence_systemic_treatment_1_type,
             MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 1 THEN systemic_treatment_reason_for_end_of_treatment END) AS recurrence_systemic_treatment_1_reason_for_end_of_treatment,
+            {% if is_head_and_neck %},
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 1 THEN systemic_treatment_intent END) AS recurrence_systemic_treatment_1_intent,
+            {% endif %}
 
             -- Recurrence systemic therapy 2
             MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 2 THEN systemic_treatment_start_date END) AS recurrence_systemic_treatment_2_start_date,
@@ -743,6 +785,10 @@ WITH
             MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 2 THEN systemic_treatment_regimen END) AS recurrence_systemic_treatment_2_regimen,
             MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 2 THEN systemic_treatment_type END) AS recurrence_systemic_treatment_2_type,
             MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 2 THEN systemic_treatment_reason_for_end_of_treatment END) AS recurrence_systemic_treatment_2_reason_for_end_of_treatment
+            {% if is_head_and_neck %},
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 2 THEN systemic_treatment_intent END) AS recurrence_systemic_treatment_2_intent,
+            {% endif %}
+
         FROM
             systemic_therapy_ranked
         GROUP BY
@@ -1252,7 +1298,14 @@ SELECT
     COALESCE(clinical_staging_ct.stage, 'N/A')      as clinical_stage_ct,
     COALESCE(clinical_staging_cn.stage, 'N/A')      as clinical_stage_cn,
     COALESCE(clinical_staging_cm.stage, 'N/A')      as clinical_stage_cm,
-    COALESCE(clinical_staging_ene.clinical_stage_extra_nodal_extension, 'N/A') as clinical_stage_extra_nodal_extension
+    COALESCE(clinical_staging_ene.clinical_stage_extra_nodal_extension, 'N/A') as clinical_stage_extra_nodal_extension,
+
+    COALESCE(systemic_therapy_wide.pre_operative_systemic_treatment_intent, 'N/A')     as pre_operative_systemic_treatment_intent,
+    COALESCE(systemic_therapy_wide.post_operative_systemic_treatment_1_intent, 'N/A')  as post_operative_systemic_treatment_1_intent,
+    COALESCE(systemic_therapy_wide.post_operative_systemic_treatment_2_intent, 'N/A')  as post_operative_systemic_treatment_2_intent,
+    COALESCE(systemic_therapy_wide.recurrence_systemic_treatment_1_intent, 'N/A')  as recurrence_systemic_treatment_1_intent,
+    COALESCE(systemic_therapy_wide.recurrence_systemic_treatment_2_intent, 'N/A')  as recurrence_systemic_treatment_2_intent
+
 {% endif %}
 
 {% if is_sarcoma %},
