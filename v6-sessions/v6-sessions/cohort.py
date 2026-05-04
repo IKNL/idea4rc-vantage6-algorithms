@@ -331,6 +331,13 @@ def convert_head_neck_columns(df: pd.DataFrame) -> pd.DataFrame:
             "clinical_stage_cm",
             "clinical_stage_extra_nodal_extension",
             "pathological_stage_extra_nodal_extension",
+
+            "surgery_1_extra_nodal_extension",
+            "surgery_2_extra_nodal_extension",
+            "surgery_3_extra_nodal_extension",
+            "surgery_4_extra_nodal_extension",
+            "surgery_5_extra_nodal_extension",
+
             "pre_operative_systemic_treatment_intent",
             "post_operative_systemic_treatment_1_intent",
             "post_operative_systemic_treatment_2_intent",
