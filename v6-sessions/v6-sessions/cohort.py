@@ -351,6 +351,28 @@ def convert_head_neck_columns(df: pd.DataFrame) -> pd.DataFrame:
             "recurrence_systemic_treatment_2_intent",
         ],
     )
+
+    df = _to_datetime(
+        df,
+        [
+            "surgery_1_date_of_neck_surgery",
+            "surgery_2_date_of_neck_surgery",
+            "surgery_3_date_of_neck_surgery",
+            "surgery_4_date_of_neck_surgery",
+            "surgery_5_date_of_neck_surgery",
+        ],
+    )
+
+    df = _to_boolean(df, 
+        [
+            "surgery_1_neck_surgery",
+            "surgery_2_neck_surgery",
+            "surgery_3_neck_surgery",
+            "surgery_4_neck_surgery",
+            "surgery_5_neck_surgery",
+        ]
+    )
+
     return df
 
 def convert_sarcoma_columns(df: pd.DataFrame) -> pd.DataFrame:
