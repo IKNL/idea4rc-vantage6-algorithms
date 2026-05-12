@@ -229,7 +229,7 @@ def _perform_iteration(df: pd.DataFrame, time_col, expl_vars, beta, unique_time_
 @central
 @algorithm_client
 def coxph_central(
-    client: AlgorithmClient, time_col, outcome_col, expl_vars, organization_ids
+    client: AlgorithmClient, time_col, outcome_col, expl_vars, organizations_to_include
 ):
     """
     This function is the central part of the algorithm. It performs the main
@@ -241,11 +241,11 @@ def coxph_central(
     dict: {"cohorts": {df_name: {...}}, "details": {"iterations": ..., "all_converged": ...}}
     """
 
-    if not isinstance(organization_ids, list):
+    if not isinstance(organizations_to_include, list):
         organisations = client.organization.list()
         ids = [organisation.get("id") for organisation in organisations]
     else:
-        ids = list(organization_ids)
+        ids = list(organizations_to_include)
 
     info(f"Sending task to organizations {ids}")
 
