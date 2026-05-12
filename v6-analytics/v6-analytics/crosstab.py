@@ -403,6 +403,10 @@ def _partial_crosstab(
     PrivacyThresholdViolation
         The privacy threshold is not met by any values in the contingency table.
     """
+    if df.empty:
+        info("Dataframe is empty, skipping computation and returning empty results")
+        return "[]"
+    
     assert_columns_dtype_in(
         df,
         [results_col] + list(group_cols),
