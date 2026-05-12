@@ -16,40 +16,6 @@
 --          |                |               | cohort.
 --
 ----------------------------------------------------------------------------------------
--- BASIC FEATURES
---
--- Both head and neck and sarcoma have the same basic features.
---
--- Patient ID
--- The patient ID is the ID of the patient.
---
--- Sex
--- In `PERSON.gender_concept_id` there are two codes:
--- 1. Female: 8507
--- 2. Male: 8532
--- This results in a categorical variable with two levels: "Female" and "Male".
---
--- Year of Birth
--- In `PERSON.year_of_birth` there is the year of birth of the patient.
--- This results in a Integer variable with the year of birth.
---
--- Diagnosis date
--- of episode_concept_id of 32533 Disease Episode (always one) look up the date
---
--- Morphology
--- Extract episode_object_concept_id this contains the omop concept id for the ICDO3 
--- code (for topography and morphology).
---
--- Topography
--- Second part of `concept_code` of `episode.episode_object_concept_id` where `episode.episode_concept_id = 32533`
---
--- Life status
--- Concept_id look for codes of Alive Dead etc (see excel). Look for latest date. 
--- Translate from the vocabulary (also store the date)
---
--- Life status date
--- `observation.observation_date` of the latest observation where `observation.observation_concept_id` is one of `2000100071`, `4230556`, `2000100072`,`2000100073`, `2000100074`, `2000100075`, `4163894`.
-----------------------------------------------------------------------------------------
 
 {# Valid OMOP calendars for cohort export; outliers break R/Python date conversion #}
 {% set COHORT_DATE_MIN = "DATE '1900-01-01'" %}
@@ -95,18 +61,17 @@ WITH
     primary_tumor AS (
         SELECT
             pid.person_id,
-            episode.episode_id                                                      as episode_id,
-            {{ cohort_safe_date('episode.episode_start_date') }}
-                                                                                AS diagnosis_date, -- e.g. 2020-01-01
+            episode.episode_id                                                      AS episode_id,
+            {{ cohort_safe_date('episode.episode_start_date') }}                    AS diagnosis_date, -- e.g. 2020-01-01
             CASE
                 WHEN episode.episode_start_date IS NULL THEN NULL
                 WHEN episode.episode_start_date < {{ COHORT_DATE_MIN }}
                     OR episode.episode_start_date >= {{ COHORT_DATE_MAX }} THEN NULL
                 ELSE EXTRACT(YEAR FROM episode.episode_start_date) - person.year_of_birth
-            END                                                                    AS age_at_diagnosis, -- e.g. 67
-            diagnosis_concept.concept_name                                          as diagnosis_code, -- e.g. "C34.1-8888/8"
-            split_part(diagnosis_concept.concept_code, '-', 1)                      as morphology, -- e.g. 8888/8
-            split_part(diagnosis_concept.concept_code, '-', 2)                      as topography -- e.g. C34.1
+            END                                                                     AS age_at_diagnosis, -- e.g. 67
+            diagnosis_concept.concept_name                                          AS diagnosis_code, -- e.g. "C34.1-8888/8"
+            NULLIF(split_part(diagnosis_concept.concept_code, '-', 1), '')          AS morphology, -- e.g. 8888/8
+            NULLIF(split_part(diagnosis_concept.concept_code, '-', 2), '')          AS topography -- e.g. C34.1
         FROM
             patient_id_list pid
         LEFT JOIN
