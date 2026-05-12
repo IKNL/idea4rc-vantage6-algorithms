@@ -25,10 +25,10 @@ from vantage6.algorithm.tools.util import get_env_var, info, warn
 from v6_idea4rc_common.type_guards import (
     Idea4rcDType,
     assert_column_dtype_in,
-    assert_columns_dtype_in,
     convert_int64_01_to_boolean,
     is_binary_int64_01,
 )
+from .utils import create_child_task
 
 # The following global variables are algorithm settings. They can be overwritten by
 # the node admin by setting the corresponding environment variables.
@@ -288,14 +288,15 @@ def _start_partial_and_collect_results(
         A list of dictionaries containing results obtained from the organizations.
     """
     info(f"Including {len(organizations_to_include)} organizations in the analysis")
-    task = client.task.create(
+    task_id = create_child_task(
+        client,
         method=method,
         arguments=kwargs,
         organizations=organizations_to_include,
     )
 
     info("Waiting for results")
-    results = client.wait_for_results(task_id=task["id"])
+    results = client.wait_for_results(task_id=task_id)
     info(f"Results obtained for {method}!")
     return results
 

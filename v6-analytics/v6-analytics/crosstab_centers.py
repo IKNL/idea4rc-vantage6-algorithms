@@ -5,6 +5,7 @@ from vantage6.algorithm.client import AlgorithmClient
 from vantage6.algorithm.decorator import metadata, dataframes
 from vantage6.algorithm.decorator.metadata import RunMetaData
 from vantage6.algorithm.decorator import algorithm_client
+from .utils import create_child_task
 
 
 @algorithm_client
@@ -20,7 +21,8 @@ def crosstab_centers(
         ]
 
     # Get the data from the centers
-    task = client.task.create(
+    task_id = create_child_task(
+        client,
         method="compute_local_counts",
         input_={},
         organizations=organizations_to_include,
@@ -29,7 +31,7 @@ def crosstab_centers(
     )
 
     # Wait for the task to finish
-    results = client.wait_for_results(task_id=task.get("id"))
+    results = client.wait_for_results(task_id=task_id)
 
     # Combine the results
     combined_df, chi_squared_df = combine_center_results(results, organizations)

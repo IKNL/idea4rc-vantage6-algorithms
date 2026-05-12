@@ -25,6 +25,7 @@ from v6_idea4rc_common.type_guards import (
     assert_columns_dtype_in,
     classify_idea4rc_dtype,
 )
+from .utils import create_child_task
 
 # names of environment variables
 ## minimum number of rows in the dataframe
@@ -93,7 +94,8 @@ def summary(
 
     # create a subtask for all organizations in the collaboration.
     info("Creating subtask for all organizations in the collaboration")
-    task = client.task.create(
+    task_id = create_child_task(
+        client,
         method="summary_per_data_station",
         arguments={
             "columns": columns,
@@ -107,7 +109,7 @@ def summary(
 
     # wait for node to return results of the subtask.
     info("Waiting for results")
-    results = client.wait_for_results(task_id=task.get("id"))
+    results = client.wait_for_results(task_id=task_id)
     info("Results obtained!")
 
     # aggregate the partial summaries of all nodes
@@ -143,7 +145,8 @@ def summary(
         info(f"n num cols: {len(numerical_columns)}")
         info(f"n means: {len(means[cohort_name])}")
 
-    task = client.task.create(
+    task_id = create_child_task(
+        client,
         method="variance_per_data_station",
         arguments={
             "columns": numerical_columns,
@@ -155,7 +158,7 @@ def summary(
         description="Compute variance per data station",
     )
 
-    variance_results = client.wait_for_results(task_id=task.get("id"))
+    variance_results = client.wait_for_results(task_id=task_id)
 
     # add the standard deviation to the results
     for cohort_name in cohort_names:

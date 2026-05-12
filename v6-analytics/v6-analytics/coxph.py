@@ -19,6 +19,7 @@ from v6_idea4rc_common.type_guards import (
     assert_column_dtype_in,
     assert_columns_dtype_in,
 )
+from .utils import create_child_task
 
 
 def _filter_dataframes_on_names(
@@ -265,7 +266,8 @@ def coxph_central(
             )
         n_loops += 1
 
-        task = client.task.create(
+        task_id = create_child_task(
+            client,
             method="coxph_get_unique_event_times",
             arguments={"time_col": time_col, "outcome_col": outcome_col},
             organizations=ids,
@@ -273,7 +275,7 @@ def coxph_central(
             description="Getting unique event times and their counts",
         )
         info("Waiting for results")
-        results = client.wait_for_results(task_id=task.get("id"))
+        results = client.wait_for_results(task_id=task_id)
         info("Results obtained!")
 
         if not results:
@@ -343,7 +345,8 @@ def coxph_central(
         }
 
     # --- compute_summed_z: unpack per dataframe ---
-    task = client.task.create(
+    task_id = create_child_task(
+        client,
         method="compute_summed_z",
         arguments={
             "outcome_col": outcome_col,
@@ -355,7 +358,7 @@ def coxph_central(
         description="Computing the summed Z statistic",
     )
     info("Waiting for results")
-    results = client.wait_for_results(task_id=task.get("id"))
+    results = client.wait_for_results(task_id=task_id)
     info("Results obtained!")
 
     z_sum = {}
@@ -387,7 +390,8 @@ def coxph_central(
         iteration = epoch + 1
         info(f"Iteration {iteration}")
 
-        task = client.task.create(
+        task_id = create_child_task(
+            client,
             method="perform_iteration",
             arguments={
                 "time_col": time_col,
@@ -407,7 +411,7 @@ def coxph_central(
             description="Iterating to find the optimal beta",
         )
         info("Waiting for results")
-        results = client.wait_for_results(task_id=task.get("id"))
+        results = client.wait_for_results(task_id=task_id)
         info("Results obtained!")
 
         summed_agg1 = {}

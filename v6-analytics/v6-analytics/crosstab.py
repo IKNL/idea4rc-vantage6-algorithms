@@ -14,6 +14,7 @@ from v6_idea4rc_common.type_guards import (
     Idea4rcDType,
     assert_columns_dtype_in,
 )
+from .utils import create_child_task
 
 @federated
 @dataframes
@@ -70,7 +71,8 @@ def crosstab(
 
     # create a subtask for all organizations in the collaboration.
     info("Creating subtask to compute partial contingency tables")
-    task = client.task.create(
+    task_id = create_child_task(
+        client,
         method="partial_crosstab",
         arguments={
             "results_col": results_col,
@@ -83,7 +85,7 @@ def crosstab(
 
     # wait for node to return results of the subtask.
     info("Waiting for results")
-    results = client.wait_for_results(task_id=task.get("id"))
+    results = client.wait_for_results(task_id=task_id)
     info("Results obtained!")
 
     valid_results = [r for r in results if r is not None]

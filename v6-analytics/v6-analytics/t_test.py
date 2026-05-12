@@ -15,6 +15,7 @@ from v6_idea4rc_common.type_guards import (
     Idea4rcDType,
     assert_columns_dtype_in,
 )
+from .utils import create_child_task
 
 T_TEST_MINIMUM_NUMBER_OF_RECORDS = 3
 
@@ -43,7 +44,8 @@ def t_test_central(
     """
     # create a subtask for all organizations in the collaboration.
     info("Creating subtask for all organizations in the collaboration")
-    task = client.task.create(
+    task_id = create_child_task(
+        client,
         method="t_test_partial",
         arguments=None,
         organizations=organizations_to_include,
@@ -51,13 +53,9 @@ def t_test_central(
         description="Compute mean and sample variance per data station.",
     )
 
-    info(f"Task: {task}")
-    if not task.get("id"):
-        raise Exception(f"Task creation failed: {task}")
-        
     # wait for node to return results of the subtask.
     info("Waiting for results")
-    results = client.wait_for_results(task_id=task.get("id"))
+    results = client.wait_for_results(task_id=task_id)
     info("Results obtained!")
 
     final_result = {}

@@ -28,11 +28,11 @@ from vantage6.algorithm.decorator.algorithm_client import algorithm_client
 from v6_idea4rc_common.type_guards import (
     Idea4rcDType,
     assert_column_dtype_in,
-    assert_columns_dtype_in,
     classify_idea4rc_dtype,
     convert_int64_01_to_boolean,
     is_binary_int64_01,
 )
+from .utils import create_child_task
 
 
 # Constants for main function arguments
@@ -650,7 +650,8 @@ def _compute_local_betas_task(
 
     # create a subtask for all organizations in the collaboration.
     info("Creating subtask for all organizations in the collaboration")
-    task = client.task.create(
+    task_id = create_child_task(
+        client,
         method="compute_local_betas",
         arguments=kwargs,
         organizations=organizations_to_include,
@@ -660,7 +661,7 @@ def _compute_local_betas_task(
 
     # wait for node to return results of the subtask.
     info("Waiting for results")
-    results = client.wait_for_results(task_id=task.get("id"))
+    results = client.wait_for_results(task_id=task_id)
     info("Results obtained!")
 
     # check that each node provided complete results
@@ -738,7 +739,8 @@ def _compute_partial_deviance(
 
     # create a subtask for all organizations in the collaboration.
     info("Creating subtask for all organizations in the collaboration")
-    task = client.task.create(
+    task_id = create_child_task(
+        client,
         method="compute_local_deviance",
         arguments=kwargs,
         organizations=organizations_to_include,
@@ -748,7 +750,7 @@ def _compute_partial_deviance(
 
     # wait for node to return results of the subtask.
     info("Waiting for results")
-    results = client.wait_for_results(task_id=task.get("id"))
+    results = client.wait_for_results(task_id=task_id)
     info("Results obtained!")
 
     # check that each node provided complete results
