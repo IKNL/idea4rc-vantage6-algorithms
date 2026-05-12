@@ -86,10 +86,14 @@ def crosstab(
     results = client.wait_for_results(task_id=task.get("id"))
     info("Results obtained!")
 
+    valid_results = [r for r in results if r is not None]
+    if not valid_results:
+        raise ValueError("All nodes failed to return results")
+
     all_cohort_results = {}
-    cohort_names = results[0].keys()
+    cohort_names = valid_results[0].keys()
     for cohort_name in cohort_names:
-        cohort_results = [result[cohort_name] for result in results]
+        cohort_results = [result[cohort_name] for result in valid_results]
         all_cohort_results[cohort_name] = _aggregate_results(
             cohort_results, group_cols, include_chi2, include_totals
         )
@@ -119,70 +123,6 @@ DEFAULT_MINIMUM_ROWS_TOTAL = "3"
 DEFAULT_ALLOW_ZERO = "true"
 
 
-# @algorithm_client
-# def central_crosstab(
-#     client: AlgorithmClient,
-#     results_col: str,
-#     group_cols: list[str],
-#     organizations_to_include: list[int] = None,
-#     include_chi2: bool = True,
-#     include_totals: bool = True,
-# ) -> Any:
-#     """
-#     Central part of the algorithm
-
-#     Parameters
-#     ----------
-#     client : AlgorithmClient
-#         The client object used for communication with the server.
-#     results_col : str
-#         The column for which counts are calculated
-#     group_cols : list[str]
-#         List of one or more columns to group the data by.
-#     organizations_to_include : list[int], optional
-#         List of organization ids to include in the computation. If not provided, all
-#         organizations in the collaboration are included.
-#     include_chi2 : bool, optional
-#         Whether to include the chi-squared statistic in the results.
-#     include_totals : bool, optional
-#         Whether to include totals in the contingency table.
-#     """
-#     # get all organizations (ids) within the collaboration so you can send a
-#     # task to them.
-#     if not organizations_to_include:
-#         organizations = client.organization.list()
-#         organizations_to_include = [
-#             organization.get("id") for organization in organizations
-#         ]
-
-#     # Define input parameters for a subtask
-#     info("Defining input parameters")
-#     input_ = {
-#         "method": "partial_crosstab",
-#         "kwargs": {
-#             "results_col": results_col,
-#             "group_cols": group_cols,
-#         },
-#     }
-
-#     # create a subtask for all organizations in the collaboration.
-#     info("Creating subtask to compute partial contingency tables")
-#     task = client.task.create(
-#         input_=input_,
-#         organizations=organizations_to_include,
-#         name="Partial crosstabulation",
-#         description="Contingency table for each organization",
-#     )
-
-#     # wait for node to return results of the subtask.
-#     info("Waiting for results")
-#     results = client.wait_for_results(task_id=task.get("id"))
-#     info("Results obtained!")
-
-#     # return the final results of the algorithm
-#     return _aggregate_results(results, group_cols, include_chi2, include_totals)
-
-
 def _aggregate_results(
     results: dict, group_cols: list[str], include_chi2: bool, include_totals: bool
 ) -> pd.DataFrame:
@@ -210,6 +150,10 @@ def _aggregate_results(
     partial_dfs = []
     for result in results:
         df = pd.read_json(StringIO(result))
+        # Skip empty dataframes from nodes with no data
+        if df.empty:
+            info("Skipping empty dataframe from a node with no data")
+            continue
         # set group cols as index
         df.set_index(group_cols, inplace=True)
         partial_dfs.append(df)
@@ -476,9 +420,12 @@ def _partial_crosstab(
 
     # check if env var values are compatible
     info("Checking privacy settings before starting...")
-    _do_prestart_privacy_checks(
-        df, group_cols + [results_col], PRIVACY_THRESHOLD, ALLOW_ZERO
-    )
+    try:
+        _do_prestart_privacy_checks(
+            df, group_cols + [results_col], PRIVACY_THRESHOLD, ALLOW_ZERO
+        )
+    except Exception:
+        return "[]"
 
     # TODO this is a fix for categorical columns with empty values.
     categorical_columns = df.select_dtypes(include=["category"]).columns
@@ -511,11 +458,12 @@ def _partial_crosstab(
             non_na_crosstab_df.index.get_level_values(col) != "N/A"
         ]
     if not (non_na_crosstab_df >= PRIVACY_THRESHOLD).any().any():
-        raise PrivacyThresholdViolation(
-            "No values in the contingency table are higher than the privacy threshold "
-            f"of {PRIVACY_THRESHOLD}. Please check if you submitted categorical "
-            "variables - if you did, there may simply not be enough data at this node."
-        )
+        return "[]"
+        # raise PrivacyThresholdViolation(
+        #     "No values in the contingency table are higher than the privacy threshold "
+        #     f"of {PRIVACY_THRESHOLD}. Please check if you submitted categorical "
+        #     "variables - if you did, there may simply not be enough data at this node."
+        # )
 
     # Replace too low values with a privacy-preserving value
     info("Replacing values below threshold with privacy-enhancing values...")
