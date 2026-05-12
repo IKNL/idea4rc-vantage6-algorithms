@@ -219,7 +219,7 @@ WITH
         WHERE rn = 1
     ),
 
-{if is_head_and_neck %},
+{% if is_head_and_neck %}
    -- Assumption: first surgery_extra_nodal_extension is the relevant one
     surgery_extra_nodal_extension AS (
         SELECT
@@ -252,8 +252,8 @@ WITH
 
     surgery_laterality_of_the_dissection AS (
         SELECT
-            episode.episode_id,
-            c.concept_name AS laterality_of_the_dissection
+            episode_id,
+            laterality_of_the_dissection
         FROM (
             SELECT
                 episode.episode_id,
@@ -324,7 +324,7 @@ WITH
             ON surgeries.episode_id = surgery_intent.episode_id
         LEFT JOIN margins_after_surgery margins_after_surgery
             ON surgeries.episode_id = margins_after_surgery.episode_id
-        {% if is_head_and_neck %},
+        {% if is_head_and_neck %}
         LEFT JOIN surgery_extra_nodal_extension surgery_extra_nodal_extension
             ON surgeries.episode_id = surgery_extra_nodal_extension.episode_id
         LEFT JOIN surgery_laterality_of_the_dissection surgery_laterality_of_the_dissection
@@ -341,10 +341,10 @@ WITH
         -- Surgery 1
         MAX(CASE WHEN surgery_id = 1 THEN date_of_surgery END)            AS surgery_1_date,
         MAX(CASE WHEN surgery_id = 1 THEN surgery_intent END)             AS surgery_1_intent,
-        MAX(CASE WHEN surgery_id = 1 THEN margins_after_surgery END)      AS surgery_1_margins_after_surgery,
+        MAX(CASE WHEN surgery_id = 1 THEN margins_after_surgery END)      AS surgery_1_margins_after_surgery
             {% if is_head_and_neck %},
         MAX(CASE WHEN surgery_id = 1 THEN surgery_extra_nodal_extension END)            AS surgery_1_extra_nodal_extension,
-        MAX(CASE WHEN surgery_id = 1 THEN surgery_laterality_of_the_dissection END)     AS surgery_1_laterality_of_the_dissection,
+        MAX(CASE WHEN surgery_id = 1 THEN laterality_of_the_dissection END)     AS surgery_1_laterality_of_the_dissection,
         MAX(CASE WHEN surgery_id = 1 THEN neck_surgery END)                             AS surgery_1_neck_surgery,
         MAX(CASE WHEN surgery_id = 1 THEN date_of_neck_surgery END)                     AS surgery_1_date_of_neck_surgery,
             {% endif %}
@@ -352,10 +352,10 @@ WITH
         -- Surgery 2
         MAX(CASE WHEN surgery_id = 2 THEN date_of_surgery END)            AS surgery_2_date,
         MAX(CASE WHEN surgery_id = 2 THEN surgery_intent END)             AS surgery_2_intent,
-        MAX(CASE WHEN surgery_id = 2 THEN margins_after_surgery END)      AS surgery_2_margins_after_surgery,
+        MAX(CASE WHEN surgery_id = 2 THEN margins_after_surgery END)      AS surgery_2_margins_after_surgery
             {% if is_head_and_neck %},
         MAX(CASE WHEN surgery_id = 2 THEN surgery_extra_nodal_extension END)            AS surgery_2_extra_nodal_extension,
-        MAX(CASE WHEN surgery_id = 2 THEN surgery_laterality_of_the_dissection END)     AS surgery_2_laterality_of_the_dissection,
+        MAX(CASE WHEN surgery_id = 2 THEN laterality_of_the_dissection END)     AS surgery_2_laterality_of_the_dissection,
         MAX(CASE WHEN surgery_id = 2 THEN neck_surgery END)                             AS surgery_2_neck_surgery,
         MAX(CASE WHEN surgery_id = 2 THEN date_of_neck_surgery END)                     AS surgery_2_date_of_neck_surgery,
             {% endif %}
@@ -363,10 +363,10 @@ WITH
         -- Surgery 3
         MAX(CASE WHEN surgery_id = 3 THEN date_of_surgery END)            AS surgery_3_date,
         MAX(CASE WHEN surgery_id = 3 THEN surgery_intent END)             AS surgery_3_intent,
-        MAX(CASE WHEN surgery_id = 3 THEN margins_after_surgery END)      AS surgery_3_margins_after_surgery,
+        MAX(CASE WHEN surgery_id = 3 THEN margins_after_surgery END)      AS surgery_3_margins_after_surgery
             {% if is_head_and_neck %},
         MAX(CASE WHEN surgery_id = 3 THEN surgery_extra_nodal_extension END)            AS surgery_3_extra_nodal_extension,
-        MAX(CASE WHEN surgery_id = 3 THEN surgery_laterality_of_the_dissection END)     AS surgery_3_laterality_of_the_dissection,
+        MAX(CASE WHEN surgery_id = 3 THEN laterality_of_the_dissection END)     AS surgery_3_laterality_of_the_dissection,
         MAX(CASE WHEN surgery_id = 3 THEN neck_surgery END)                             AS surgery_3_neck_surgery,
         MAX(CASE WHEN surgery_id = 3 THEN date_of_neck_surgery END)                     AS surgery_3_date_of_neck_surgery,
             {% endif %}
@@ -374,10 +374,10 @@ WITH
         -- Surgery 4
         MAX(CASE WHEN surgery_id = 4 THEN date_of_surgery END)            AS surgery_4_date,
         MAX(CASE WHEN surgery_id = 4 THEN surgery_intent END)             AS surgery_4_intent,
-        MAX(CASE WHEN surgery_id = 4 THEN margins_after_surgery END)      AS surgery_4_margins_after_surgery,
+        MAX(CASE WHEN surgery_id = 4 THEN margins_after_surgery END)      AS surgery_4_margins_after_surgery
             {% if is_head_and_neck %},
         MAX(CASE WHEN surgery_id = 4 THEN surgery_extra_nodal_extension END)            AS surgery_4_extra_nodal_extension,
-        MAX(CASE WHEN surgery_id = 4 THEN surgery_laterality_of_the_dissection END)     AS surgery_4_laterality_of_the_dissection,
+        MAX(CASE WHEN surgery_id = 4 THEN laterality_of_the_dissection END)     AS surgery_4_laterality_of_the_dissection,
         MAX(CASE WHEN surgery_id = 4 THEN neck_surgery END)                             AS surgery_4_neck_surgery,
         MAX(CASE WHEN surgery_id = 4 THEN date_of_neck_surgery END)                     AS surgery_4_date_of_neck_surgery,
             {% endif %}
@@ -385,13 +385,13 @@ WITH
         -- Surgery 5
         MAX(CASE WHEN surgery_id = 5 THEN date_of_surgery END)            AS surgery_5_date,
         MAX(CASE WHEN surgery_id = 5 THEN surgery_intent END)             AS surgery_5_intent,
+        MAX(CASE WHEN surgery_id = 5 THEN margins_after_surgery END)      AS surgery_5_margins_after_surgery
             {% if is_head_and_neck %},
         MAX(CASE WHEN surgery_id = 5 THEN surgery_extra_nodal_extension END)            AS surgery_5_extra_nodal_extension,
-        MAX(CASE WHEN surgery_id = 5 THEN surgery_laterality_of_the_dissection END)     AS surgery_5_laterality_of_the_dissection,
+        MAX(CASE WHEN surgery_id = 5 THEN laterality_of_the_dissection END)     AS surgery_5_laterality_of_the_dissection,
         MAX(CASE WHEN surgery_id = 5 THEN neck_surgery END)                             AS surgery_5_neck_surgery,
-        MAX(CASE WHEN surgery_id = 5 THEN date_of_neck_surgery END)                     AS surgery_5_date_of_neck_surgery,
+        MAX(CASE WHEN surgery_id = 5 THEN date_of_neck_surgery END)                     AS surgery_5_date_of_neck_surgery
             {% endif %}
-        MAX(CASE WHEN surgery_id = 5 THEN margins_after_surgery END)      AS surgery_5_margins_after_surgery
 
     FROM surgeries_enriched
     GROUP BY person_id
@@ -836,7 +836,7 @@ WITH
         ORDER BY stb.person_id, stb.systemic_treatment_start_date ASC
     ),
 
-{% if is_head_and_neck %},
+{% if is_head_and_neck %}
     systemic_therapy_enriched_with_intent AS (
         SELECT
             ste.*,
@@ -855,15 +855,15 @@ WITH
         LEFT JOIN {{ cdm_schema }}.concept c
             ON c.concept_id = m.measurement_concept_id
         ORDER BY ste.person_id, ste.systemic_treatment_start_date ASC
-    )
-{% else %},
+    ),
+{% else %}
     systemic_therapy_enriched_with_intent AS (
         SELECT
             ste.*,
             NULL AS systemic_treatment_intent
         FROM
             systemic_therapy_enriched ste
-    )
+    ),
 {% endif %}
 
     systemic_therapy_ranked AS (
@@ -887,7 +887,7 @@ WITH
             MAX(CASE WHEN treatment_setting = 'pre-operative' THEN systemic_treatment_regimen END) AS pre_operative_systemic_treatment_regimen,
             MAX(CASE WHEN treatment_setting = 'pre-operative' THEN systemic_treatment_type END) AS pre_operative_systemic_treatment_type,
             MAX(CASE WHEN treatment_setting = 'pre-operative' THEN systemic_treatment_reason_for_end_of_treatment END) AS pre_operative_systemic_treatment_reason_for_end_of_treatment,
-            {% if is_head_and_neck %},
+            {% if is_head_and_neck %}
             MAX(CASE WHEN treatment_setting = 'pre-operative' THEN systemic_treatment_intent END) AS pre_operative_systemic_treatment_intent,
             {% endif %}
 
@@ -897,7 +897,7 @@ WITH
             MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 1 THEN systemic_treatment_regimen END) AS post_operative_systemic_treatment_1_regimen,
             MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 1 THEN systemic_treatment_type END) AS post_operative_systemic_treatment_1_type,
             MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 1 THEN systemic_treatment_reason_for_end_of_treatment END) AS post_operative_systemic_treatment_1_reason_for_end_of_treatment,
-            {% if is_head_and_neck %},
+            {% if is_head_and_neck %}
             MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 1 THEN systemic_treatment_intent END) AS post_operative_systemic_treatment_1_intent,
             {% endif %}
 
@@ -907,7 +907,7 @@ WITH
             MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 2 THEN systemic_treatment_regimen END) AS post_operative_systemic_treatment_2_regimen,
             MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 2 THEN systemic_treatment_type END) AS post_operative_systemic_treatment_2_type,
             MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 2 THEN systemic_treatment_reason_for_end_of_treatment END) AS post_operative_systemic_treatment_2_reason_for_end_of_treatment,
-            {% if is_head_and_neck %},
+            {% if is_head_and_neck %}
             MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 2 THEN systemic_treatment_intent END) AS post_operative_systemic_treatment_2_intent,
             {% endif %}
 
@@ -917,7 +917,7 @@ WITH
             MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 1 THEN systemic_treatment_regimen END) AS recurrence_systemic_treatment_1_regimen,
             MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 1 THEN systemic_treatment_type END) AS recurrence_systemic_treatment_1_type,
             MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 1 THEN systemic_treatment_reason_for_end_of_treatment END) AS recurrence_systemic_treatment_1_reason_for_end_of_treatment,
-            {% if is_head_and_neck %},
+            {% if is_head_and_neck %}
             MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 1 THEN systemic_treatment_intent END) AS recurrence_systemic_treatment_1_intent,
             {% endif %}
 
@@ -928,7 +928,7 @@ WITH
             MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 2 THEN systemic_treatment_type END) AS recurrence_systemic_treatment_2_type,
             MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 2 THEN systemic_treatment_reason_for_end_of_treatment END) AS recurrence_systemic_treatment_2_reason_for_end_of_treatment
             {% if is_head_and_neck %},
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 2 THEN systemic_treatment_intent END) AS recurrence_systemic_treatment_2_intent,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 2 THEN systemic_treatment_intent END) AS recurrence_systemic_treatment_2_intent
             {% endif %}
 
         FROM
