@@ -181,6 +181,7 @@ def _aggregate_partial_summaries(results: list[dict], lookup_organizations) -> d
     info("Aggregating partial summaries")
    
     is_first = True
+    zero_patient_nodes: list[tuple[str, dict]] = []
 
     def _merge_numeric_bound(
         current_value: Any,
@@ -256,6 +257,11 @@ def _aggregate_partial_summaries(results: list[dict], lookup_organizations) -> d
         organization_name = lookup_organizations[str(result["organization_id"])]
         result["date"] = _normalize_date_summary(result.get("date"))
         if is_first:
+            if result["num_rows_per_node"] == 0:
+                # skip zero-patient nodes as the aggregate seed; defer their row counts
+                zero_patient_nodes.append((organization_name, result))
+                continue
+
             # copy results. Only convert num complete rows per node to a list so that
             # we can add the other nodes to it later
             aggregate = result
@@ -276,6 +282,13 @@ def _aggregate_partial_summaries(results: list[dict], lookup_organizations) -> d
                 aggregate["numeric"][column]["q_75"] = {
                     organization_name: result["numeric"][column]["q_75"]
                 }
+
+            # retroactively register any zero-patient nodes deferred above
+            for org_name, zero_result in zero_patient_nodes:
+                aggregate["num_complete_rows_per_node"][org_name] = (
+                    zero_result["num_complete_rows_per_node"]
+                )
+                aggregate["num_rows_per_node"][org_name] = zero_result["num_rows_per_node"]
 
             is_first = False
             continue
@@ -397,7 +410,6 @@ def _add_sd_to_results(
     return results
 
 
-# Do not provide the columns as we want all columns to be included
 @federated
 @metadata
 @dataframes
@@ -433,24 +445,23 @@ def summary_per_data_station(
             results[name] = structure_summary_per_data_station_output(
                 df, _summary_per_data_station(df, *args, **kwargs), metadata
             )
-        # Add median and quantiles (0.25, 0.75)
     return results
 
 
 def structure_summary_per_data_station_output(df, results, metadata):
+    results["organization_id"] = metadata.organization_id or 0
     for var in results["numeric"]:
         # Temp fix to avoid errors when all values are NaN
         if df[var].isna().all():
             warn(f"Column {var} is all NaN, skipping")
             results["numeric"][var]["median"] = 1
             results["numeric"][var]["q_25"] = 1
-            results["numeric"][var]["q_75"] = 1    
+            results["numeric"][var]["q_75"] = 1
             continue
 
         results["numeric"][var]["median"] = float(np.nanmedian(df[var]))
         results["numeric"][var]["q_25"] = float(np.nanquantile(df[var], 0.25))
         results["numeric"][var]["q_75"] = float(np.nanquantile(df[var], 0.75))
-        results["organization_id"] = metadata.organization_id or 0
     return results
 
 
@@ -737,23 +748,23 @@ def _filter_results(
     """
     if not get_env_var(EnvVarsAllowed.ALLOW_MIN.value, default="true", as_type="bool"):
         warn("Removing minimum from summary as policies do not allow sharing it.")
-        summary_numeric.drop("min", inplace=True)
+        summary_numeric.drop("min", inplace=True, errors="ignore")
     if not get_env_var(EnvVarsAllowed.ALLOW_MAX.value, default="true", as_type="bool"):
         warn("Removing maximum from summary as policies do not allow sharing it.")
-        summary_numeric.drop("max", inplace=True)
+        summary_numeric.drop("max", inplace=True, errors="ignore")
     if not get_env_var(
         EnvVarsAllowed.ALLOW_COUNT.value, default="true", as_type="bool"
     ):
         warn("Removing count from summary as policies do not allow sharing it.")
-        summary_numeric.drop("count", inplace=True)
+        summary_numeric.drop("count", inplace=True, errors="ignore")
     if not get_env_var(EnvVarsAllowed.ALLOW_SUM.value, default="true", as_type="bool"):
         warn("Removing sum from summary as policies do not allow sharing it.")
-        summary_numeric.drop("sum", inplace=True)
+        summary_numeric.drop("sum", inplace=True, errors="ignore")
     if not get_env_var(
         EnvVarsAllowed.ALLOW_MISSING.value, default="true", as_type="bool"
     ):
         warn("Removing missing from summary as policies do not allow sharing it.")
-        summary_numeric.drop("missing", inplace=True)
+        summary_numeric.drop("missing", inplace=True, errors="ignore")
     return summary_numeric, summary_categorical
 
 

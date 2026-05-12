@@ -15,20 +15,20 @@ This folder contains all documentation required for the vantage6 components to b
   - [Sarcoma](#sarcoma-variables)
 - [Authentication](#authentication)
 - [Analytics Algorithms](#analytics-algorithms)
-  - [Summary & Table1](#summary-and-table1)
-  - [Crosstabs & Chi-Square (Contingency table)](#crosstabs--chi-square-contingency-table)
-  - [T-test](#t-test)
-  - [Kaplan Meier and Log Rank](#kaplan-meier-and-log-rank)
-  - [GLM](#glm)
-  - [CoxPH](#coxph)
+  - [Summary & Table1](#summary-and-table1) - [Notebook Data Preparation](./raven-api-documentation/3-data-preparation.ipynb) - [Notebook Table1](./raven-api-documentation/5-analytics-table1.ipynb)
+  - [Crosstabs & Chi-Square (Contingency table)](#crosstabs--chi-square-contingency-table) - [Notebook](./raven-api-documentation/4-analytics-crosstabs-and-chisquared.ipynb)
+  - [T-test](#t-test) - [Notebook](./raven-api-documentation/6-analytics-t-test.ipynb)
+  - [Kaplan Meier and Log Rank](#kaplan-meier-and-log-rank) - [Notebook](./raven-api-documentation/7-analytics-kaplan-meier-and-log-rank.ipynb)
+  - [GLM](#glm) - [Notebook](./raven-api-documentation/8-analytics-glm.ipynb)
+  - [CoxPH](#coxph) - Notebook
 - [Preprocessing Algorithms](#preprocessing-algorithms)
-  - [Timedelta](#timedelta)
-  - [Merge categories](#merge-categories)
-  - [One hot encoding](#one-hot-encoding)
-  - [Merge variables](#merge-variables)
-  - [Basic Arithmetic](#basic-arithmetic)
-  - [Drop column](#drop-column)
-  - [To boolean](#to-boolean)
+  - [Timedelta](#timedelta) - [Notebook](./raven-api-documentation/9-preprocessing-time-delta.ipynb)
+  - [Merge categories](#merge-categories) - [Notebook](./raven-api-documentation/10-preprocessing-merge-categories.ipynb)
+  - [One hot encoding](#one-hot-encoding) - [Notebook](./raven-api-documentation/11-preprocessing-one-hot-encoding.ipynb)
+  - [Merge variables](#merge-variables) - [Notebook](./raven-api-documentation/12-preprocessing-merge-variables.ipynb)
+  - [Basic Arithmetic](#basic-arithmetic) - [Notebook](./raven-api-documentation/14-preprocessing-basic-arithmetic.ipynb)
+  - [Drop column](#drop-column) - [Notebook](./raven-api-documentation/13-preprocessing-drop-variable.ipynb)
+  - [To boolean](#to-boolean) - [Notebook](./raven-api-documentation/15-preprocessing-to-boolean.ipynb)
   
 
 ## Introduction
@@ -59,6 +59,8 @@ deliverables/
 │   ├── 1-new-analysis.ipynb
 │   ├── 2-new-cohort.ipynb
 │   ├── 3-data-preparation.ipynb
+│   ├── 3a-task-status-page.ipynb
+│   ├── 3b-kill-running-tasks.ipynb
 │   ├── 4-analytics-crosstabs-and-chisquared.ipynb
 │   ├── 6-analytics-t-test.ipynb
 │   ├── 7-analytics-kaplan-meier-and-log-rank.ipynb
@@ -69,6 +71,7 @@ deliverables/
 │   ├── 12-preprocessing-merge-variables.ipynb
 │   ├── 13-preprocessing-drop-variable.ipynb
 │   ├── 14-preprocessing-basic-arithmetic.ipynb
+│   ├── 15-preprocessing-to-boolean.ipynb
 │   └── token.txt # used for authentication in the 0-X notebooks, not in the repo. Create yourself.
 ├── security-and-privacy/ # Security analysis per algorithm required by the CoEs
 │   ├── Security & Privacy Summary.pdf      
@@ -517,6 +520,8 @@ The input parameters are as follows:
 |`column`|✅|✅|`str`|The column name to drop.
 
 ### To boolean
+
+[API documentation Notebook](./raven-api-documentation/15-preprocessing-to-boolean.ipynb)
 
 |Argument|Required|Display as argument|Type|Description|
 |---|---|---|---|---|
