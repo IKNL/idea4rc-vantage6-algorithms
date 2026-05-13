@@ -21,7 +21,7 @@ from v6_idea4rc_common.type_guards import (
     assert_columns_dtype_in,
     classify_idea4rc_dtype,
 )
-from .utils import create_child_task
+from .utils import create_child_task, assert_results_complete
 
 
 def _filter_dataframes_on_names(
@@ -405,6 +405,7 @@ def coxph_central(
         )
         info("Waiting for results")
         results = client.wait_for_results(task_id=task_id)
+        assert_results_complete(results, "get_unique_event_times")
         info("Results obtained!")
 
         if not results:
@@ -495,6 +496,7 @@ def coxph_central(
     )
     info("Waiting for results")
     cat_results = client.wait_for_results(task_id=cat_task_id)
+    assert_results_complete(cat_results, "get_categorical_levels")
     info("Results obtained!")
 
     for df_name in active_dataframe_names:
@@ -559,6 +561,7 @@ def coxph_central(
     )
     info("Waiting for results")
     results = client.wait_for_results(task_id=task_id)
+    assert_results_complete(results, "compute_summed_z")
     info("Results obtained!")
 
     z_sum = {}
@@ -619,6 +622,7 @@ def coxph_central(
         )
         info("Waiting for results")
         results = client.wait_for_results(task_id=task_id)
+        assert_results_complete(results, f"perform_iteration (epoch {iteration})")
         info("Results obtained!")
 
         summed_agg1 = {}
