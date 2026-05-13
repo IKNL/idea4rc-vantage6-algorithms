@@ -153,7 +153,7 @@ def _compute_summed_z(df: pd.DataFrame, outcome_col, expl_vars):
         algorithm="coxph",
         expected_kind="numeric (nullable Int64 or Float64)",
     )
-    z_sum = (df[df[outcome_col] == 1][expl_vars].sum().to_dict())
+    z_sum = (df[df[outcome_col] == 1][expl_vars].dropna().sum().to_dict())
     return {'sum': z_sum}
 
 
@@ -197,18 +197,17 @@ def _perform_iteration(df: pd.DataFrame, time_col, expl_vars, beta, unique_time_
     agg3 = []
 
     for i in range(num_unique_time_events):
-        R_i = df[df[time_col] >= unique_time_events[i]][expl_vars]
-        # Check if R_i is empty
-        if not R_i.empty:
-            ebz = np.exp(np.dot(np.array(R_i), beta))
-            agg1.append(sum(ebz))
-            func = lambda x: np.asarray(x) * np.asarray(ebz)
-            z_ebz = R_i.apply(func)
-            agg2.append(z_ebz.sum())
+        R_i_df = df[df[time_col] >= unique_time_events[i]][expl_vars].dropna()
+        if not R_i_df.empty:
+            R_i = R_i_df.to_numpy(dtype=float)
+            ebz = np.exp(np.dot(R_i, beta))
+            agg1.append(float(np.sum(ebz)))
+            z_ebz = R_i * ebz[:, np.newaxis]
+            agg2.append(pd.Series(z_ebz.sum(axis=0), index=expl_vars))
 
             summed = np.zeros((num_explanatory_vars, num_explanatory_vars))
             for j in range(len(R_i)):
-                summed = summed + np.outer(np.array(z_ebz)[j], np.array(R_i)[j].T)
+                summed += np.outer(z_ebz[j], R_i[j])
             agg3.append(summed)
 
         else:
@@ -458,8 +457,17 @@ def coxph_central(
             beta_old = np.array(betas[df_name])
             try:
                 beta_new = beta_old - solve(secondary_derivative, primary_derivative)
-            except Exception:
-                info(f"Solve failed for dataframe {df_name}, keeping current beta.")
+            except Exception as e:
+                msg = (
+                    f"Newton step failed for cohort '{df_name}': cannot solve the Fisher "
+                    "information system (singular matrix). Likely causes: perfect multicollinearity "
+                    "(e.g. age and year_of_birth are linearly dependent), complete separation, or "
+                    "numerical overflow from diverging betas. Consider removing collinear or "
+                    "redundant predictors."
+                )
+                warn(msg)
+                converged_results[df_name] = {"msg": msg}
+                to_remove.append(df_name)
                 continue
             delta = float(np.max(np.abs(beta_new - beta_old)))
 
@@ -600,7 +608,15 @@ def _prepare_cohort_result(
     """Build the per-cohort result dict (model table, AIC, warnings, etc.)."""
     n_params = len(beta)
     SErrors = []
-    fisher = np.linalg.inv(-secondary_derivative)
+    try:
+        fisher = np.linalg.inv(-secondary_derivative)
+    except np.linalg.LinAlgError:
+        msg = (
+            "Cannot compute standard errors: Fisher information matrix is singular. "
+            "Likely causes: perfect multicollinearity or complete separation."
+        )
+        warn(msg)
+        return {"msg": msg}
     for k in range(fisher.shape[0]):
         SErrors.append(np.sqrt(fisher[k, k]))
 
