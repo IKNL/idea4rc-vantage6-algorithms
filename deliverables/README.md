@@ -264,14 +264,14 @@ Variable|Type|Status|Notes
 `surgery_intent`|`CategoricalDtype`|✅|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `4179711`, `4162591` and `measurement_event_id` is equal to `procedure_occurrence.procedure_occurrence_id` which is equal to `episode_event.event_id` and `episode_event.episode_id` is equal to `episode.episode_id` where `episode.episode_concept_id = 32939`
 `margins_after_surgery`|`CategoricalDtype`|✅|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `1634643`, `1633801`, `1634484` and `measurement_event_id` is equal to `procedure_occurrence.procedure_occurrence_id` which is equal to `episode_event.event_id` and `episode_event.episode_id` is equal to `episode.episode_id` where `episode.episode_concept_id = 32939`
 `date_of_surgery`|`datetime64[ns, tz]`|✅||
-`radio_therapy_intent`|`CategoricalDtype`|*|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `4179711`, `4162591`.
-`radiotherapy_hospital`|???|*|
-`radio_start_date`|`datetime64[ns, tz]`|*||
-`radio_end_date`|`datetime64[ns, tz]`|*||
-`radio_setting`|`CategoricalDtype`(?)|*|
-`radio_total_dose_gy`|`Float64`|*|
-`radio_number_of_fractions`|`Float64`|*|
-`radio_treatment_completed_as_planned`|`CategoricalDtype`|*|
+`radio_therapy_intent`|`CategoricalDtype`|🆕|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `4179711`, `4162591` and `measurement_event_id` is equal to `procedure_occurrence.procedure_occurrence_id` which is equal to `episode_event.event_id` and `episode_event.episode_id` is equal to `episode.episode_id` where `episode.episode_concept_id = 32940`
+`radiotherapy_hospital`|`CategoricalDtype`|🆕|`provider_name` of `provider.provider_id` where `provider_id` is equal to (`procedure_occurrence.provider_id` where `procedure_occurrence_id` is equal to `episode_event.event_id` and `episode_event.episode_id` is equal to `episode.episode_id` where `episode.episode_concept_id = 32940`)
+`radio_start_date`|`datetime64[ns, tz]`|🆕|`episode_start_date` of `episode.episode_concept_id = 32940`
+`radio_end_date`|`datetime64[ns, tz]`|🆕|`episode_end_date` of `episode.episode_concept_id = 32940`
+`radio_setting`|`CategoricalDtype`(?)|🆕|Derived, with settings included in the variable name
+`radio_total_dose_gy`|`Float64`|🆕|`value_as_number` of `measurement.measurement_concept_id` where `measurement_concept_id = 40483776` and `measurement_event_id` is equal to `procedure_occurrence.procedure_occurrence_id` which is equal to `episode_event.event_id` and `episode_event.episode_id` is equal to `episode.episode_id` where `episode.episode_concept_id = 32940`
+`radio_number_of_fractions`|`Float64`|🆕|`value_as_number` of `measurement.measurement_concept_id` where `measurement_concept_id = 4037631` and `measurement_event_id` is equal to `procedure_occurrence.procedure_occurrence_id` which is equal to `episode_event.event_id` and `episode_event.episode_id` is equal to `episode.episode_id` where `episode.episode_concept_id = 32940`
+`radio_treatment_completed_as_planned`|`CategoricalDtype`|🆕|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `44788181`, `4161588`, `2000100030`, `4105297`, `37017062`, `4306655` and `measurement_event_id` is equal to `procedure_occurrence.procedure_occurrence_id` which is equal to `episode_event.event_id` and `episode_event.episode_id` is equal to `episode.episode_id` where `episode.episode_concept_id = 32940`
 `[pre_operative/post_operative/recurrence]_systemic_treatment[_[i]]_type`|`CategoricalDtype`|✅|`concept_name` of `procedure_occurrence.procedure_concept_id` where `procedure_occurrence_id` is equal to `episode_event.event_id` and `episode_event.episode_id` is equal to `episode.episode_id` where `episode.episode_concept_id = 32531`
 `[pre_operative/post_operative/recurrence]_systemic_treatment[_[i]]_start_date`|`datetime64[ns, tz]`|✅|`episode_start_date` of `episode.episode_concept_id = 32531`
 `[pre_operative/post_operative/recurrence]_systemic_treatment[_[i]]_end_date`|`datetime64[ns, tz]`|✅|`episode_end_date` of `episode.episode_concept_id = 32531`
