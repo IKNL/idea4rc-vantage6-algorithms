@@ -281,7 +281,7 @@ def glm(
     # betas = {cohort_name: None for cohort_name in cohort_names}
     betas = None
     while iteration <= max_iterations:
-        converged, new_betas, deviance, cohort_names = _do_iteration(
+        converged, new_betas, deviance, cohort_names, error_cohorts = _do_iteration(
             iteration=iteration,
             client=client,
             formula=formula,
@@ -294,9 +294,15 @@ def glm(
             use_cohort_names=active_cohort_names,
         )
 
+        # Handle error cohorts immediately
+        for cohort, err in error_cohorts.items():
+            warn(f"Cohort '{cohort}' failed: {err['msg']}")
+            converged_results[cohort] = {"msg": err["msg"]}
+            if cohort in active_cohort_names:
+                active_cohort_names.remove(cohort)
+
         # On first iteration, initialize cohort tracking
         if iteration == 1:
-            all_cohort_names = cohort_names
             active_cohort_names = cohort_names
 
         # Update betas and track converged cohorts
@@ -307,6 +313,8 @@ def glm(
 
         # Check convergence for each cohort
         for cohort in active_cohort_names[:]:  # Iterate over copy to allow removal
+            if cohort not in deviance:
+                continue
             if deviance[cohort]["new"] == 0 or (
                 abs(deviance[cohort]["old"] - deviance[cohort]["new"])
                 / deviance[cohort]["new"]
@@ -439,7 +447,11 @@ def _do_iteration(
         new_betas[cohort] = _compute_central_betas(cohort_partials, family)
     info(" - Central betas obtained!")
 
-    # compute the deviance for each cohort
+    # separate error cohorts from healthy ones
+    error_cohorts = {c: new_betas.pop(c) for c in list(new_betas) if new_betas[c].get("error")}
+    healthy_cohort_names = [c for c in cohort_names if c not in error_cohorts]
+
+    # compute the deviance for each cohort (only healthy ones)
     info("Computing deviance")
     deviance_partials = _compute_partial_deviance(
         client=client,
@@ -460,12 +472,12 @@ def _do_iteration(
     )
 
     deviance = {}
-    for cohort in cohort_names:
+    for cohort in healthy_cohort_names:
         cohort_partials = [result[cohort] for result in deviance_partials]
         deviance[cohort] = _compute_deviance(cohort_partials)
     info(" - Deviance computed!")
 
-    return False, new_betas, deviance, cohort_names
+    return False, new_betas, deviance, healthy_cohort_names, error_cohorts
 
 
 def _filter_df_on_cohort_names(dfs, cohort_names, use_cohort_names):
@@ -543,8 +555,18 @@ def _compute_central_betas(
     XTX_np = XTX_sum.to_numpy()
     XTz_np = XTz_sum.to_numpy()
 
-    beta_estimates = np.linalg.solve(XTX_np, XTz_np).flatten()
-    std_error_betas = np.sqrt(np.diag(np.linalg.inv(XTX_np) * dispersion))
+    try:
+        beta_estimates = np.linalg.solve(XTX_np, XTz_np).flatten()
+        std_error_betas = np.sqrt(np.diag(np.linalg.inv(XTX_np) * dispersion))
+    except np.linalg.LinAlgError:
+        msg = (
+            "Singular matrix: XᵀWX is not invertible. "
+            "Likely causes: perfect separation, multicollinearity between predictors "
+            "(e.g. age and year_of_birth are linearly dependent), or more parameters "
+            "than events. Consider removing collinear or redundant predictors."
+        )
+        warn(msg)
+        return {"error": True, "msg": msg}
 
     # add the indices back to the beta estimates
     indices = pd.DataFrame(partial_betas[0]["XTX"]).index
@@ -1454,17 +1476,7 @@ class GLMDataManager:
                 f"Invalid outcome expression '{lhs}'. Provide a single outcome column name."
             )
         return lhs
-        non_allowed_collumns = get_env_var(ENVVAR_DISALLOWED_COLUMNS)
-        if non_allowed_collumns:
-            non_allowed_collumns = non_allowed_collumns.split(",")
-            for col in columns_used:
-                if col in non_allowed_collumns:
-                    raise NodePermissionException(
-                        f"The node administrator does not allow '{col}' to be requested"
-                        " in this algorithm computation. Please contact the node "
-                        "administrator for more information."
-                    )
-
+        
     @staticmethod
     def _simplify_column_names(columns: pd.Index) -> pd.Index:
         """
