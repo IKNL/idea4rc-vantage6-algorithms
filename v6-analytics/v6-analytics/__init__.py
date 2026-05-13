@@ -23,6 +23,7 @@ from .coxph import (
     compute_summed_z,
     perform_iteration,
     get_unique_event_times as coxph_get_unique_event_times,
+    get_categorical_levels as coxph_get_categorical_levels,
 )
 
 __all__ = [
@@ -45,4 +46,5 @@ __all__ = [
     "compute_summed_z",
     "perform_iteration",
     "coxph_get_unique_event_times",
+    "coxph_get_categorical_levels",
 ]

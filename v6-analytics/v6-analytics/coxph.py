@@ -5,6 +5,7 @@ from scipy.stats import norm, chi2
 from scipy.linalg import solve
 
 from vantage6.algorithm.tools.util import info, warn, error
+from vantage6.algorithm.tools.exceptions import UserInputError
 from vantage6.algorithm.client import AlgorithmClient
 from vantage6.algorithm.decorator.metadata import RunMetaData
 from vantage6.algorithm.decorator import (
@@ -18,6 +19,7 @@ from v6_idea4rc_common.type_guards import (
     Idea4rcDType,
     assert_column_dtype_in,
     assert_columns_dtype_in,
+    classify_idea4rc_dtype,
 )
 from .utils import create_child_task
 
@@ -29,6 +31,20 @@ def _filter_dataframes_on_names(
     if not use_dataframe_names:
         return dataframes
     return {name: dataframes[name] for name in use_dataframe_names if name in dataframes}
+
+
+@federated
+@dataframes
+def get_categorical_levels(
+    dataframes: dict[str, pd.DataFrame],
+    expl_vars: list[str],
+    use_dataframe_names: list[str] | None = None,
+) -> dict[str, dict[str, list]]:
+    dataframes = _filter_dataframes_on_names(dataframes, use_dataframe_names)
+    results = {}
+    for name, df in dataframes.items():
+        results[name] = _get_categorical_levels(df, expl_vars)
+    return results
 
 
 @federated
@@ -55,11 +71,13 @@ def compute_summed_z(
     outcome_col: str,
     expl_vars: list[str],
     use_dataframe_names: list[str] | None = None,
+    categorical_specs: dict[str, dict] | None = None,
 ) -> dict[str, dict]:
     dataframes = _filter_dataframes_on_names(dataframes, use_dataframe_names)
+    specs = categorical_specs or {}
     results = {}
     for name, df in dataframes.items():
-        results[name] = _compute_summed_z(df, outcome_col, expl_vars)
+        results[name] = _compute_summed_z(df, outcome_col, expl_vars, specs.get(name))
     return results
 
 
@@ -72,14 +90,99 @@ def perform_iteration(
     beta: dict[str, list[float]],
     unique_time_events: dict[str, list[float]],
     use_dataframe_names: list[str] | None = None,
+    categorical_specs: dict[str, dict] | None = None,
 ) -> dict[str, dict]:
     dataframes = _filter_dataframes_on_names(dataframes, use_dataframe_names)
+    specs = categorical_specs or {}
     results = {}
     for name, df in dataframes.items():
         results[name] = _perform_iteration(
-            df, time_col, expl_vars, beta[name], unique_time_events[name]
+            df, time_col, expl_vars, beta[name], unique_time_events[name], specs.get(name)
         )
     return results
+
+
+def _format_indicator_name(column: str, level) -> str:
+    """Render a one-hot indicator column name in GLM-style: ``column[T.level]``."""
+    return f"{column}[T.{level}]"
+
+
+def _get_categorical_levels(df: pd.DataFrame, expl_vars: list[str]) -> dict[str, list]:
+    """Return the sorted unique non-null values for each ``category``-dtype column in ``expl_vars``.
+
+    Columns with non-categorical dtype are skipped, so the central function can use the
+    keys of the returned mapping as the auto-detected categorical predictor set.
+    """
+    info("Collecting categorical levels")
+    levels: dict[str, list] = {}
+    for col in expl_vars:
+        if col not in df.columns:
+            continue
+        if classify_idea4rc_dtype(df[col]) is not Idea4rcDType.CATEGORY:
+            continue
+        series = df[col].dropna()
+        unique_values = sorted({str(v) for v in series.unique()})
+        levels[col] = unique_values
+    return levels
+
+
+def _apply_one_hot_encoding(
+    df: pd.DataFrame,
+    expl_vars: list[str],
+    categorical_specs: dict[str, dict],
+) -> tuple[pd.DataFrame, list[str]]:
+    """Expand categorical columns in ``expl_vars`` into indicator columns.
+
+    ``categorical_specs`` maps each categorical column to ``{"levels": [...], "reference": <value>}``.
+    Returns the encoded dataframe and the resolved (post-encoding) ``expl_vars`` list, preserving
+    the original variable order. Indicator columns are cast to ``Float64`` so the downstream
+    numeric dtype assertions pass.
+
+    Source values are normalized to strings to match the discovered levels (which are also
+    stringified). Rows with a missing value in the source column have ``pd.NA`` in every
+    indicator column so the existing ``.dropna()`` calls still drop those rows.
+    """
+    if not categorical_specs:
+        return df, list(expl_vars)
+
+    encoded_df = df.copy()
+    resolved: list[str] = []
+
+    for var in expl_vars:
+        if var not in categorical_specs:
+            resolved.append(var)
+            continue
+
+        spec = categorical_specs[var]
+        levels = list(spec["levels"])
+        reference = spec["reference"]
+        non_reference_levels = [lvl for lvl in levels if lvl != reference]
+        indicator_names = [_format_indicator_name(var, lvl) for lvl in non_reference_levels]
+
+        source = encoded_df[var].astype("string")
+        na_mask = source.isna().to_numpy()
+        cat_series = source.astype(pd.CategoricalDtype(categories=levels))
+
+        dummies = pd.get_dummies(
+            cat_series, prefix=var, prefix_sep="__SEP__", dummy_na=False
+        )
+        rename_map = {
+            f"{var}__SEP__{lvl}": _format_indicator_name(var, lvl) for lvl in levels
+        }
+        dummies = dummies.rename(columns=rename_map)
+        dummies = (
+            dummies.reindex(columns=indicator_names, fill_value=0).astype("Float64")
+        )
+        if na_mask.any() and indicator_names:
+            dummies.loc[na_mask, indicator_names] = pd.NA
+
+        encoded_df = encoded_df.drop(columns=[var])
+        for name in indicator_names:
+            encoded_df[name] = dummies[name].values
+
+        resolved.extend(indicator_names)
+
+    return encoded_df, resolved
 
 
 def _get_unique_event_times(df: pd.DataFrame, time_col: str, outcome_col: str, metadata: RunMetaData) -> dict:
@@ -125,7 +228,7 @@ def _get_unique_event_times(df: pd.DataFrame, time_col: str, outcome_col: str, m
     return {'times': times.to_dict()}
 
 
-def _compute_summed_z(df: pd.DataFrame, outcome_col, expl_vars):
+def _compute_summed_z(df: pd.DataFrame, outcome_col, expl_vars, categorical_specs=None):
     """
     This function computes the sum of the specified explanatory variables for the outcome events.
 
@@ -134,6 +237,9 @@ def _compute_summed_z(df: pd.DataFrame, outcome_col, expl_vars):
     df (pandas.DataFrame): The DataFrame containing the data.
     outcome_col (str): The name of the column in the DataFrame that contains the outcome data.
     expl_vars (list): A list of explanatory variables to be used in the computation.
+    categorical_specs (dict, optional): Mapping from categorical column name to
+        ``{"levels": [...], "reference": <value>}``. If provided, the listed columns are
+        one-hot encoded (with the reference level dropped) before computation.
 
     Returns:
     dict: A dictionary containing the sum of the explanatory variables for the outcome events.
@@ -146,6 +252,7 @@ def _compute_summed_z(df: pd.DataFrame, outcome_col, expl_vars):
         algorithm="coxph",
         expected_kind="boolean (pandas 'boolean')",
     )
+    df, expl_vars = _apply_one_hot_encoding(df, list(expl_vars), categorical_specs or {})
     assert_columns_dtype_in(
         df,
         list(expl_vars),
@@ -157,7 +264,7 @@ def _compute_summed_z(df: pd.DataFrame, outcome_col, expl_vars):
     return {'sum': z_sum}
 
 
-def _perform_iteration(df: pd.DataFrame, time_col, expl_vars, beta, unique_time_events):
+def _perform_iteration(df: pd.DataFrame, time_col, expl_vars, beta, unique_time_events, categorical_specs=None):
     """
     This function performs an iteration of the algorithm, computing the necessary aggregates.
 
@@ -168,6 +275,9 @@ def _perform_iteration(df: pd.DataFrame, time_col, expl_vars, beta, unique_time_
     expl_vars (list): A list of explanatory variables to be used in the computation.
     beta (numpy.ndarray): The current estimate of the beta coefficients.
     unique_time_events (list): A list of unique time events.
+    categorical_specs (dict, optional): Mapping from categorical column name to
+        ``{"levels": [...], "reference": <value>}``. If provided, the listed columns are
+        one-hot encoded (with the reference level dropped) before computation.
 
     Returns:
     dict: A dictionary containing the aggregates computed during the iteration.
@@ -180,6 +290,7 @@ def _perform_iteration(df: pd.DataFrame, time_col, expl_vars, beta, unique_time_
         algorithm="coxph",
         expected_kind="numeric (nullable Int64 or Float64)",
     )
+    df, expl_vars = _apply_one_hot_encoding(df, list(expl_vars), categorical_specs or {})
     assert_columns_dtype_in(
         df,
         list(expl_vars),
@@ -229,7 +340,12 @@ def _perform_iteration(df: pd.DataFrame, time_col, expl_vars, beta, unique_time_
 @central
 @algorithm_client
 def coxph_central(
-    client: AlgorithmClient, time_col, outcome_col, expl_vars, organizations_to_include
+    client: AlgorithmClient,
+    time_col,
+    outcome_col,
+    expl_vars,
+    organizations_to_include,
+    category_reference_values: dict[str, str] | None = None,
 ):
     """
     This function is the central part of the algorithm. It performs the main
@@ -237,9 +353,24 @@ def coxph_central(
     Results are unpacked per dataframe and dataframes that have converged are
     removed from the iteration loop.
 
+    Any column in ``expl_vars`` with pandas ``category`` dtype is auto-detected and
+    one-hot encoded at the federated nodes before fitting. Levels are discovered via an
+    extra federated round so the encoded column set is consistent across nodes. By
+    default the alphabetically-first level of each categorical variable serves as the
+    dropped reference; this can be overridden per-variable via ``category_reference_values``.
+
     Returns:
     dict: {"cohorts": {df_name: {...}}, "details": {"iterations": ..., "all_converged": ...}}
     """
+
+    category_reference_values = dict(category_reference_values or {})
+
+    invalid_refs = [c for c in category_reference_values if c not in expl_vars]
+    if invalid_refs:
+        warn(
+            f"category_reference_values entries for {invalid_refs} are ignored "
+            "because the columns are not in expl_vars."
+        )
 
     if not isinstance(organizations_to_include, list):
         organisations = client.organization.list()
@@ -249,7 +380,6 @@ def coxph_central(
 
     info(f"Sending task to organizations {ids}")
 
-    n_covs = len(expl_vars)
     epochs = 25
     tolerance = 1e-6
 
@@ -343,6 +473,76 @@ def coxph_central(
             "details": {"iterations": 0, "all_converged": False},
         }
 
+    # --- Auto-detect categorical predictors via federated discovery ---
+    categorical_specs: dict[str, dict[str, dict]] = {
+        df_name: {} for df_name in active_dataframe_names
+    }
+    resolved_expl_vars: dict[str, list[str]] = {
+        df_name: list(expl_vars) for df_name in active_dataframe_names
+    }
+
+    info(f"Discovering categorical levels for {list(expl_vars)} across organizations")
+    cat_task_id = create_child_task(
+        client,
+        method="coxph_get_categorical_levels",
+        arguments={
+            "expl_vars": expl_vars,
+            "use_dataframe_names": active_dataframe_names,
+        },
+        organizations=ids,
+        name="Categorical levels",
+        description="Detecting categorical predictors and their levels per organization",
+    )
+    info("Waiting for results")
+    cat_results = client.wait_for_results(task_id=cat_task_id)
+    info("Results obtained!")
+
+    for df_name in active_dataframe_names:
+        included_set = set(ids_included[df_name])
+        per_col_union: dict[str, set] = {}
+        for org_id, org_result in zip(ids, cat_results):
+            if org_id not in included_set or df_name not in org_result:
+                continue
+            org_levels = org_result[df_name] or {}
+            for col, lvls in org_levels.items():
+                per_col_union.setdefault(col, set()).update(lvls)
+
+        specs_for_cohort: dict[str, dict] = {}
+        for col in expl_vars:
+            if col not in per_col_union:
+                continue
+            levels_sorted = sorted(per_col_union[col])
+            if not levels_sorted:
+                continue
+            if col in category_reference_values:
+                reference = category_reference_values[col]
+                if reference not in levels_sorted:
+                    raise UserInputError(
+                        f"category_reference_values['{col}']={reference!r} is not present "
+                        f"in the observed levels {levels_sorted} for cohort '{df_name}'."
+                    )
+            else:
+                reference = levels_sorted[0]
+            specs_for_cohort[col] = {"levels": levels_sorted, "reference": reference}
+        categorical_specs[df_name] = specs_for_cohort
+
+        resolved: list[str] = []
+        for var in expl_vars:
+            if var in specs_for_cohort:
+                spec = specs_for_cohort[var]
+                resolved.extend(
+                    _format_indicator_name(var, lvl)
+                    for lvl in spec["levels"]
+                    if lvl != spec["reference"]
+                )
+            else:
+                resolved.append(var)
+        resolved_expl_vars[df_name] = resolved
+
+    n_covs_by_cohort: dict[str, int] = {
+        df_name: len(resolved_expl_vars[df_name]) for df_name in active_dataframe_names
+    }
+
     # --- compute_summed_z: unpack per dataframe ---
     task_id = create_child_task(
         client,
@@ -351,6 +551,7 @@ def coxph_central(
             "outcome_col": outcome_col,
             "expl_vars": expl_vars,
             "use_dataframe_names": active_dataframe_names,
+            "categorical_specs": categorical_specs,
         },
         organizations=ids,
         name="Summed Z statistic",
@@ -375,10 +576,13 @@ def coxph_central(
         z_sum[df_name] = (
             total
             if total is not None
-            else pd.Series(0.0, index=expl_vars)
+            else pd.Series(0.0, index=resolved_expl_vars[df_name])
         )
 
-    betas = {df_name: np.zeros(n_covs) for df_name in active_dataframe_names}
+    betas = {
+        df_name: np.zeros(n_covs_by_cohort[df_name])
+        for df_name in active_dataframe_names
+    }
     converged_results = {}
     iteration = 0
 
@@ -404,6 +608,10 @@ def coxph_central(
                     for df_name in active_dataframe_names
                 },
                 "use_dataframe_names": active_dataframe_names,
+                "categorical_specs": {
+                    df_name: categorical_specs[df_name]
+                    for df_name in active_dataframe_names
+                },
             },
             organizations=ids,
             name="Start iteration",
@@ -481,7 +689,7 @@ def coxph_central(
                     zs,
                     sag1,
                     secondary_derivative,
-                    expl_vars,
+                    resolved_expl_vars[df_name],
                     ids_included[df_name],
                     excluded_ids[df_name],
                     converged=False,
@@ -500,7 +708,7 @@ def coxph_central(
                     zs,
                     sag1,
                     secondary_derivative,
-                    expl_vars,
+                    resolved_expl_vars[df_name],
                     ids_included[df_name],
                     excluded_ids[df_name],
                     converged=True,
@@ -532,7 +740,7 @@ def coxph_central(
                     zs,
                     sag1,
                     secondary_derivative,
-                    expl_vars,
+                    resolved_expl_vars[df_name],
                     ids_included[df_name],
                     excluded_ids[df_name],
                     converged=False,
