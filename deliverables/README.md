@@ -264,14 +264,15 @@ Variable|Type|Status|Notes
 `surgery_intent`|`CategoricalDtype`|✅|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `4179711`, `4162591` and `measurement_event_id` is equal to `procedure_occurrence.procedure_occurrence_id` which is equal to `episode_event.event_id` and `episode_event.episode_id` is equal to `episode.episode_id` where `episode.episode_concept_id = 32939`
 `margins_after_surgery`|`CategoricalDtype`|✅|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `1634643`, `1633801`, `1634484` and `measurement_event_id` is equal to `procedure_occurrence.procedure_occurrence_id` which is equal to `episode_event.event_id` and `episode_event.episode_id` is equal to `episode.episode_id` where `episode.episode_concept_id = 32939`
 `date_of_surgery`|`datetime64[ns, tz]`|✅||
-`radio_therapy_intent`|`CategoricalDtype`|*|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `4179711`, `4162591`.
-`radiotherapy_hospital`|???|*|
-`radio_start_date`|`datetime64[ns, tz]`|*||
-`radio_end_date`|`datetime64[ns, tz]`|*||
-`radio_setting`|`CategoricalDtype`(?)|*|
-`radio_total_dose_gy`|`Float64`|*|
-`radio_number_of_fractions`|`Float64`|*|
-`radio_treatment_completed_as_planned`|`CategoricalDtype`|*|
+`radio_therapy_intent`|`CategoricalDtype`|🆕|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `4179711`, `4162591` and `measurement_event_id` is equal to `procedure_occurrence.procedure_occurrence_id` which is equal to `episode_event.event_id` and `episode_event.episode_id` is equal to `episode.episode_id` where `episode.episode_concept_id = 32940`
+`radiotherapy_hospital`|`CategoricalDtype`|🆕|`provider_name` of `provider.provider_id` where `provider_id` is equal to (`procedure_occurrence.provider_id` where `procedure_occurrence_id` is equal to `episode_event.event_id` and `episode_event.episode_id` is equal to `episode.episode_id` where `episode.episode_concept_id = 32940`)
+`radio_start_date`|`datetime64[ns, tz]`|🆕|`episode_start_date` of `episode.episode_concept_id = 32940`
+`radio_end_date`|`datetime64[ns, tz]`|🆕|`episode_end_date` of `episode.episode_concept_id = 32940`
+`radio_setting`|`CategoricalDtype`(?)|🆕|Derived, with settings included in the variable name
+`radio_total_dose_gy`|`Float64`|🆕|`value_as_number` of `measurement.measurement_concept_id` where `measurement_concept_id = 40483776` and `measurement_event_id` is equal to `procedure_occurrence.procedure_occurrence_id` which is equal to `episode_event.event_id` and `episode_event.episode_id` is equal to `episode.episode_id` where `episode.episode_concept_id = 32940`
+`radio_number_of_fractions`|`Float64`|🆕|`value_as_number` of `measurement.measurement_concept_id` where `measurement_concept_id = 4037631` and `measurement_event_id` is equal to `procedure_occurrence.procedure_occurrence_id` which is equal to `episode_event.event_id` and `episode_event.episode_id` is equal to `episode.episode_id` where `episode.episode_concept_id = 32940`
+`radio_treatment_completed_as_planned`|`CategoricalDtype`|🆕|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `44788181`, `4161588`, `2000100030`, `4105297`, `37017062`, `4306655` and `measurement_event_id` is equal to `procedure_occurrence.procedure_occurrence_id` which is equal to `episode_event.event_id` and `episode_event.episode_id` is equal to `episode.episode_id` where `episode.episode_concept_id = 32940`
+`intraoperative_radio`|`boolean`|🆕|`TRUE` if `radio_start_date` is equal to one of `procedure_occurrence.procedure_date` where `procedure_occurrence_id` is equal to `episode_event.event_id` and `episode_event.episode_id` is equal to `episode.episode_id` where `episode.episode_concept_id = 32940` (⚠️ For H&N patients multiple procedures may be associated with the same radiotherapy episode)
 `[pre_operative/post_operative/recurrence]_systemic_treatment[_[i]]_type`|`CategoricalDtype`|✅|`concept_name` of `procedure_occurrence.procedure_concept_id` where `procedure_occurrence_id` is equal to `episode_event.event_id` and `episode_event.episode_id` is equal to `episode.episode_id` where `episode.episode_concept_id = 32531`
 `[pre_operative/post_operative/recurrence]_systemic_treatment[_[i]]_start_date`|`datetime64[ns, tz]`|✅|`episode_start_date` of `episode.episode_concept_id = 32531`
 `[pre_operative/post_operative/recurrence]_systemic_treatment[_[i]]_end_date`|`datetime64[ns, tz]`|✅|`episode_end_date` of `episode.episode_concept_id = 32531`
@@ -334,13 +335,13 @@ Variable|Type|Status|Notes
 `neck_surgery`|`CategoricalDtype`|🐧|`concept_name` of `procedure_occurrence.procedure_concept_id` where `procedure_concept_id` is equal to `4291481` and `procedure_occurrence_id` is equal to `episode_event.event_id` and `episode_event.episode_id` is equal to `episode.episode_id` where `episode.episode_concept_id = 32939` ⚠️ Maybe this can be represented as a boolean, since only one concept_id is used: `TRUE` if present and `FALSE` if not.
 `laterality_of_the_dissection`|`CategoricalDtype`|🐧|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `4112106`, `4117496`, `4112107` and `measurement_event_id` is equal to `procedure_occurrence.procedure_occurrence_id` which is equal to `episode_event.event_id` and `procedure_occurrence.procedure_concept_id = 4291481` and `episode_event.episode_id` is equal to `episode.episode_id` where `episode.episode_concept_id = 32939`
 `date_of_neck_surgery`|`datetime64[ns,tz]`|🐧|`procedure_date` of `procedure_occurrence.procedure_concept_id = 4291481` where `procedure_occurrence_id` is equal to `episode_event.event_id` and `episode_event.episode_id` is equal to `episode.episode_id` where `episode.episode_concept_id = 32939`
-`radio_beam_quality`|`CategoricalDtype`|*|
-`radio_total_high_dose`|`Float64`|*|
-`radio_treatment_site_primary_only`|`boolean`|*|
-`radio_treatment_site_neck_only`| `boolean`|*|
-`radio_treatment_site_primary_and_ipsilateral_neck`|`boolean`|*|
-`radio_treatment_site_primary_and_bilateral_neck`|`boolean`|*|
-`radio_treatment_site_distant_metastasis`|`boolean`|*|
+`radio_beam_quality`|`CategoricalDtype`|🆕|`concept_name` of `procedure.procedure_concept_id` where `procedure_concept_id` is one of (`607996`,`4165039`,`607995`,`4024005`,`4012485`,`4161415`,`4058601`,`4077953`) and `procedure_occurrence_id` is equal to `episode_event.event_id` and `episode_event.episode_id` is equal to `episode.episode_id` where `episode.episode_concept_id = 32940`
+`radio_total_high_dose`|`Float64`|🆕|`value_as_number` of `measurement.measurement_concept_id` where `measurement_concept_id = 4129296` and `measurement_event_id` is equal to `procedure_occurrence.procedure_occurrence_id` which is equal to `episode_event.event_id` and `episode_event.episode_id` is equal to `episode.episode_id` where `episode.episode_concept_id = 32940`
+`radio_treatment_site_primary_only`|`boolean`|❌|They are not included in OMOP because no corresponding codes/mappings have been defined in the data model
+`radio_treatment_site_neck_only`| `boolean`|❌|They are not included in OMOP because no corresponding codes/mappings have been defined in the data model
+`radio_treatment_site_primary_and_ipsilateral_neck`|`boolean`|❌|They are not included in OMOP because no corresponding codes/mappings have been defined in the data model
+`radio_treatment_site_primary_and_bilateral_neck`|`boolean`|❌|They are not included in OMOP because no corresponding codes/mappings have been defined in the data model
+`radio_treatment_site_distant_metastasis`|`boolean`|🆕|`TRUE` if `procedure.modifier_concept_id IS NOT NULL`  where `procedure_occurrence_id` is equal to `episode_event.event_id` and `episode_event.episode_id` is equal to `episode.episode_id` where `episode.episode_concept_id = 32940`
 `systemic_intent`|`CategoricalDtype`|🐧|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `4179711`, `4162591` and `measurement_event_id` is equal to `procedure_occurrence.procedure_occurrence_id` which is equal to `episode_event.event_id` and `episode_event.episode_id` is equal to `episode.episode_id` where `episode.episode_concept_id = 32531`
 `systemic_setting`|`CategoricalDtype`|🆕|This will be derived using dates
 
