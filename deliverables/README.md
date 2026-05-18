@@ -20,7 +20,7 @@ This folder contains all documentation required for the vantage6 components to b
   - [T-test](#t-test) - [Notebook](./raven-api-documentation/6-analytics-t-test.ipynb)
   - [Kaplan Meier and Log Rank](#kaplan-meier-and-log-rank) - [Notebook](./raven-api-documentation/7-analytics-kaplan-meier-and-log-rank.ipynb)
   - [GLM](#glm) - [Notebook](./raven-api-documentation/8-analytics-glm.ipynb)
-  - [CoxPH](#coxph) - Notebook
+  - [CoxPH](#coxph) - [Notebook](./raven-api-documentation/16-analytics-coxph.ipynb)
 - [Preprocessing Algorithms](#preprocessing-algorithms)
   - [Timedelta](#timedelta) - [Notebook](./raven-api-documentation/9-preprocessing-time-delta.ipynb)
   - [Merge categories](#merge-categories) - [Notebook](./raven-api-documentation/10-preprocessing-merge-categories.ipynb)
@@ -607,13 +607,12 @@ A GLM (Generalized Linear Model) lets you model relationships between variables 
 |Survival|`Int64` or `Float64`|Any real positive value.|
 
 ### CoxPH
-The Cox algorithm looks at how different factors (like age or treatment) change a person’s chance of experiencing something over time, for example dying or having a complication. It tells you whether a factor seems to increase, decrease, or not really affect that chance, while using all the follow-up time information instead of just "event yes/no".
+The Cox algorithm looks at how different factors (like age or treatment) change a person’s chance of experiencing something over time, for example dying or having a complication. It tells you whether a factor seems to increase, decrease, or not really affect that chance, while using all the follow-up time information instead of just "event yes/no". I sugest to have a brief look at the swimlane diagram in the [Security and Privacy documentation](./security-and-privacy/Security%20&%20Privacy%20CoxPH.pdf) to have a goof overview of the different steps in the algorithm.
 
-TODO: The security an privacy document
 
 |Argument|Required|Display as argument|Type|Description|
 |---|---|---|---|---|
 |`time_col`|✅|✅|`str`|The variable name of the time column. This should be a numerical, either `Float64` or `Int64`, column that represents the survival time.
 |`outcome_col`|✅|✅|`str`|The variable name of the outcome column. This should be a `boolean` variable.
-|`expl_vars`|✅|✅|`list[str]`|The variable names that represent the covariates. They should be numerical, either `Float64` or `Int64`, columns.
+|`expl_vars`|✅|✅|`list[str]`|The variable names that represent the covariates. They should be of type `Float64`, `Int64` or `category`.
 |`organizations_to_include`|No|No|`list[int]`|List of vantage6 organization IDs that need to be included in the analysis|
