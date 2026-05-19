@@ -116,6 +116,7 @@ def summary(
     all_cohort_results = {}
 
     means = {}
+    columns_per_cohort = {}
     cohort_names = list(
         set(
             [
@@ -136,20 +137,21 @@ def summary(
             cohort_results, lookup_organizations
         )
 
-        numerical_columns = list(all_cohort_results[cohort_name]["numeric"].keys())
+        cohort_numerical_columns = list(all_cohort_results[cohort_name]["numeric"].keys())
+        columns_per_cohort[cohort_name] = cohort_numerical_columns
         # compute the variance now that we have the mean
         means[cohort_name] = [
             all_cohort_results[cohort_name]["numeric"][column]["mean"]
-            for column in numerical_columns
+            for column in cohort_numerical_columns
         ]
-        info(f"n num cols: {len(numerical_columns)}")
+        info(f"n num cols: {len(cohort_numerical_columns)}")
         info(f"n means: {len(means[cohort_name])}")
 
     task_id = create_child_task(
         client,
         method="variance_per_data_station",
         arguments={
-            "columns": numerical_columns,
+            "columns_per_cohort": columns_per_cohort,
             "means": means,
             "stratification_column": stratification_column,
         },
@@ -166,7 +168,9 @@ def summary(
             result.get(cohort_name) for result in variance_results
         ]
         all_cohort_results[cohort_name] = _add_sd_to_results(
-            all_cohort_results[cohort_name], cohort_variance_results, numerical_columns
+            all_cohort_results[cohort_name],
+            cohort_variance_results,
+            columns_per_cohort[cohort_name],
         )
 
     # return the final results of the algorithm
@@ -367,6 +371,37 @@ def _aggregate_partial_summaries(results: list[dict], lookup_organizations) -> d
 
         aggregate["num_rows"] = sum(aggregate["num_rows_per_node"].values())
 
+    # Handle the case where aggregate was never seeded (all nodes had 0 rows or returned None)
+    if is_first:
+        if not zero_patient_nodes:
+            return {
+                "numeric": {}, "categorical": {}, "date": {},
+                "num_complete_rows_per_node": {}, "num_rows_per_node": {},
+                "counts_unique_values": {}, "num_rows": 0,
+            }
+        first_org_name, first_result = zero_patient_nodes[0]
+        aggregate = first_result
+        aggregate["num_complete_rows_per_node"] = {
+            first_org_name: first_result["num_complete_rows_per_node"]
+        }
+        aggregate["num_rows_per_node"] = {
+            first_org_name: first_result["num_rows_per_node"]
+        }
+        for var in aggregate["numeric"]:
+            aggregate["numeric"][var]["median"] = {
+                first_org_name: aggregate["numeric"][var].get("median")
+            }
+            aggregate["numeric"][var]["q_25"] = {
+                first_org_name: aggregate["numeric"][var].get("q_25")
+            }
+            aggregate["numeric"][var]["q_75"] = {
+                first_org_name: aggregate["numeric"][var].get("q_75")
+            }
+        for org_name, zero_result in zero_patient_nodes[1:]:
+            aggregate["num_complete_rows_per_node"][org_name] = zero_result["num_complete_rows_per_node"]
+            aggregate["num_rows_per_node"][org_name] = zero_result["num_rows_per_node"]
+        aggregate["num_rows"] = 0
+
     # now that all data is aggregated, we can compute the mean
     for column in aggregate["numeric"]:
         aggregated_dict = aggregate["numeric"][column]
@@ -472,7 +507,8 @@ def structure_summary_per_data_station_output(df, results, metadata):
 @dataframes
 def variance_per_data_station(
     dataframes: dict[str, pd.DataFrame],
-    means: dict[list[float]],
+    means: dict[str, list[float]],
+    columns_per_cohort: dict[str, list[str]],
     stratification_column=None,
     *args,
     **kwargs,
@@ -498,13 +534,21 @@ def variance_per_data_station(
                 name_stratum = f"{name}_{stratification_column}=={stratum}"
                 if means.get(name_stratum):
                     results[name] = _variance_per_data_station(
-                        df_strata, means=means[name_stratum], *args, **kwargs
+                        df_strata,
+                        columns=columns_per_cohort.get(name_stratum, []),
+                        means=means[name_stratum],
+                        *args,
+                        **kwargs,
                     )
                 else:
                     results[name] = None
         else:
             results[name] = _variance_per_data_station(
-                df, means=means[name], *args, **kwargs
+                df,
+                columns=columns_per_cohort.get(name, []),
+                means=means[name],
+                *args,
+                **kwargs,
             )
     info(results)
     return results
