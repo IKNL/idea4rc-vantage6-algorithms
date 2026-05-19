@@ -104,6 +104,9 @@ def compute_local_betas(
         beta_coefficients = {cohort_name: None for cohort_name in cohort_names}
 
     for df, cohort_name in zip(dfs, cohort_names):
+        if len(df) == 0:
+            info(f"Skipping cohort '{cohort_name}': empty DataFrame.")
+            continue
         info(f"cohort_name: {cohort_name}")
         info(f"betas_for_cohort: {beta_coefficients[cohort_name]}")
         info(f"formula: {formula}")
@@ -166,6 +169,9 @@ def compute_local_deviance(
         beta_coefficients_previous.values(),
         global_average_outcome_var.values(),
     ):
+        if len(df) == 0:
+            info(f"Skipping cohort '{cohort_name}': empty DataFrame.")
+            continue
         print(f"betas_for_cohort: {betas_for_cohort}")
         print(f"betas_previous_for_cohort: {betas_previous_for_cohort}")
 
@@ -443,7 +449,10 @@ def _do_iteration(
     new_betas = {}
     for cohort in cohort_names:
         info(f"  cohort: {cohort}")
-        cohort_partials = [result[cohort] for result in partial_betas]
+        cohort_partials = [result[cohort] for result in partial_betas if cohort in result]
+        if not cohort_partials:
+            info(f"  Skipping cohort '{cohort}': no nodes returned data.")
+            continue
         new_betas[cohort] = _compute_central_betas(cohort_partials, family)
     info(" - Central betas obtained!")
 
@@ -473,7 +482,9 @@ def _do_iteration(
 
     deviance = {}
     for cohort in healthy_cohort_names:
-        cohort_partials = [result[cohort] for result in deviance_partials]
+        cohort_partials = [result[cohort] for result in deviance_partials if cohort in result]
+        if not cohort_partials:
+            continue
         deviance[cohort] = _compute_deviance(cohort_partials)
     info(" - Deviance computed!")
 
