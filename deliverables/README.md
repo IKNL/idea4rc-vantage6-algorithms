@@ -342,8 +342,8 @@ Variable|Type|Status|Notes
 `radio_treatment_site_primary_and_ipsilateral_neck`|`boolean`|❌|They are not included in OMOP because no corresponding codes/mappings have been defined in the data model
 `radio_treatment_site_primary_and_bilateral_neck`|`boolean`|❌|They are not included in OMOP because no corresponding codes/mappings have been defined in the data model
 `[pre_operative/post_operative/recurrence]_radio[_[i]]_treatment_site_distant_metastasis`|`boolean`|🐧|`TRUE` if `procedure.modifier_concept_id IS NOT NULL`  where `procedure_occurrence_id` is equal to `episode_event.event_id` and `episode_event.episode_id` is equal to `episode.episode_id` where `episode.episode_concept_id = 32940`
-`systemic_intent`|`CategoricalDtype`|🐧|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `4179711`, `4162591` and `measurement_event_id` is equal to `procedure_occurrence.procedure_occurrence_id` which is equal to `episode_event.event_id` and `episode_event.episode_id` is equal to `episode.episode_id` where `episode.episode_concept_id = 32531`
-`systemic_setting`|`CategoricalDtype`|🆕|This will be derived using dates
+`[pre_operative/post_operative/recurrence]_systemic_treatment[_[i]]_intent`|`CategoricalDtype`|🐧|`concept_name` of `measurement.measurement_concept_id` where `measurement_concept_id` is one of `4179711`, `4162591` and `measurement_event_id` is equal to `procedure_occurrence.procedure_occurrence_id` which is equal to `episode_event.event_id` and `episode_event.episode_id` is equal to `episode.episode_id` where `episode.episode_concept_id = 32531`
+`[pre_operative/post_operative/recurrence]_systemic_treatment[_[i]]_setting`|`CategoricalDtype`|🐧|This will be derived using dates ⚠️ added to basic variables (not only H&N)
 
 
 ## Sarcoma variables

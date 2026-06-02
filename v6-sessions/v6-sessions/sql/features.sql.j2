@@ -1018,6 +1018,12 @@ WITH
     systemic_therapy_enriched AS (
         SELECT
             stb.*,
+            CASE
+                WHEN stb.treatment_setting = 'pre-operative' THEN 'pre-operative'
+                WHEN stb.treatment_setting = 'post-operative' THEN 'post-operative'
+                WHEN stb.treatment_setting = 'recurrence' THEN 'recurrence'
+                ELSE 'other'
+            END AS systemic_setting,
             procedure_concept.concept_name AS systemic_treatment_type,
             reason_concept.concept_name AS systemic_treatment_reason_for_end_of_treatment
         FROM
@@ -1087,6 +1093,7 @@ WITH
             MAX(CASE WHEN treatment_setting = 'pre-operative' THEN systemic_treatment_start_date END) AS pre_operative_systemic_treatment_start_date,
             MAX(CASE WHEN treatment_setting = 'pre-operative' THEN systemic_treatment_end_date END) AS pre_operative_systemic_treatment_end_date,
             MAX(CASE WHEN treatment_setting = 'pre-operative' THEN systemic_treatment_regimen END) AS pre_operative_systemic_treatment_regimen,
+            MAX(CASE WHEN treatment_setting = 'pre-operative' THEN systemic_setting END) AS pre_operative_systemic_setting,
             MAX(CASE WHEN treatment_setting = 'pre-operative' THEN systemic_treatment_type END) AS pre_operative_systemic_treatment_type,
             MAX(CASE WHEN treatment_setting = 'pre-operative' THEN systemic_treatment_reason_for_end_of_treatment END) AS pre_operative_systemic_treatment_reason_for_end_of_treatment,
             {% if is_head_and_neck %}
@@ -1097,6 +1104,7 @@ WITH
             MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 1 THEN systemic_treatment_start_date END) AS post_operative_systemic_treatment_1_start_date,
             MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 1 THEN systemic_treatment_end_date END) AS post_operative_systemic_treatment_1_end_date,
             MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 1 THEN systemic_treatment_regimen END) AS post_operative_systemic_treatment_1_regimen,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 1 THEN systemic_setting END) AS post_operative_systemic_treatment_1_setting,
             MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 1 THEN systemic_treatment_type END) AS post_operative_systemic_treatment_1_type,
             MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 1 THEN systemic_treatment_reason_for_end_of_treatment END) AS post_operative_systemic_treatment_1_reason_for_end_of_treatment,
             {% if is_head_and_neck %}
@@ -1107,6 +1115,7 @@ WITH
             MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 2 THEN systemic_treatment_start_date END) AS post_operative_systemic_treatment_2_start_date,
             MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 2 THEN systemic_treatment_end_date END) AS post_operative_systemic_treatment_2_end_date,
             MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 2 THEN systemic_treatment_regimen END) AS post_operative_systemic_treatment_2_regimen,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 2 THEN systemic_setting END) AS post_operative_systemic_treatment_2_setting,
             MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 2 THEN systemic_treatment_type END) AS post_operative_systemic_treatment_2_type,
             MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 2 THEN systemic_treatment_reason_for_end_of_treatment END) AS post_operative_systemic_treatment_2_reason_for_end_of_treatment,
             {% if is_head_and_neck %}
@@ -1117,6 +1126,7 @@ WITH
             MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 1 THEN systemic_treatment_start_date END) AS recurrence_systemic_treatment_1_start_date,
             MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 1 THEN systemic_treatment_end_date END) AS recurrence_systemic_treatment_1_end_date,
             MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 1 THEN systemic_treatment_regimen END) AS recurrence_systemic_treatment_1_regimen,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 1 THEN systemic_setting END) AS recurrence_systemic_treatment_1_setting,
             MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 1 THEN systemic_treatment_type END) AS recurrence_systemic_treatment_1_type,
             MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 1 THEN systemic_treatment_reason_for_end_of_treatment END) AS recurrence_systemic_treatment_1_reason_for_end_of_treatment,
             {% if is_head_and_neck %}
@@ -1127,6 +1137,7 @@ WITH
             MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 2 THEN systemic_treatment_start_date END) AS recurrence_systemic_treatment_2_start_date,
             MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 2 THEN systemic_treatment_end_date END) AS recurrence_systemic_treatment_2_end_date,
             MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 2 THEN systemic_treatment_regimen END) AS recurrence_systemic_treatment_2_regimen,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 2 THEN systemic_setting END) AS recurrence_systemic_treatment_2_setting,
             MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 2 THEN systemic_treatment_type END) AS recurrence_systemic_treatment_2_type,
             MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 2 THEN systemic_treatment_reason_for_end_of_treatment END) AS recurrence_systemic_treatment_2_reason_for_end_of_treatment
             {% if is_head_and_neck %},
@@ -1635,28 +1646,33 @@ SELECT
     systemic_therapy_wide.pre_operative_systemic_treatment_start_date                                       as pre_operative_systemic_treatment_start_date,
     systemic_therapy_wide.pre_operative_systemic_treatment_end_date                                         as pre_operative_systemic_treatment_end_date,
     COALESCE(systemic_therapy_wide.pre_operative_systemic_treatment_regimen, 'N/A')                         as pre_operative_systemic_treatment_regimen,
+    COALESCE(systemic_therapy_wide.pre_operative_systemic_treatment_setting, 'N/A')                         as pre_operative_systemic_treatment_setting,
     COALESCE(systemic_therapy_wide.pre_operative_systemic_treatment_type, 'N/A')                            as pre_operative_systemic_treatment_type,
     COALESCE(systemic_therapy_wide.pre_operative_systemic_treatment_reason_for_end_of_treatment, 'N/A')     as pre_operative_systemic_treatment_reason_for_end_of_treatment,
     
     systemic_therapy_wide.post_operative_systemic_treatment_1_start_date                                    as post_operative_systemic_treatment_1_start_date,
     systemic_therapy_wide.post_operative_systemic_treatment_1_end_date                                      as post_operative_systemic_treatment_1_end_date,
     COALESCE(systemic_therapy_wide.post_operative_systemic_treatment_1_regimen, 'N/A')                      as post_operative_systemic_treatment_1_regimen,
+    COALESCE(systemic_therapy_wide.post_operative_systemic_treatment_1_setting, 'N/A')                      as post_operative_systemic_treatment_1_setting,
     COALESCE(systemic_therapy_wide.post_operative_systemic_treatment_1_type, 'N/A')                         as post_operative_systemic_treatment_1_type,
     COALESCE(systemic_therapy_wide.post_operative_systemic_treatment_1_reason_for_end_of_treatment, 'N/A')  as post_operative_systemic_treatment_1_reason_for_end_of_treatment,
     systemic_therapy_wide.post_operative_systemic_treatment_2_start_date                                    as post_operative_systemic_treatment_2_start_date,
     systemic_therapy_wide.post_operative_systemic_treatment_2_end_date                                      as post_operative_systemic_treatment_2_end_date,
     COALESCE(systemic_therapy_wide.post_operative_systemic_treatment_2_regimen, 'N/A')                      as post_operative_systemic_treatment_2_regimen,
+    COALESCE(systemic_therapy_wide.post_operative_systemic_treatment_2_setting, 'N/A')                      as post_operative_systemic_treatment_2_setting,
     COALESCE(systemic_therapy_wide.post_operative_systemic_treatment_2_type, 'N/A')                         as post_operative_systemic_treatment_2_type,
     COALESCE(systemic_therapy_wide.post_operative_systemic_treatment_2_reason_for_end_of_treatment, 'N/A')  as post_operative_systemic_treatment_2_reason_for_end_of_treatment,
     
     systemic_therapy_wide.recurrence_systemic_treatment_1_start_date                                        as recurrence_systemic_treatment_1_start_date,
     systemic_therapy_wide.recurrence_systemic_treatment_1_end_date                                          as recurrence_systemic_treatment_1_end_date,
     COALESCE(systemic_therapy_wide.recurrence_systemic_treatment_1_regimen, 'N/A')                          as recurrence_systemic_treatment_1_regimen,
+    COALESCE(systemic_therapy_wide.recurrence_systemic_treatment_1_setting, 'N/A')                          as recurrence_systemic_treatment_1_setting,
     COALESCE(systemic_therapy_wide.recurrence_systemic_treatment_1_type, 'N/A')                             as recurrence_systemic_treatment_1_type,
     COALESCE(systemic_therapy_wide.recurrence_systemic_treatment_1_reason_for_end_of_treatment, 'N/A')      as recurrence_systemic_treatment_1_reason_for_end_of_treatment,
     systemic_therapy_wide.recurrence_systemic_treatment_2_start_date                                        as recurrence_systemic_treatment_2_start_date,
     systemic_therapy_wide.recurrence_systemic_treatment_2_end_date                                          as recurrence_systemic_treatment_2_end_date,
     COALESCE(systemic_therapy_wide.recurrence_systemic_treatment_2_regimen, 'N/A')                          as recurrence_systemic_treatment_2_regimen,
+    COALESCE(systemic_therapy_wide.recurrence_systemic_treatment_2_setting, 'N/A')                          as recurrence_systemic_treatment_2_setting,
     COALESCE(systemic_therapy_wide.recurrence_systemic_treatment_2_type, 'N/A')                             as recurrence_systemic_treatment_2_type,
     COALESCE(systemic_therapy_wide.recurrence_systemic_treatment_2_reason_for_end_of_treatment, 'N/A')      as recurrence_systemic_treatment_2_reason_for_end_of_treatment,
 
