@@ -410,6 +410,12 @@ def convert_head_neck_columns(df: pd.DataFrame) -> pd.DataFrame:
             "post_operative_radio_2_beam_quality",
             "recurrence_radio_1_beam_quality",
             "recurrence_radio_2_beam_quality",
+
+            "surgery_1_surgery_hospital",
+            "surgery_2_surgery_hospital",
+            "surgery_3_surgery_hospital",
+            "surgery_4_surgery_hospital",
+            "surgery_5_surgery_hospital",
         ],
     )
     
