@@ -244,29 +244,43 @@ WITH
     ),
 
     table_neck_surgery AS (
-    SELECT
-        episode_id,
-        1 AS neck_surgery,
-        {{ cohort_safe_date('procedure_date') }} AS date_of_neck_surgery
-    FROM (
         SELECT
-            e.episode_id,
-            po.procedure_date,
-            ROW_NUMBER() OVER (
-                PARTITION BY e.episode_id
-                ORDER BY po.procedure_date
-            ) AS rn
-        FROM {{ cdm_schema }}.episode e
+            episode_id,
+            1 AS neck_surgery,
+            {{ cohort_safe_date('procedure_date') }} AS date_of_neck_surgery
+        FROM (
+            SELECT
+                e.episode_id,
+                po.procedure_date,
+                ROW_NUMBER() OVER (
+                    PARTITION BY e.episode_id
+                    ORDER BY po.procedure_date
+                ) AS rn
+            FROM {{ cdm_schema }}.episode e
+            JOIN {{ cdm_schema }}.episode_event ee
+                ON e.episode_id = ee.episode_id
+            JOIN {{ cdm_schema }}.procedure_occurrence po
+                ON ee.event_id = po.procedure_occurrence_id
+            WHERE 
+                e.episode_concept_id = 32939
+                AND po.procedure_concept_id = 4291481
+        ) ns
+        WHERE rn = 1
+    ),
+
+    surgery_hospital AS (
+        SELECT
+            episode.episode_id,
+            provider.provider_name AS surgery_hospital
+        FROM {{ cdm_schema }}.episode episode
         JOIN {{ cdm_schema }}.episode_event ee
-            ON e.episode_id = ee.episode_id
+            ON episode.episode_id = ee.episode_id
         JOIN {{ cdm_schema }}.procedure_occurrence po
             ON ee.event_id = po.procedure_occurrence_id
-        WHERE 
-            e.episode_concept_id = 32939
-            AND po.procedure_concept_id = 4291481
-    ) ns
-    WHERE rn = 1
-),
+        JOIN {{ cdm_schema }}.provider provider
+            ON po.provider_id = provider.provider_id
+        WHERE episode.episode_concept_id = 32939 -- Surgery episode
+    ),
     
 {% endif %}
 
@@ -282,7 +296,8 @@ WITH
             surgery_extra_nodal_extension.surgery_extra_nodal_extension,
             surgery_laterality_of_the_dissection.laterality_of_the_dissection,
             COALESCE(table_neck_surgery.neck_surgery, 0) AS neck_surgery,
-            table_neck_surgery.date_of_neck_surgery
+            table_neck_surgery.date_of_neck_surgery,
+            surgery_hospital.surgery_hospital
             {% endif %}
         FROM surgeries surgeries
         LEFT JOIN surgery_intent surgery_intent
@@ -296,6 +311,8 @@ WITH
             ON surgeries.episode_id = surgery_laterality_of_the_dissection.episode_id
         LEFT JOIN table_neck_surgery table_neck_surgery
             ON surgeries.episode_id = table_neck_surgery.episode_id
+        LEFT JOIN surgery_hospital surgery_hospital
+            ON surgeries.episode_id = surgery_hospital.episode_id
         {% endif %}
     ),
 
@@ -304,58 +321,63 @@ WITH
         person_id,
 
         -- Surgery 1
-        MAX(CASE WHEN surgery_id = 1 THEN date_of_surgery END)            AS surgery_1_date,
-        MAX(CASE WHEN surgery_id = 1 THEN surgery_intent END)             AS surgery_1_intent,
-        MAX(CASE WHEN surgery_id = 1 THEN margins_after_surgery END)      AS surgery_1_margins_after_surgery
+        MAX(CASE WHEN surgery_id = 1 THEN date_of_surgery END)                  AS surgery_1_date,
+        MAX(CASE WHEN surgery_id = 1 THEN surgery_intent END)                   AS surgery_1_intent,
+        MAX(CASE WHEN surgery_id = 1 THEN margins_after_surgery END)            AS surgery_1_margins_after_surgery
             {% if is_head_and_neck %},
-        MAX(CASE WHEN surgery_id = 1 THEN surgery_extra_nodal_extension END)            AS surgery_1_extra_nodal_extension,
+        MAX(CASE WHEN surgery_id = 1 THEN surgery_extra_nodal_extension END)    AS surgery_1_extra_nodal_extension,
         MAX(CASE WHEN surgery_id = 1 THEN laterality_of_the_dissection END)     AS surgery_1_laterality_of_the_dissection,
-        MAX(CASE WHEN surgery_id = 1 THEN neck_surgery END)                             AS surgery_1_neck_surgery,
-        MAX(CASE WHEN surgery_id = 1 THEN date_of_neck_surgery END)                     AS surgery_1_date_of_neck_surgery,
+        MAX(CASE WHEN surgery_id = 1 THEN neck_surgery END)                     AS surgery_1_neck_surgery,
+        MAX(CASE WHEN surgery_id = 1 THEN date_of_neck_surgery END)             AS surgery_1_date_of_neck_surgery,
+        MAX(CASE WHEN surgery_id = 1 THEN surgery_hospital END)                 AS surgery_1_surgery_hospital,
             {% endif %}
 
         -- Surgery 2
-        MAX(CASE WHEN surgery_id = 2 THEN date_of_surgery END)            AS surgery_2_date,
-        MAX(CASE WHEN surgery_id = 2 THEN surgery_intent END)             AS surgery_2_intent,
-        MAX(CASE WHEN surgery_id = 2 THEN margins_after_surgery END)      AS surgery_2_margins_after_surgery
+        MAX(CASE WHEN surgery_id = 2 THEN date_of_surgery END)                  AS surgery_2_date,
+        MAX(CASE WHEN surgery_id = 2 THEN surgery_intent END)                   AS surgery_2_intent,
+        MAX(CASE WHEN surgery_id = 2 THEN margins_after_surgery END)            AS surgery_2_margins_after_surgery
             {% if is_head_and_neck %},
-        MAX(CASE WHEN surgery_id = 2 THEN surgery_extra_nodal_extension END)            AS surgery_2_extra_nodal_extension,
+        MAX(CASE WHEN surgery_id = 2 THEN surgery_extra_nodal_extension END)    AS surgery_2_extra_nodal_extension,
         MAX(CASE WHEN surgery_id = 2 THEN laterality_of_the_dissection END)     AS surgery_2_laterality_of_the_dissection,
-        MAX(CASE WHEN surgery_id = 2 THEN neck_surgery END)                             AS surgery_2_neck_surgery,
-        MAX(CASE WHEN surgery_id = 2 THEN date_of_neck_surgery END)                     AS surgery_2_date_of_neck_surgery,
+        MAX(CASE WHEN surgery_id = 2 THEN neck_surgery END)                     AS surgery_2_neck_surgery,
+        MAX(CASE WHEN surgery_id = 2 THEN date_of_neck_surgery END)             AS surgery_2_date_of_neck_surgery,
+        MAX(CASE WHEN surgery_id = 2 THEN surgery_hospital END)                 AS surgery_2_surgery_hospital,
             {% endif %}
 
         -- Surgery 3
-        MAX(CASE WHEN surgery_id = 3 THEN date_of_surgery END)            AS surgery_3_date,
-        MAX(CASE WHEN surgery_id = 3 THEN surgery_intent END)             AS surgery_3_intent,
-        MAX(CASE WHEN surgery_id = 3 THEN margins_after_surgery END)      AS surgery_3_margins_after_surgery
+        MAX(CASE WHEN surgery_id = 3 THEN date_of_surgery END)                  AS surgery_3_date,
+        MAX(CASE WHEN surgery_id = 3 THEN surgery_intent END)                   AS surgery_3_intent,
+        MAX(CASE WHEN surgery_id = 3 THEN margins_after_surgery END)            AS surgery_3_margins_after_surgery
             {% if is_head_and_neck %},
-        MAX(CASE WHEN surgery_id = 3 THEN surgery_extra_nodal_extension END)            AS surgery_3_extra_nodal_extension,
+        MAX(CASE WHEN surgery_id = 3 THEN surgery_extra_nodal_extension END)    AS surgery_3_extra_nodal_extension,
         MAX(CASE WHEN surgery_id = 3 THEN laterality_of_the_dissection END)     AS surgery_3_laterality_of_the_dissection,
-        MAX(CASE WHEN surgery_id = 3 THEN neck_surgery END)                             AS surgery_3_neck_surgery,
-        MAX(CASE WHEN surgery_id = 3 THEN date_of_neck_surgery END)                     AS surgery_3_date_of_neck_surgery,
+        MAX(CASE WHEN surgery_id = 3 THEN neck_surgery END)                     AS surgery_3_neck_surgery,
+        MAX(CASE WHEN surgery_id = 3 THEN date_of_neck_surgery END)             AS surgery_3_date_of_neck_surgery,
+        MAX(CASE WHEN surgery_id = 3 THEN surgery_hospital END)                 AS surgery_3_surgery_hospital,
             {% endif %}
 
         -- Surgery 4
-        MAX(CASE WHEN surgery_id = 4 THEN date_of_surgery END)            AS surgery_4_date,
-        MAX(CASE WHEN surgery_id = 4 THEN surgery_intent END)             AS surgery_4_intent,
-        MAX(CASE WHEN surgery_id = 4 THEN margins_after_surgery END)      AS surgery_4_margins_after_surgery
+        MAX(CASE WHEN surgery_id = 4 THEN date_of_surgery END)                  AS surgery_4_date,
+        MAX(CASE WHEN surgery_id = 4 THEN surgery_intent END)                   AS surgery_4_intent,
+        MAX(CASE WHEN surgery_id = 4 THEN margins_after_surgery END)            AS surgery_4_margins_after_surgery
             {% if is_head_and_neck %},
-        MAX(CASE WHEN surgery_id = 4 THEN surgery_extra_nodal_extension END)            AS surgery_4_extra_nodal_extension,
+        MAX(CASE WHEN surgery_id = 4 THEN surgery_extra_nodal_extension END)    AS surgery_4_extra_nodal_extension,
         MAX(CASE WHEN surgery_id = 4 THEN laterality_of_the_dissection END)     AS surgery_4_laterality_of_the_dissection,
-        MAX(CASE WHEN surgery_id = 4 THEN neck_surgery END)                             AS surgery_4_neck_surgery,
-        MAX(CASE WHEN surgery_id = 4 THEN date_of_neck_surgery END)                     AS surgery_4_date_of_neck_surgery,
+        MAX(CASE WHEN surgery_id = 4 THEN neck_surgery END)                     AS surgery_4_neck_surgery,
+        MAX(CASE WHEN surgery_id = 4 THEN date_of_neck_surgery END)             AS surgery_4_date_of_neck_surgery,
+        MAX(CASE WHEN surgery_id = 4 THEN surgery_hospital END)                 AS surgery_4_surgery_hospital,
             {% endif %}
 
         -- Surgery 5
-        MAX(CASE WHEN surgery_id = 5 THEN date_of_surgery END)            AS surgery_5_date,
-        MAX(CASE WHEN surgery_id = 5 THEN surgery_intent END)             AS surgery_5_intent,
-        MAX(CASE WHEN surgery_id = 5 THEN margins_after_surgery END)      AS surgery_5_margins_after_surgery
+        MAX(CASE WHEN surgery_id = 5 THEN date_of_surgery END)                  AS surgery_5_date,
+        MAX(CASE WHEN surgery_id = 5 THEN surgery_intent END)                   AS surgery_5_intent,
+        MAX(CASE WHEN surgery_id = 5 THEN margins_after_surgery END)            AS surgery_5_margins_after_surgery
             {% if is_head_and_neck %},
-        MAX(CASE WHEN surgery_id = 5 THEN surgery_extra_nodal_extension END)            AS surgery_5_extra_nodal_extension,
+        MAX(CASE WHEN surgery_id = 5 THEN surgery_extra_nodal_extension END)    AS surgery_5_extra_nodal_extension,
         MAX(CASE WHEN surgery_id = 5 THEN laterality_of_the_dissection END)     AS surgery_5_laterality_of_the_dissection,
-        MAX(CASE WHEN surgery_id = 5 THEN neck_surgery END)                             AS surgery_5_neck_surgery,
-        MAX(CASE WHEN surgery_id = 5 THEN date_of_neck_surgery END)                     AS surgery_5_date_of_neck_surgery
+        MAX(CASE WHEN surgery_id = 5 THEN neck_surgery END)                     AS surgery_5_neck_surgery,
+        MAX(CASE WHEN surgery_id = 5 THEN date_of_neck_surgery END)             AS surgery_5_date_of_neck_surgery,
+        MAX(CASE WHEN surgery_id = 5 THEN surgery_hospital END)                 AS surgery_5_surgery_hospital
             {% endif %}
 
     FROM surgeries_enriched
@@ -731,6 +753,243 @@ WITH
             pid.person_id
     ),
 
+    -- Radiotherapies
+    radiotherapy_base AS (
+        SELECT
+            pid.person_id,
+            episode.episode_id,
+            {{ cohort_safe_date('episode.episode_start_date') }} AS radio_start_date,
+            {{ cohort_safe_date('episode.episode_end_date') }} AS radio_end_date,
+            CASE
+                WHEN episode.episode_start_date > primary_tumor.diagnosis_date
+                    AND episode.episode_start_date < surgeries_wide.surgery_1_date THEN 'pre-operative'
+                WHEN episode.episode_start_date > surgeries_wide.surgery_1_date
+                    AND episode.episode_start_date < COALESCE(progression_recurrence.first_progression_recurrence_date, DATE '2030-01-01') THEN 'post-operative'
+                WHEN episode.episode_start_date > COALESCE(progression_recurrence.first_progression_recurrence_date, DATE '2030-01-01') THEN 'recurrence'
+                ELSE 'other'
+            END AS treatment_setting
+        FROM
+            patient_id_list pid
+        LEFT JOIN
+            {{ cdm_schema }}.episode episode
+            ON pid.person_id = episode.person_id
+        LEFT JOIN
+            primary_tumor
+            ON pid.person_id = primary_tumor.person_id
+        LEFT JOIN
+            surgeries_wide
+            ON pid.person_id = surgeries_wide.person_id
+        LEFT JOIN (
+            SELECT 
+                person_id,
+                MIN(episode_start_date) AS first_progression_recurrence_date
+            FROM {{ cdm_schema }}.episode 
+            WHERE episode_concept_id IN (32948, 2000100002) -- Progression or recurrence episodes
+              AND episode_start_date >= {{ COHORT_DATE_MIN }}
+              AND episode_start_date < {{ COHORT_DATE_MAX }}
+            GROUP BY person_id
+        ) progression_recurrence
+        ON pid.person_id = progression_recurrence.person_id
+        WHERE episode.episode_concept_id = 32940 -- Radiotherapy episode
+          AND episode.episode_start_date >= {{ COHORT_DATE_MIN }}
+          AND episode.episode_start_date < {{ COHORT_DATE_MAX }}
+    ),
+    
+    radiotherapy_enriched AS (
+        SELECT
+            rtb.*,
+            provider.provider_name AS radio_hospital,
+            intent_concept.concept_name AS radio_intent,
+            CASE
+                WHEN rtb.treatment_setting = 'pre-operative' THEN 'pre-operative'
+                WHEN rtb.treatment_setting = 'post-operative' THEN 'post-operative'
+                WHEN rtb.treatment_setting = 'recurrence' THEN 'recurrence'
+                ELSE 'other'
+            END AS radio_setting,
+            total_dose_measurement.value_as_number AS radio_total_dose_gy,
+            number_of_fractions_measurement.value_as_number AS radio_number_of_fractions,
+            treatment_completed_concept.concept_name AS radio_treatment_completed_as_planned,
+            CASE
+                WHEN rtb.radio_start_date IN (
+                    SELECT procedure_date
+                    FROM {{ cdm_schema }}.procedure_occurrence po
+                    JOIN {{ cdm_schema }}.episode_event ee
+                        ON po.procedure_occurrence_id = ee.event_id
+                    JOIN {{ cdm_schema }}.episode episode
+                        ON ee.episode_id = episode.episode_id
+                    WHERE episode.episode_concept_id = 32940 -- Radiotherapy episode
+                ) THEN TRUE
+                ELSE FALSE
+            END AS intraoperative_radio
+        FROM
+            radiotherapy_base rtb
+        LEFT JOIN {{ cdm_schema }}.episode episode
+            ON rtb.episode_id = episode.episode_id
+        LEFT JOIN {{ cdm_schema }}.episode_event ee
+            ON episode.episode_id = ee.episode_id
+        LEFT JOIN {{ cdm_schema }}.procedure_occurrence po
+            ON ee.event_id = po.procedure_occurrence_id
+        LEFT JOIN {{ cdm_schema }}.provider provider
+            ON po.provider_id = provider.provider_id
+        LEFT JOIN {{ cdm_schema }}.measurement intent_measurement
+            ON intent_measurement.measurement_event_id = po.procedure_occurrence_id
+            AND intent_measurement.measurement_concept_id IN (4179711, 4162591) -- Radiotherapy intent concepts
+        LEFT JOIN {{ cdm_schema }}.concept intent_concept
+            ON intent_concept.concept_id = intent_measurement.measurement_concept_id
+        LEFT JOIN {{ cdm_schema }}.measurement total_dose_measurement
+            ON total_dose_measurement.measurement_event_id = po.procedure_occurrence_id
+            AND total_dose_measurement.measurement_concept_id = 40483776 -- Total dose in Gy
+        LEFT JOIN {{ cdm_schema }}.measurement number_of_fractions_measurement
+            ON number_of_fractions_measurement.measurement_event_id = po.procedure_occurrence_id
+            AND number_of_fractions_measurement.measurement_concept_id = 4037631 -- Number of fractions
+        LEFT JOIN {{ cdm_schema }}.measurement treatment_completed_measurement
+            ON treatment_completed_measurement.measurement_event_id = po.procedure_occurrence_id
+            AND treatment_completed_measurement.measurement_concept_id IN (44788181, 4161588, 2000100030, 4105297, 37017062, 4306655) -- Treatment completed as planned concepts
+        LEFT JOIN {{ cdm_schema }}.concept treatment_completed_concept
+            ON treatment_completed_concept.concept_id = treatment_completed_measurement.measurement_concept_id
+        ORDER BY rtb.person_id, rtb.radio_start_date ASC
+    ),
+
+{% if is_head_and_neck %}
+    radiotherapy_enriched_with_more AS (
+        SELECT
+            rten.*,
+            beam_quality_concept.concept_name AS radio_beam_quality,
+            total_high_dose_measurement.value_as_number AS radio_total_high_dose,
+            CASE
+                WHEN po.modifier_concept_id IS NOT NULL THEN TRUE
+                ELSE FALSE
+            END AS radio_treatment_site_distant_metastasis
+        FROM
+            radiotherapy_enriched rten
+        LEFT JOIN {{ cdm_schema }}.episode episode
+            ON rten.episode_id = episode.episode_id
+        LEFT JOIN {{ cdm_schema }}.episode_event ee
+            ON episode.episode_id = ee.episode_id
+        LEFT JOIN {{ cdm_schema }}.procedure_occurrence po
+            ON ee.event_id = po.procedure_occurrence_id
+            AND po.procedure_concept_id IN (607996,4165039,607995,4024005,4012485,4161415,4058601,4077953)
+        LEFT JOIN {{ cdm_schema }}.concept beam_quality_concept
+            ON beam_quality_concept.concept_id = po.procedure_concept_id
+        LEFT JOIN {{ cdm_schema }}.measurement total_high_dose_measurement
+            ON total_high_dose_measurement.measurement_event_id = po.procedure_occurrence_id
+            AND total_high_dose_measurement.measurement_concept_id = 4129296 -- Total high dose in Gy
+        ORDER BY rten.person_id, rten.radio_start_date ASC
+    ),
+{% else %}
+    radiotherapy_enriched_with_more AS (
+        SELECT
+            rten.*,
+            NULL AS radio_beam_quality,
+            NULL AS radio_total_high_dose,
+            NULL AS radio_treatment_site_distant_metastasis
+        FROM
+            radiotherapy_enriched rten
+    ),
+{% endif %}
+
+    -- not sure if here we need to do something with the fact that "For H&N patients multiple procedures may be associated with the same radiotherapy episode"
+    radiotherapy_ranked AS (
+        SELECT
+            rtem.*,
+            ROW_NUMBER() OVER (
+                PARTITION BY rtem.person_id
+                ORDER BY rtem.radio_start_date
+            ) AS radiotherapy_row_number
+        FROM
+            radiotherapy_enriched_with_more rtem
+    ),
+
+    radiotherapy_wide AS (
+        SELECT
+            person_id,
+
+            -- Pre-operative radiotherapy
+            MAX(CASE WHEN treatment_setting = 'pre-operative' THEN radio_start_date END) AS pre_operative_radio_start_date,
+            MAX(CASE WHEN treatment_setting = 'pre-operative' THEN radio_end_date END) AS pre_operative_radio_end_date,
+            MAX(CASE WHEN treatment_setting = 'pre-operative' THEN radio_hospital END) AS pre_operative_radio_hospital,
+            MAX(CASE WHEN treatment_setting = 'pre-operative' THEN radio_setting END) AS pre_operative_radio_setting,
+            MAX(CASE WHEN treatment_setting = 'pre-operative' THEN radio_intent END) AS pre_operative_radio_intent,
+            MAX(CASE WHEN treatment_setting = 'pre-operative' THEN radio_total_dose_gy END) AS pre_operative_radio_total_dose_gy,
+            MAX(CASE WHEN treatment_setting = 'pre-operative' THEN radio_number_of_fractions END) AS pre_operative_radio_number_of_fractions,
+            MAX(CASE WHEN treatment_setting = 'pre-operative' THEN radio_treatment_completed_as_planned END) AS pre_operative_radio_treatment_completed_as_planned,
+            MAX(CASE WHEN treatment_setting = 'pre-operative' THEN intraoperative_radio END) AS pre_operative_radio_intraoperative_radio,
+            {% if is_head_and_neck %}
+            MAX(CASE WHEN treatment_setting = 'pre-operative' THEN radio_beam_quality END) AS pre_operative_radio_beam_quality,
+            MAX(CASE WHEN treatment_setting = 'pre-operative' THEN radio_total_high_dose END) AS pre_operative_radio_total_high_dose,
+            MAX(CASE WHEN treatment_setting = 'pre-operative' THEN radio_treatment_site_distant_metastasis END) AS pre_operative_radio_treatment_site_distant_metastasis,
+            {% endif %}
+
+            -- Post-operative radiotherapy 1
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 1 THEN radio_start_date END) AS post_operative_radio_1_start_date,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 1 THEN radio_end_date END) AS post_operative_radio_1_end_date,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 1 THEN radio_hospital END) AS post_operative_radio_1_hospital,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 1 THEN radio_setting END) AS post_operative_radio_1_setting,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 1 THEN radio_intent END) AS post_operative_radio_1_intent,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 1 THEN radio_total_dose_gy END) AS post_operative_radio_1_total_dose_gy,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 1 THEN radio_number_of_fractions END) AS post_operative_radio_1_number_of_fractions,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 1 THEN radio_treatment_completed_as_planned END) AS post_operative_radio_1_treatment_completed_as_planned,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 1 THEN intraoperative_radio END) AS post_operative_radio_1_intraoperative_radio,
+            {% if is_head_and_neck %}
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 1 THEN radio_beam_quality END) AS post_operative_radio_1_beam_quality,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 1 THEN radio_total_high_dose END) AS post_operative_radio_1_total_high_dose,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 1 THEN radio_treatment_site_distant_metastasis END) AS post_operative_radio_1_treatment_site_distant_metastasis,
+            {% endif %}
+
+            -- Post-operative radiotherapy 2
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 2 THEN radio_start_date END) AS post_operative_radio_2_start_date,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 2 THEN radio_end_date END) AS post_operative_radio_2_end_date,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 2 THEN radio_hospital END) AS post_operative_radio_2_hospital,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 2 THEN radio_setting END) AS post_operative_radio_2_setting,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 2 THEN radio_intent END) AS post_operative_radio_2_intent,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 2 THEN radio_total_dose_gy END) AS post_operative_radio_2_total_dose_gy,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 2 THEN radio_number_of_fractions END) AS post_operative_radio_2_number_of_fractions,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 2 THEN radio_treatment_completed_as_planned END) AS post_operative_radio_2_treatment_completed_as_planned,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 2 THEN intraoperative_radio END) AS post_operative_radio_2_intraoperative_radio,
+            {% if is_head_and_neck %}
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 2 THEN radio_beam_quality END) AS post_operative_radio_2_beam_quality,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 2 THEN radio_total_high_dose END) AS post_operative_radio_2_total_high_dose,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 2 THEN radio_treatment_site_distant_metastasis END) AS post_operative_radio_2_treatment_site_distant_metastasis,
+            {% endif %}
+
+            -- Recurrence radiotherapy 1
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 1 THEN radio_start_date END) AS recurrence_radio_1_start_date,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 1 THEN radio_end_date END) AS recurrence_radio_1_end_date,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 1 THEN radio_hospital END) AS recurrence_radio_1_hospital,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 1 THEN radio_setting END) AS recurrence_radio_1_setting,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 1 THEN radio_intent END) AS recurrence_radio_1_intent,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 1 THEN radio_total_dose_gy END) AS recurrence_radio_1_total_dose_gy,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 1 THEN radio_number_of_fractions END) AS recurrence_radio_1_number_of_fractions,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 1 THEN radio_treatment_completed_as_planned END) AS recurrence_radio_1_treatment_completed_as_planned,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 1 THEN intraoperative_radio END) AS recurrence_radio_1_intraoperative_radio,
+            {% if is_head_and_neck %}
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 1 THEN radio_beam_quality END) AS recurrence_radio_1_beam_quality,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 1 THEN radio_total_high_dose END) AS recurrence_radio_1_total_high_dose,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 1 THEN radio_treatment_site_distant_metastasis END) AS recurrence_radio_1_treatment_site_distant_metastasis,
+            {% endif %}            
+
+            -- Recurrence radiotherapy 2
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 2 THEN radio_start_date END) AS recurrence_radio_2_start_date,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 2 THEN radio_end_date END) AS recurrence_radio_2_end_date,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 2 THEN radio_hospital END) AS recurrence_radio_2_hospital,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 2 THEN radio_setting END) AS recurrence_radio_2_setting,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 2 THEN radio_intent END) AS recurrence_radio_2_intent,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 2 THEN radio_total_dose_gy END) AS recurrence_radio_2_total_dose_gy,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 2 THEN radio_number_of_fractions END) AS recurrence_radio_2_number_of_fractions,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 2 THEN radio_treatment_completed_as_planned END) AS recurrence_radio_2_treatment_completed_as_planned,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 2 THEN intraoperative_radio END) AS recurrence_radio_2_intraoperative_radio
+            {% if is_head_and_neck %},
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 2 THEN radio_beam_quality END) AS recurrence_radio_2_beam_quality,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 2 THEN radio_total_high_dose END) AS recurrence_radio_2_total_high_dose,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 2 THEN radio_treatment_site_distant_metastasis END) AS recurrence_radio_2_treatment_site_distant_metastasis
+            {% endif %}
+        FROM
+            radiotherapy_ranked
+        GROUP BY
+            person_id
+    ),
+
+
     -- Systemic therapies
     systemic_therapy_base AS (
         SELECT
@@ -781,6 +1040,12 @@ WITH
     systemic_therapy_enriched AS (
         SELECT
             stb.*,
+            CASE
+                WHEN stb.treatment_setting = 'pre-operative' THEN 'pre-operative'
+                WHEN stb.treatment_setting = 'post-operative' THEN 'post-operative'
+                WHEN stb.treatment_setting = 'recurrence' THEN 'recurrence'
+                ELSE 'other'
+            END AS systemic_setting,
             procedure_concept.concept_name AS systemic_treatment_type,
             reason_concept.concept_name AS systemic_treatment_reason_for_end_of_treatment
         FROM
@@ -850,6 +1115,7 @@ WITH
             MAX(CASE WHEN treatment_setting = 'pre-operative' THEN systemic_treatment_start_date END) AS pre_operative_systemic_treatment_start_date,
             MAX(CASE WHEN treatment_setting = 'pre-operative' THEN systemic_treatment_end_date END) AS pre_operative_systemic_treatment_end_date,
             MAX(CASE WHEN treatment_setting = 'pre-operative' THEN systemic_treatment_regimen END) AS pre_operative_systemic_treatment_regimen,
+            MAX(CASE WHEN treatment_setting = 'pre-operative' THEN systemic_setting END) AS pre_operative_systemic_setting,
             MAX(CASE WHEN treatment_setting = 'pre-operative' THEN systemic_treatment_type END) AS pre_operative_systemic_treatment_type,
             MAX(CASE WHEN treatment_setting = 'pre-operative' THEN systemic_treatment_reason_for_end_of_treatment END) AS pre_operative_systemic_treatment_reason_for_end_of_treatment,
             {% if is_head_and_neck %}
@@ -860,6 +1126,7 @@ WITH
             MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 1 THEN systemic_treatment_start_date END) AS post_operative_systemic_treatment_1_start_date,
             MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 1 THEN systemic_treatment_end_date END) AS post_operative_systemic_treatment_1_end_date,
             MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 1 THEN systemic_treatment_regimen END) AS post_operative_systemic_treatment_1_regimen,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 1 THEN systemic_setting END) AS post_operative_systemic_treatment_1_setting,
             MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 1 THEN systemic_treatment_type END) AS post_operative_systemic_treatment_1_type,
             MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 1 THEN systemic_treatment_reason_for_end_of_treatment END) AS post_operative_systemic_treatment_1_reason_for_end_of_treatment,
             {% if is_head_and_neck %}
@@ -870,6 +1137,7 @@ WITH
             MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 2 THEN systemic_treatment_start_date END) AS post_operative_systemic_treatment_2_start_date,
             MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 2 THEN systemic_treatment_end_date END) AS post_operative_systemic_treatment_2_end_date,
             MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 2 THEN systemic_treatment_regimen END) AS post_operative_systemic_treatment_2_regimen,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 2 THEN systemic_setting END) AS post_operative_systemic_treatment_2_setting,
             MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 2 THEN systemic_treatment_type END) AS post_operative_systemic_treatment_2_type,
             MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 2 THEN systemic_treatment_reason_for_end_of_treatment END) AS post_operative_systemic_treatment_2_reason_for_end_of_treatment,
             {% if is_head_and_neck %}
@@ -880,6 +1148,7 @@ WITH
             MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 1 THEN systemic_treatment_start_date END) AS recurrence_systemic_treatment_1_start_date,
             MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 1 THEN systemic_treatment_end_date END) AS recurrence_systemic_treatment_1_end_date,
             MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 1 THEN systemic_treatment_regimen END) AS recurrence_systemic_treatment_1_regimen,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 1 THEN systemic_setting END) AS recurrence_systemic_treatment_1_setting,
             MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 1 THEN systemic_treatment_type END) AS recurrence_systemic_treatment_1_type,
             MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 1 THEN systemic_treatment_reason_for_end_of_treatment END) AS recurrence_systemic_treatment_1_reason_for_end_of_treatment,
             {% if is_head_and_neck %}
@@ -890,6 +1159,7 @@ WITH
             MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 2 THEN systemic_treatment_start_date END) AS recurrence_systemic_treatment_2_start_date,
             MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 2 THEN systemic_treatment_end_date END) AS recurrence_systemic_treatment_2_end_date,
             MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 2 THEN systemic_treatment_regimen END) AS recurrence_systemic_treatment_2_regimen,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 2 THEN systemic_setting END) AS recurrence_systemic_treatment_2_setting,
             MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 2 THEN systemic_treatment_type END) AS recurrence_systemic_treatment_2_type,
             MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 2 THEN systemic_treatment_reason_for_end_of_treatment END) AS recurrence_systemic_treatment_2_reason_for_end_of_treatment
             {% if is_head_and_neck %},
@@ -1369,19 +1639,19 @@ SELECT
     COALESCE(surgeries_wide.surgery_5_intent, 'N/A')                as surgery_5_intent,
     COALESCE(surgeries_wide.surgery_5_margins_after_surgery, 'N/A') as surgery_5_margins_after_surgery,
 
-    clinical_staging_flags.is_transit_metastasis_with_clinical_confirmation as clinical_is_transit_metastasis_with_clinical_confirmation,
-    clinical_staging_flags.is_multifocal_tumor               as clinical_is_multifocal_tumor,
-    clinical_staging_flags.regional_nodal_metastases         as clinical_regional_nodal_metastases,
-    clinical_staging_flags.soft_tissue                       as clinical_soft_tissue,
-    clinical_staging_flags.distant_lymph_node                as clinical_distant_lymph_node,
-    clinical_staging_flags.lung                              as clinical_lung,
-    clinical_staging_flags.metastasis_at_bone                as clinical_metastasis_at_bone,
-    clinical_staging_flags.liver                             as clinical_liver,
-    clinical_staging_flags.pleura                            as clinical_pleura,
-    clinical_staging_flags.peritoneum                        as clinical_peritoneum,
-    clinical_staging_flags.brain                             as clinical_brain,
-    clinical_staging_flags.other_viscera                     as clinical_other_viscera,
-    clinical_staging_flags.unknown                           as clinical_unknown,
+    clinical_staging_flags.is_transit_metastasis_with_clinical_confirmation     as clinical_is_transit_metastasis_with_clinical_confirmation,
+    clinical_staging_flags.is_multifocal_tumor                                  as clinical_is_multifocal_tumor,
+    clinical_staging_flags.regional_nodal_metastases                            as clinical_regional_nodal_metastases,
+    clinical_staging_flags.soft_tissue                                          as clinical_soft_tissue,
+    clinical_staging_flags.distant_lymph_node                                   as clinical_distant_lymph_node,
+    clinical_staging_flags.lung                                                 as clinical_lung,
+    clinical_staging_flags.metastasis_at_bone                                   as clinical_metastasis_at_bone,
+    clinical_staging_flags.liver                                                as clinical_liver,
+    clinical_staging_flags.pleura                                               as clinical_pleura,
+    clinical_staging_flags.peritoneum                                           as clinical_peritoneum,
+    clinical_staging_flags.brain                                                as clinical_brain,
+    clinical_staging_flags.other_viscera                                        as clinical_other_viscera,
+    clinical_staging_flags.unknown                                              as clinical_unknown,
 
     pathological_staging_flags.regional_nodal_metastases     as pathological_regional_nodal_metastases,
     pathological_staging_flags.soft_tissue                   as pathological_soft_tissue,
@@ -1398,42 +1668,97 @@ SELECT
     systemic_therapy_wide.pre_operative_systemic_treatment_start_date                                       as pre_operative_systemic_treatment_start_date,
     systemic_therapy_wide.pre_operative_systemic_treatment_end_date                                         as pre_operative_systemic_treatment_end_date,
     COALESCE(systemic_therapy_wide.pre_operative_systemic_treatment_regimen, 'N/A')                         as pre_operative_systemic_treatment_regimen,
+    COALESCE(systemic_therapy_wide.pre_operative_systemic_treatment_setting, 'N/A')                         as pre_operative_systemic_treatment_setting,
     COALESCE(systemic_therapy_wide.pre_operative_systemic_treatment_type, 'N/A')                            as pre_operative_systemic_treatment_type,
     COALESCE(systemic_therapy_wide.pre_operative_systemic_treatment_reason_for_end_of_treatment, 'N/A')     as pre_operative_systemic_treatment_reason_for_end_of_treatment,
     
     systemic_therapy_wide.post_operative_systemic_treatment_1_start_date                                    as post_operative_systemic_treatment_1_start_date,
     systemic_therapy_wide.post_operative_systemic_treatment_1_end_date                                      as post_operative_systemic_treatment_1_end_date,
     COALESCE(systemic_therapy_wide.post_operative_systemic_treatment_1_regimen, 'N/A')                      as post_operative_systemic_treatment_1_regimen,
+    COALESCE(systemic_therapy_wide.post_operative_systemic_treatment_1_setting, 'N/A')                      as post_operative_systemic_treatment_1_setting,
     COALESCE(systemic_therapy_wide.post_operative_systemic_treatment_1_type, 'N/A')                         as post_operative_systemic_treatment_1_type,
     COALESCE(systemic_therapy_wide.post_operative_systemic_treatment_1_reason_for_end_of_treatment, 'N/A')  as post_operative_systemic_treatment_1_reason_for_end_of_treatment,
     systemic_therapy_wide.post_operative_systemic_treatment_2_start_date                                    as post_operative_systemic_treatment_2_start_date,
     systemic_therapy_wide.post_operative_systemic_treatment_2_end_date                                      as post_operative_systemic_treatment_2_end_date,
     COALESCE(systemic_therapy_wide.post_operative_systemic_treatment_2_regimen, 'N/A')                      as post_operative_systemic_treatment_2_regimen,
+    COALESCE(systemic_therapy_wide.post_operative_systemic_treatment_2_setting, 'N/A')                      as post_operative_systemic_treatment_2_setting,
     COALESCE(systemic_therapy_wide.post_operative_systemic_treatment_2_type, 'N/A')                         as post_operative_systemic_treatment_2_type,
     COALESCE(systemic_therapy_wide.post_operative_systemic_treatment_2_reason_for_end_of_treatment, 'N/A')  as post_operative_systemic_treatment_2_reason_for_end_of_treatment,
     
     systemic_therapy_wide.recurrence_systemic_treatment_1_start_date                                        as recurrence_systemic_treatment_1_start_date,
     systemic_therapy_wide.recurrence_systemic_treatment_1_end_date                                          as recurrence_systemic_treatment_1_end_date,
     COALESCE(systemic_therapy_wide.recurrence_systemic_treatment_1_regimen, 'N/A')                          as recurrence_systemic_treatment_1_regimen,
+    COALESCE(systemic_therapy_wide.recurrence_systemic_treatment_1_setting, 'N/A')                          as recurrence_systemic_treatment_1_setting,
     COALESCE(systemic_therapy_wide.recurrence_systemic_treatment_1_type, 'N/A')                             as recurrence_systemic_treatment_1_type,
     COALESCE(systemic_therapy_wide.recurrence_systemic_treatment_1_reason_for_end_of_treatment, 'N/A')      as recurrence_systemic_treatment_1_reason_for_end_of_treatment,
     systemic_therapy_wide.recurrence_systemic_treatment_2_start_date                                        as recurrence_systemic_treatment_2_start_date,
     systemic_therapy_wide.recurrence_systemic_treatment_2_end_date                                          as recurrence_systemic_treatment_2_end_date,
     COALESCE(systemic_therapy_wide.recurrence_systemic_treatment_2_regimen, 'N/A')                          as recurrence_systemic_treatment_2_regimen,
+    COALESCE(systemic_therapy_wide.recurrence_systemic_treatment_2_setting, 'N/A')                          as recurrence_systemic_treatment_2_setting,
     COALESCE(systemic_therapy_wide.recurrence_systemic_treatment_2_type, 'N/A')                             as recurrence_systemic_treatment_2_type,
-    COALESCE(systemic_therapy_wide.recurrence_systemic_treatment_2_reason_for_end_of_treatment, 'N/A')      as recurrence_systemic_treatment_2_reason_for_end_of_treatment   
+    COALESCE(systemic_therapy_wide.recurrence_systemic_treatment_2_reason_for_end_of_treatment, 'N/A')      as recurrence_systemic_treatment_2_reason_for_end_of_treatment,
+
+    radiotherapy_wide.pre_operative_radio_start_date                                            as pre_operative_radio_start_date,
+    radiotherapy_wide.pre_operative_radio_end_date                                              as pre_operative_radio_end_date,
+    COALESCE(radiotherapy_wide.pre_operative_radio_hospital, 'N/A')                             as pre_operative_radio_hospital,
+    COALESCE(radiotherapy_wide.pre_operative_radio_setting, 'N/A')                              as pre_operative_radio_setting,
+    COALESCE(radiotherapy_wide.pre_operative_radio_intent, 'N/A')                               as pre_operative_radio_intent,
+    radiotherapy_wide.pre_operative_radio_total_dose_gy                                         as pre_operative_radio_total_dose_gy,
+    radiotherapy_wide.pre_operative_radio_number_of_fractions                                   as pre_operative_radio_number_of_fractions,
+    COALESCE(radiotherapy_wide.pre_operative_radio_treatment_completed_as_planned, 'N/A')       as pre_operative_radio_treatment_completed_as_planned,
+    radiotherapy_wide.pre_operative_radio_intraoperative_radio                                  as pre_operative_radio_intraoperative_radio,
+
+    radiotherapy_wide.post_operative_radio_1_start_date                                         as post_operative_radio_1_start_date,
+    radiotherapy_wide.post_operative_radio_1_end_date                                           as post_operative_radio_1_end_date,
+    COALESCE(radiotherapy_wide.post_operative_radio_1_hospital, 'N/A')                          as post_operative_radio_1_hospital,
+    COALESCE(radiotherapy_wide.post_operative_radio_1_setting, 'N/A')                           as post_operative_radio_1_setting,
+    COALESCE(radiotherapy_wide.post_operative_radio_1_intent, 'N/A')                            as post_operative_radio_1_intent,
+    radiotherapy_wide.post_operative_radio_1_total_dose_gy                                      as post_operative_radio_1_total_dose_gy,
+    radiotherapy_wide.post_operative_radio_1_number_of_fractions                                as post_operative_radio_1_number_of_fractions,
+    COALESCE(radiotherapy_wide.post_operative_radio_1_treatment_completed_as_planned, 'N/A')    as post_operative_radio_1_treatment_completed_as_planned,
+    radiotherapy_wide.post_operative_radio_1_intraoperative_radio                               as post_operative_radio_1_intraoperative_radio,
+
+    radiotherapy_wide.post_operative_radio_2_start_date                                         as post_operative_radio_2_start_date,
+    radiotherapy_wide.post_operative_radio_2_end_date                                           as post_operative_radio_2_end_date,
+    COALESCE(radiotherapy_wide.post_operative_radio_2_hospital, 'N/A')                          as post_operative_radio_2_hospital,
+    COALESCE(radiotherapy_wide.post_operative_radio_2_setting, 'N/A')                           as post_operative_radio_2_setting,
+    COALESCE(radiotherapy_wide.post_operative_radio_2_intent, 'N/A')                            as post_operative_radio_2_intent,
+    radiotherapy_wide.post_operative_radio_2_total_dose_gy                                      as post_operative_radio_2_total_dose_gy,
+    radiotherapy_wide.post_operative_radio_2_number_of_fractions                                as post_operative_radio_2_number_of_fractions,
+    COALESCE(radiotherapy_wide.post_operative_radio_2_treatment_completed_as_planned, 'N/A')    as post_operative_radio_2_treatment_completed_as_planned,
+    radiotherapy_wide.post_operative_radio_2_intraoperative_radio                               as post_operative_radio_2_intraoperative_radio,
+
+    radiotherapy_wide.recurrence_radio_1_start_date                                             as recurrence_radio_1_start_date,
+    radiotherapy_wide.recurrence_radio_1_end_date                                               as recurrence_radio_1_end_date,
+    COALESCE(radiotherapy_wide.recurrence_radio_1_hospital, 'N/A')                              as recurrence_radio_1_hospital,
+    COALESCE(radiotherapy_wide.recurrence_radio_1_setting, 'N/A')                               as recurrence_radio_1_setting,
+    COALESCE(radiotherapy_wide.recurrence_radio_1_intent, 'N/A')                                as recurrence_radio_1_intent,
+    radiotherapy_wide.recurrence_radio_1_total_dose_gy                                          as recurrence_radio_1_total_dose_gy,
+    radiotherapy_wide.recurrence_radio_1_number_of_fractions                                    as recurrence_radio_1_number_of_fractions,
+    COALESCE(radiotherapy_wide.recurrence_radio_1_treatment_completed_as_planned, 'N/A')        as recurrence_radio_1_treatment_completed_as_planned,
+    radiotherapy_wide.recurrence_radio_1_intraoperative_radio                                   as recurrence_radio_1_intraoperative_radio,
+
+    radiotherapy_wide.recurrence_radio_2_start_date                                             as recurrence_radio_2_start_date,
+    radiotherapy_wide.recurrence_radio_2_end_date                                               as recurrence_radio_2_end_date,
+    COALESCE(radiotherapy_wide.recurrence_radio_2_hospital, 'N/A')                              as recurrence_radio_2_hospital,
+    COALESCE(radiotherapy_wide.recurrence_radio_2_setting, 'N/A')                               as recurrence_radio_2_setting,
+    COALESCE(radiotherapy_wide.recurrence_radio_2_intent, 'N/A')                                as recurrence_radio_2_intent,
+    radiotherapy_wide.recurrence_radio_2_total_dose_gy                                          as recurrence_radio_2_total_dose_gy,
+    radiotherapy_wide.recurrence_radio_2_number_of_fractions                                    as recurrence_radio_2_number_of_fractions,
+    COALESCE(radiotherapy_wide.recurrence_radio_2_treatment_completed_as_planned, 'N/A')        as recurrence_radio_2_treatment_completed_as_planned,
+    radiotherapy_wide.recurrence_radio_2_intraoperative_radio                                   as recurrence_radio_2_intraoperative_radio,
 
 {% if is_head_and_neck %},
-    COALESCE(pathological_staging.stage, 'N/A')     as pathological_stage,
-    COALESCE(pathological_staging_pt.stage, 'N/A')  as pathological_stage_pt,
-    COALESCE(pathological_staging_pn.stage, 'N/A')  as pathological_stage_pn,
-    COALESCE(pathological_staging_pm.stage, 'N/A')  as pathological_stage_pm,
-    COALESCE(pathological_staging_ene.pathological_stage_extra_nodal_extension, 'N/A') as pathological_stage_extra_nodal_extension,
-    COALESCE(clinical_staging.stage, 'N/A')         as clinical_stage,
-    COALESCE(clinical_staging_ct.stage, 'N/A')      as clinical_stage_ct,
-    COALESCE(clinical_staging_cn.stage, 'N/A')      as clinical_stage_cn,
-    COALESCE(clinical_staging_cm.stage, 'N/A')      as clinical_stage_cm,
-    COALESCE(clinical_staging_ene.clinical_stage_extra_nodal_extension, 'N/A') as clinical_stage_extra_nodal_extension,
+    COALESCE(pathological_staging.stage, 'N/A')                                         as pathological_stage,
+    COALESCE(pathological_staging_pt.stage, 'N/A')                                      as pathological_stage_pt,
+    COALESCE(pathological_staging_pn.stage, 'N/A')                                      as pathological_stage_pn,
+    COALESCE(pathological_staging_pm.stage, 'N/A')                                      as pathological_stage_pm,
+    COALESCE(pathological_staging_ene.pathological_stage_extra_nodal_extension, 'N/A')  as pathological_stage_extra_nodal_extension,
+    COALESCE(clinical_staging.stage, 'N/A')                                             as clinical_stage,
+    COALESCE(clinical_staging_ct.stage, 'N/A')                                          as clinical_stage_ct,
+    COALESCE(clinical_staging_cn.stage, 'N/A')                                          as clinical_stage_cn,
+    COALESCE(clinical_staging_cm.stage, 'N/A')                                          as clinical_stage_cm,
+    COALESCE(clinical_staging_ene.clinical_stage_extra_nodal_extension, 'N/A')          as clinical_stage_extra_nodal_extension,
 
     COALESCE(surgeries_wide.surgery_1_extra_nodal_extension, 'N/A') as surgery_1_extra_nodal_extension,
     COALESCE(surgeries_wide.surgery_2_extra_nodal_extension, 'N/A') as surgery_2_extra_nodal_extension,
@@ -1459,26 +1784,52 @@ SELECT
     surgeries_wide.surgery_4_date_of_neck_surgery as surgery_4_date_of_neck_surgery,
     surgeries_wide.surgery_5_date_of_neck_surgery as surgery_5_date_of_neck_surgery,
 
-    COALESCE(systemic_therapy_wide.pre_operative_systemic_treatment_intent, 'N/A')     as pre_operative_systemic_treatment_intent,
-    COALESCE(systemic_therapy_wide.post_operative_systemic_treatment_1_intent, 'N/A')  as post_operative_systemic_treatment_1_intent,
-    COALESCE(systemic_therapy_wide.post_operative_systemic_treatment_2_intent, 'N/A')  as post_operative_systemic_treatment_2_intent,
-    COALESCE(systemic_therapy_wide.recurrence_systemic_treatment_1_intent, 'N/A')  as recurrence_systemic_treatment_1_intent,
-    COALESCE(systemic_therapy_wide.recurrence_systemic_treatment_2_intent, 'N/A')  as recurrence_systemic_treatment_2_intent
+    COALESCE(surgeries_wide.surgery_1_surgery_hospital, 'N/A') as surgery_1_surgery_hospital,
+    COALESCE(surgeries_wide.surgery_2_surgery_hospital, 'N/A') as surgery_2_surgery_hospital,
+    COALESCE(surgeries_wide.surgery_3_surgery_hospital, 'N/A') as surgery_3_surgery_hospital,
+    COALESCE(surgeries_wide.surgery_4_surgery_hospital, 'N/A') as surgery_4_surgery_hospital,
+    COALESCE(surgeries_wide.surgery_5_surgery_hospital, 'N/A') as surgery_5_surgery_hospital,
+
+    COALESCE(systemic_therapy_wide.pre_operative_systemic_treatment_intent, 'N/A')      as pre_operative_systemic_treatment_intent,
+    COALESCE(systemic_therapy_wide.post_operative_systemic_treatment_1_intent, 'N/A')   as post_operative_systemic_treatment_1_intent,
+    COALESCE(systemic_therapy_wide.post_operative_systemic_treatment_2_intent, 'N/A')   as post_operative_systemic_treatment_2_intent,
+    COALESCE(systemic_therapy_wide.recurrence_systemic_treatment_1_intent, 'N/A')       as recurrence_systemic_treatment_1_intent,
+    COALESCE(systemic_therapy_wide.recurrence_systemic_treatment_2_intent, 'N/A')       as recurrence_systemic_treatment_2_intent,
+
+    COALESCE(radiotherapy_wide.pre_operative_radio_beam_quality, 'N/A')                 as pre_operative_radio_beam_quality,
+    radiotherapy_wide.pre_operative_radio_total_high_dose                               as pre_operative_radio_total_high_dose,
+    radiotherapy_wide.pre_operative_radio_treatment_site_distant_metastasis             as pre_operative_radio_treatment_site_distant_metastasis,
+
+    COALESCE(radiotherapy_wide.post_operative_radio_1_beam_quality, 'N/A')              as post_operative_radio_1_beam_quality,
+    radiotherapy_wide.post_operative_radio_1_total_high_dose                            as post_operative_radio_1_total_high_dose,
+    radiotherapy_wide.post_operative_radio_1_treatment_site_distant_metastasis          as post_operative_radio_1_treatment_site_distant_metastasis,
+
+    COALESCE(radiotherapy_wide.post_operative_radio_2_beam_quality, 'N/A')              as post_operative_radio_2_beam_quality,
+    radiotherapy_wide.post_operative_radio_2_total_high_dose                            as post_operative_radio_2_total_high_dose,
+    radiotherapy_wide.post_operative_radio_2_treatment_site_distant_metastasis          as post_operative_radio_2_treatment_site_distant_metastasis,
+
+    COALESCE(radiotherapy_wide.recurrence_radio_1_beam_quality, 'N/A')                  as recurrence_radio_1_beam_quality,
+    radiotherapy_wide.recurrence_radio_1_total_high_dose                                as recurrence_radio_1_total_high_dose,
+    radiotherapy_wide.recurrence_radio_1_treatment_site_distant_metastasis              as recurrence_radio_1_treatment_site_distant_metastasis,
+
+    COALESCE(radiotherapy_wide.recurrence_radio_2_beam_quality, 'N/A')                  as recurrence_radio_2_beam_quality,
+    radiotherapy_wide.recurrence_radio_2_total_high_dose                                as recurrence_radio_2_total_high_dose,
+    radiotherapy_wide.recurrence_radio_2_treatment_site_distant_metastasis              as recurrence_radio_2_treatment_site_distant_metastasis,
 
 {% endif %}
 
 {% if is_sarcoma %},
-    COALESCE(biopsy.type_of_biopsy, 'N/A')                      as type_of_biopsy,
-    biopsy.date_of_biopsy                                       as date_of_biopsy,
-    clinical_staging_sarcoma.clinical_localised                 as clinical_localised,
-    clinical_number_of_tumor_nodules.number_of_tumor_nodules    as clinical_number_of_tumor_nodules,
-    clinical_staging_sarcoma.clinical_loco_regional             as clinical_loco_regional,
-    pathological_staging_sarcoma.pathological_localised         as pathological_localised,
-    pathological_staging_sarcoma.pathological_loco_regional     as pathological_loco_regional,
+    COALESCE(biopsy.type_of_biopsy, 'N/A')                                                          as type_of_biopsy,
+    biopsy.date_of_biopsy                                                                           as date_of_biopsy,
+    clinical_staging_sarcoma.clinical_localised                                                     as clinical_localised,
+    clinical_number_of_tumor_nodules.number_of_tumor_nodules                                        as clinical_number_of_tumor_nodules,
+    clinical_staging_sarcoma.clinical_loco_regional                                                 as clinical_loco_regional,
+    pathological_staging_sarcoma.pathological_localised                                             as pathological_localised,
+    pathological_staging_sarcoma.pathological_loco_regional                                         as pathological_loco_regional,
     pathological_features_sarcoma.pathological_number_of_tumor_nodules                              as pathological_number_of_tumor_nodules,
     pathological_features_sarcoma.pathological_is_transit_metastasis_with_clinical_confirmation     as pathological_is_transit_metastasis_with_clinical_confirmation,
     pathological_features_sarcoma.pathological_is_multifocal_tumor                                  as pathological_is_multifocal_tumor,
-    last_contact.last_contact                                   as last_contact
+    last_contact.last_contact                                                                       as last_contact
 {% endif %}
 
 FROM
@@ -1501,6 +1852,9 @@ LEFT JOIN
 LEFT JOIN
     systemic_therapy_wide
     ON person.person_id = systemic_therapy_wide.person_id
+LEFT JOIN
+    radiotherapy_wide
+    ON person.person_id = radiotherapy_wide.person_id
 
 {% if is_head_and_neck %}
 LEFT JOIN

@@ -242,24 +242,64 @@ def convert_base_columns(df: pd.DataFrame) -> pd.DataFrame:
             "surgery_5_intent",
             "surgery_5_margins_after_surgery",
             "pre_operative_systemic_treatment_regimen",
+            "pre_operative_systemic_treatment_setting",
             "pre_operative_systemic_treatment_type",
             "pre_operative_systemic_treatment_reason_for_end_of_treatment",
             "post_operative_systemic_treatment_1_regimen",
+            "post_operative_systemic_treatment_1_setting",
             "post_operative_systemic_treatment_1_type",
             "post_operative_systemic_treatment_1_reason_for_end_of_treatment",
             "post_operative_systemic_treatment_2_regimen",
+            "post_operative_systemic_treatment_2_setting",
             "post_operative_systemic_treatment_2_type",
             "post_operative_systemic_treatment_2_reason_for_end_of_treatment",
             "recurrence_systemic_treatment_1_regimen",
+            "recurrence_systemic_treatment_1_setting",
             "recurrence_systemic_treatment_1_type",
             "recurrence_systemic_treatment_1_reason_for_end_of_treatment",
             "recurrence_systemic_treatment_2_regimen",
+            "recurrence_systemic_treatment_2_setting",
             "recurrence_systemic_treatment_2_type",
             "recurrence_systemic_treatment_2_reason_for_end_of_treatment",
+            "pre_operative_radio_hospital",
+            "pre_operative_radio_setting",
+            "pre_operative_radio_intent",
+            "pre_operative_radio_treatment_completed_as_planned",
+            "post_operative_radio_1_hospital",
+            "post_operative_radio_1_setting",
+            "post_operative_radio_1_intent",
+            "post_operative_radio_1_treatment_completed_as_planned",
+            "post_operative_radio_2_hospital",
+            "post_operative_radio_2_setting",
+            "post_operative_radio_2_intent",
+            "post_operative_radio_2_treatment_completed_as_planned",
+            "recurrence_radio_1_hospital",
+            "recurrence_radio_1_setting",
+            "recurrence_radio_1_intent",
+            "recurrence_radio_1_treatment_completed_as_planned",
+            "recurrence_radio_2_hospital",
+            "recurrence_radio_2_setting",
+            "recurrence_radio_2_intent",
+            "recurrence_radio_2_treatment_completed_as_planned",
         ],
     )
 
-    df = _to_int64(df, ["year_of_birth", "age_at_diagnosis"])
+    df = _to_int64(
+        df, 
+        [
+            "year_of_birth", 
+            "age_at_diagnosis", 
+            "pre_operative_radio_total_dose_gy",
+            "pre_operative_radio_number_of_fractions",
+            "post_operative_radio_1_total_dose_gy",
+            "post_operative_radio_1_number_of_fractions",
+            "post_operative_radio_2_total_dose_gy",
+            "post_operative_radio_2_number_of_fractions",
+            "recurrence_radio_1_total_dose_gy",
+            "recurrence_radio_1_number_of_fractions",
+            "recurrence_radio_2_total_dose_gy",
+            "recurrence_radio_2_number_of_fractions",
+        ])
 
     df = _to_datetime(
         df,
@@ -281,6 +321,16 @@ def convert_base_columns(df: pd.DataFrame) -> pd.DataFrame:
             "recurrence_systemic_treatment_1_end_date",
             "recurrence_systemic_treatment_2_start_date",
             "recurrence_systemic_treatment_2_end_date",
+            "pre_operative_radio_start_date",
+            "pre_operative_radio_end_date",
+            "post_operative_radio_1_start_date",
+            "post_operative_radio_1_end_date",
+            "post_operative_radio_2_start_date",
+            "post_operative_radio_2_end_date",
+            "recurrence_radio_1_start_date",
+            "recurrence_radio_1_end_date",
+            "recurrence_radio_2_start_date",
+            "recurrence_radio_2_end_date",
         ],
     )
 
@@ -310,6 +360,11 @@ def convert_base_columns(df: pd.DataFrame) -> pd.DataFrame:
             "pathological_brain",
             "pathological_other_viscera",
             "pathological_unknown",
+            "pre_operative_radio_intraoperative_radio",
+            "post_operative_radio_1_intraoperative_radio",
+            "post_operative_radio_2_intraoperative_radio",
+            "recurrence_radio_1_intraoperative_radio",
+            "recurrence_radio_2_intraoperative_radio",
         ]
     )
 
@@ -349,9 +404,31 @@ def convert_head_neck_columns(df: pd.DataFrame) -> pd.DataFrame:
             "post_operative_systemic_treatment_2_intent",
             "recurrence_systemic_treatment_1_intent",
             "recurrence_systemic_treatment_2_intent",
+
+            "pre_operative_radio_beam_quality",
+            "post_operative_radio_1_beam_quality",
+            "post_operative_radio_2_beam_quality",
+            "recurrence_radio_1_beam_quality",
+            "recurrence_radio_2_beam_quality",
+
+            "surgery_1_surgery_hospital",
+            "surgery_2_surgery_hospital",
+            "surgery_3_surgery_hospital",
+            "surgery_4_surgery_hospital",
+            "surgery_5_surgery_hospital",
         ],
     )
-
+    
+    df = _to_int64(
+        df, 
+        [
+            "pre_operative_radio_total_high_dose",
+            "post_operative_radio_1_total_high_dose",
+            "post_operative_radio_2_total_high_dose",
+            "recurrence_radio_1_total_high_dose",
+            "recurrence_radio_2_total_high_dose",
+        ])
+    
     df = _to_datetime(
         df,
         [
@@ -370,6 +447,12 @@ def convert_head_neck_columns(df: pd.DataFrame) -> pd.DataFrame:
             "surgery_3_neck_surgery",
             "surgery_4_neck_surgery",
             "surgery_5_neck_surgery",
+
+            "pre_operative_radio_treatment_site_distant_metastasis",
+            "post_operative_radio_1_treatment_site_distant_metastasis",
+            "post_operative_radio_2_treatment_site_distant_metastasis",
+            "recurrence_radio_1_treatment_site_distant_metastasis",
+            "recurrence_radio_2_treatment_site_distant_metastasis"
         ]
     )
 
