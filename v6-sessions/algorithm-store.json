@@ -1,6 +1,6 @@
 {
     "reviews": [],
-    "vantage6_version": "5.0.0a41",
+    "vantage6_version": "5.0.0b1",
     "image": "ghcr.io/iknl/sessions",
     "partitioning": "horizontal",
     "functions": [
