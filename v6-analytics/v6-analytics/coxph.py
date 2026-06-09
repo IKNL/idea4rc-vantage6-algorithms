@@ -463,14 +463,24 @@ def coxph_central(
         aggregated_time_events[df_name] = agg
         unique_time_events[df_name] = agg[time_col].tolist()
 
-    active_dataframe_names = [
-        df_name
-        for df_name in dataframe_names
-        if df_name in aggregated_time_events and ids_included[df_name]
-    ]
+    converged_results = {}
+    active_dataframe_names = []
+    for df_name in dataframe_names:
+        if df_name not in aggregated_time_events or not ids_included[df_name]:
+            continue
+        if not unique_time_events.get(df_name):
+            info(f"No events found for cohort '{df_name}'; skipping.")
+            converged_results[df_name] = {
+                "msg": "No events found for this cohort; CoxPH cannot be fitted.",
+                "included_organizations": ids_included.get(df_name, []),
+                "excluded_organizations": excluded_ids.get(df_name, []),
+            }
+        else:
+            active_dataframe_names.append(df_name)
+
     if not active_dataframe_names:
         return {
-            "cohorts": {},
+            "cohorts": converged_results,
             "details": {"iterations": 0, "all_converged": False},
         }
 
@@ -586,7 +596,6 @@ def coxph_central(
         df_name: np.zeros(n_covs_by_cohort[df_name])
         for df_name in active_dataframe_names
     }
-    converged_results = {}
     iteration = 0
 
     # --- Iteration loop with convergence kick-out ---

@@ -4,6 +4,11 @@ from .one_hot_encode import one_hot_encode
 from .merge_variables import merge_variables
 from .drop_column import drop_column
 from .basic_arithmetic import basic_arithmetic
+from .annotate_event import (
+    annotate_event_by_index,
+    annotate_event_by_date_range,
+    annotate_event_within_window,
+)
 
 __all__ = [
     "timedelta",
@@ -12,4 +17,7 @@ __all__ = [
     "merge_variables",
     "drop_column",
     "basic_arithmetic",
+    "annotate_event_by_index",
+    "annotate_event_by_date_range",
+    "annotate_event_within_window",
 ]

@@ -63,6 +63,9 @@ def get_unique_event_times(
 ) -> dict[str, List[str]]:
     results = {}
     for name, df in dataframes.items():
+        if len(df) == 0:
+            info(f"Skipping cohort '{name}': empty DataFrame.")
+            continue
         unique_event_times = _get_unique_event_times(
             df, time_column_name, strata_column_name
         )
@@ -83,6 +86,9 @@ def get_km_event_table(
 ) -> List[str]:
     results = {}
     for name, df in dataframes.items():
+        if len(df) == 0:
+            info(f"Skipping cohort '{name}': empty DataFrame.")
+            continue
 
         kms = _get_km_event_table(
             df,

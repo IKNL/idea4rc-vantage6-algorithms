@@ -160,6 +160,13 @@ def _aggregate_results(
         df.set_index(group_cols, inplace=True)
         partial_dfs.append(df)
 
+    if not partial_dfs:
+        info("All nodes returned empty results; no data to aggregate.")
+        result = {"contingency_table": []}
+        if include_chi2:
+            result["chi2"] = {"chi2": None, "P-value": None}
+        return result
+
     # Get all unique values for the result column
     all_result_levels = list(set([col for df in partial_dfs for col in df.columns]))
 

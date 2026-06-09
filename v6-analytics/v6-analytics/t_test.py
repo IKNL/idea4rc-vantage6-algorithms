@@ -61,6 +61,9 @@ def t_test_central(
     final_result = {}
     cohort_names = results[0].keys()
     for cohort_name in cohort_names:
+        if cohort_name not in results[1]:
+            info(f"Skipping cohort '{cohort_name}': second node did not return data.")
+            continue
 
         final_result[cohort_name] = {}
 
@@ -129,6 +132,9 @@ def t_test_central(
 def t_test_partial(dataframes: dict[str, pd.DataFrame]) -> dict:
     results = {}
     for cohort_name, df in dataframes.items():
+        if len(df) == 0:
+            info(f"Skipping cohort '{cohort_name}': empty DataFrame.")
+            continue
         results[cohort_name] = _t_test_partial(df)
     return results
     
