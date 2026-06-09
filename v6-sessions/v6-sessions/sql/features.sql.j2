@@ -323,8 +323,9 @@ WITH
         -- Surgery 1
         MAX(CASE WHEN surgery_id = 1 THEN date_of_surgery END)                  AS surgery_1_date,
         MAX(CASE WHEN surgery_id = 1 THEN surgery_intent END)                   AS surgery_1_intent,
-        MAX(CASE WHEN surgery_id = 1 THEN margins_after_surgery END)            AS surgery_1_margins_after_surgery
-            {% if is_head_and_neck %},
+        MAX(CASE WHEN surgery_id = 1 THEN margins_after_surgery END)            AS surgery_1_margins_after_surgery,
+
+            {% if is_head_and_neck %}
         MAX(CASE WHEN surgery_id = 1 THEN surgery_extra_nodal_extension END)    AS surgery_1_extra_nodal_extension,
         MAX(CASE WHEN surgery_id = 1 THEN laterality_of_the_dissection END)     AS surgery_1_laterality_of_the_dissection,
         MAX(CASE WHEN surgery_id = 1 THEN neck_surgery END)                     AS surgery_1_neck_surgery,
@@ -335,8 +336,9 @@ WITH
         -- Surgery 2
         MAX(CASE WHEN surgery_id = 2 THEN date_of_surgery END)                  AS surgery_2_date,
         MAX(CASE WHEN surgery_id = 2 THEN surgery_intent END)                   AS surgery_2_intent,
-        MAX(CASE WHEN surgery_id = 2 THEN margins_after_surgery END)            AS surgery_2_margins_after_surgery
-            {% if is_head_and_neck %},
+        MAX(CASE WHEN surgery_id = 2 THEN margins_after_surgery END)            AS surgery_2_margins_after_surgery,
+            
+            {% if is_head_and_neck %}
         MAX(CASE WHEN surgery_id = 2 THEN surgery_extra_nodal_extension END)    AS surgery_2_extra_nodal_extension,
         MAX(CASE WHEN surgery_id = 2 THEN laterality_of_the_dissection END)     AS surgery_2_laterality_of_the_dissection,
         MAX(CASE WHEN surgery_id = 2 THEN neck_surgery END)                     AS surgery_2_neck_surgery,
@@ -347,8 +349,9 @@ WITH
         -- Surgery 3
         MAX(CASE WHEN surgery_id = 3 THEN date_of_surgery END)                  AS surgery_3_date,
         MAX(CASE WHEN surgery_id = 3 THEN surgery_intent END)                   AS surgery_3_intent,
-        MAX(CASE WHEN surgery_id = 3 THEN margins_after_surgery END)            AS surgery_3_margins_after_surgery
-            {% if is_head_and_neck %},
+        MAX(CASE WHEN surgery_id = 3 THEN margins_after_surgery END)            AS surgery_3_margins_after_surgery,
+
+            {% if is_head_and_neck %}
         MAX(CASE WHEN surgery_id = 3 THEN surgery_extra_nodal_extension END)    AS surgery_3_extra_nodal_extension,
         MAX(CASE WHEN surgery_id = 3 THEN laterality_of_the_dissection END)     AS surgery_3_laterality_of_the_dissection,
         MAX(CASE WHEN surgery_id = 3 THEN neck_surgery END)                     AS surgery_3_neck_surgery,
@@ -359,8 +362,8 @@ WITH
         -- Surgery 4
         MAX(CASE WHEN surgery_id = 4 THEN date_of_surgery END)                  AS surgery_4_date,
         MAX(CASE WHEN surgery_id = 4 THEN surgery_intent END)                   AS surgery_4_intent,
-        MAX(CASE WHEN surgery_id = 4 THEN margins_after_surgery END)            AS surgery_4_margins_after_surgery
-            {% if is_head_and_neck %},
+        MAX(CASE WHEN surgery_id = 4 THEN margins_after_surgery END)            AS surgery_4_margins_after_surgery,
+            {% if is_head_and_neck %}
         MAX(CASE WHEN surgery_id = 4 THEN surgery_extra_nodal_extension END)    AS surgery_4_extra_nodal_extension,
         MAX(CASE WHEN surgery_id = 4 THEN laterality_of_the_dissection END)     AS surgery_4_laterality_of_the_dissection,
         MAX(CASE WHEN surgery_id = 4 THEN neck_surgery END)                     AS surgery_4_neck_surgery,
@@ -818,8 +821,8 @@ WITH
                     JOIN {{ cdm_schema }}.episode episode
                         ON ee.episode_id = episode.episode_id
                     WHERE episode.episode_concept_id = 32940 -- Radiotherapy episode
-                ) THEN TRUE
-                ELSE FALSE
+                ) THEN 1
+                ELSE 0
             END AS intraoperative_radio
         FROM
             radiotherapy_base rtb
@@ -857,8 +860,8 @@ WITH
             beam_quality_concept.concept_name AS radio_beam_quality,
             total_high_dose_measurement.value_as_number AS radio_total_high_dose,
             CASE
-                WHEN po.modifier_concept_id IS NOT NULL THEN TRUE
-                ELSE FALSE
+                WHEN po.modifier_concept_id IS NOT NULL THEN 1
+                ELSE 0
             END AS radio_treatment_site_distant_metastasis
         FROM
             radiotherapy_enriched rten
@@ -1115,7 +1118,7 @@ WITH
             MAX(CASE WHEN treatment_setting = 'pre-operative' THEN systemic_treatment_start_date END) AS pre_operative_systemic_treatment_start_date,
             MAX(CASE WHEN treatment_setting = 'pre-operative' THEN systemic_treatment_end_date END) AS pre_operative_systemic_treatment_end_date,
             MAX(CASE WHEN treatment_setting = 'pre-operative' THEN systemic_treatment_regimen END) AS pre_operative_systemic_treatment_regimen,
-            MAX(CASE WHEN treatment_setting = 'pre-operative' THEN systemic_setting END) AS pre_operative_systemic_setting,
+            MAX(CASE WHEN treatment_setting = 'pre-operative' THEN systemic_setting END) AS pre_operative_systemic_treatment_setting,
             MAX(CASE WHEN treatment_setting = 'pre-operative' THEN systemic_treatment_type END) AS pre_operative_systemic_treatment_type,
             MAX(CASE WHEN treatment_setting = 'pre-operative' THEN systemic_treatment_reason_for_end_of_treatment END) AS pre_operative_systemic_treatment_reason_for_end_of_treatment,
             {% if is_head_and_neck %}
@@ -1746,7 +1749,7 @@ SELECT
     radiotherapy_wide.recurrence_radio_2_total_dose_gy                                          as recurrence_radio_2_total_dose_gy,
     radiotherapy_wide.recurrence_radio_2_number_of_fractions                                    as recurrence_radio_2_number_of_fractions,
     COALESCE(radiotherapy_wide.recurrence_radio_2_treatment_completed_as_planned, 'N/A')        as recurrence_radio_2_treatment_completed_as_planned,
-    radiotherapy_wide.recurrence_radio_2_intraoperative_radio                                   as recurrence_radio_2_intraoperative_radio,
+    radiotherapy_wide.recurrence_radio_2_intraoperative_radio                                   as recurrence_radio_2_intraoperative_radio
 
 {% if is_head_and_neck %},
     COALESCE(pathological_staging.stage, 'N/A')                                         as pathological_stage,
@@ -1814,7 +1817,7 @@ SELECT
 
     COALESCE(radiotherapy_wide.recurrence_radio_2_beam_quality, 'N/A')                  as recurrence_radio_2_beam_quality,
     radiotherapy_wide.recurrence_radio_2_total_high_dose                                as recurrence_radio_2_total_high_dose,
-    radiotherapy_wide.recurrence_radio_2_treatment_site_distant_metastasis              as recurrence_radio_2_treatment_site_distant_metastasis,
+    radiotherapy_wide.recurrence_radio_2_treatment_site_distant_metastasis              as recurrence_radio_2_treatment_site_distant_metastasis
 
 {% endif %}
 
