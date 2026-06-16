@@ -298,8 +298,10 @@ def convert_base_columns(df: pd.DataFrame) -> pd.DataFrame:
             "recurrence_radio_1_total_dose_gy",
             "recurrence_radio_1_number_of_fractions",
             "recurrence_radio_2_total_dose_gy",
-            "recurrence_radio_2_number_of_fractions",
         ])
+
+    # FIXME: temp test if this works for int
+    df["recurrence_radio_2_number_of_fractions"] = pd.to_numeric(df["recurrence_radio_2_number_of_fractions"].astype(str), errors="coerce").astype("Int64")
 
     df = _to_datetime(
         df,
