@@ -116,7 +116,7 @@ WITH
                 AND episode.episode_start_date < {{ COHORT_DATE_MAX }}
                 AND episode.episode_start_date >= primary_tumor.diagnosis_date
         ) s
-        WHERE surgery_id <= 5
+        WHERE surgery_id <= 10
     ),
 
 
@@ -374,14 +374,21 @@ WITH
         -- Surgery 5
         MAX(CASE WHEN surgery_id = 5 THEN date_of_surgery END)                  AS surgery_5_date,
         MAX(CASE WHEN surgery_id = 5 THEN surgery_intent END)                   AS surgery_5_intent,
-        MAX(CASE WHEN surgery_id = 5 THEN margins_after_surgery END)            AS surgery_5_margins_after_surgery
-            {% if is_head_and_neck %},
+        MAX(CASE WHEN surgery_id = 5 THEN margins_after_surgery END)            AS surgery_5_margins_after_surgery,
+            {% if is_head_and_neck %}
         MAX(CASE WHEN surgery_id = 5 THEN surgery_extra_nodal_extension END)    AS surgery_5_extra_nodal_extension,
         MAX(CASE WHEN surgery_id = 5 THEN laterality_of_the_dissection END)     AS surgery_5_laterality_of_the_dissection,
         MAX(CASE WHEN surgery_id = 5 THEN neck_surgery END)                     AS surgery_5_neck_surgery,
         MAX(CASE WHEN surgery_id = 5 THEN date_of_neck_surgery END)             AS surgery_5_date_of_neck_surgery,
-        MAX(CASE WHEN surgery_id = 5 THEN surgery_hospital END)                 AS surgery_5_surgery_hospital
+        MAX(CASE WHEN surgery_id = 5 THEN surgery_hospital END)                 AS surgery_5_surgery_hospital,
             {% endif %}
+
+        -- Surgery 6-10
+        MAX(CASE WHEN surgery_id = 6 THEN date_of_surgery END)                  AS surgery_6_date,
+        MAX(CASE WHEN surgery_id = 7 THEN date_of_surgery END)                  AS surgery_7_date,
+        MAX(CASE WHEN surgery_id = 8 THEN date_of_surgery END)                  AS surgery_8_date,
+        MAX(CASE WHEN surgery_id = 9 THEN date_of_surgery END)                  AS surgery_9_date,
+        MAX(CASE WHEN surgery_id = 10 THEN date_of_surgery END)                 AS surgery_10_date
 
     FROM surgeries_enriched
     GROUP BY person_id
@@ -986,6 +993,30 @@ WITH
             MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 2 THEN radio_total_high_dose END) AS recurrence_radio_2_total_high_dose,
             MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 2 THEN radio_treatment_site_distant_metastasis END) AS recurrence_radio_2_treatment_site_distant_metastasis
             {% endif %}
+
+            -- List of radiotherapy start/end dates
+            MAX(CASE WHEN radiotherapy_row_number = 1 THEN radio_start_date END)            AS radio_1_start_date,
+            MAX(CASE WHEN radiotherapy_row_number = 2 THEN radio_start_date END)            AS radio_2_start_date,
+            MAX(CASE WHEN radiotherapy_row_number = 3 THEN radio_start_date END)            AS radio_3_start_date,
+            MAX(CASE WHEN radiotherapy_row_number = 4 THEN radio_start_date END)            AS radio_4_start_date,
+            MAX(CASE WHEN radiotherapy_row_number = 5 THEN radio_start_date END)            AS radio_5_start_date,
+            MAX(CASE WHEN radiotherapy_row_number = 6 THEN radio_start_date END)            AS radio_6_start_date,
+            MAX(CASE WHEN radiotherapy_row_number = 7 THEN radio_start_date END)            AS radio_7_start_date,
+            MAX(CASE WHEN radiotherapy_row_number = 8 THEN radio_start_date END)            AS radio_8_start_date,
+            MAX(CASE WHEN radiotherapy_row_number = 9 THEN radio_start_date END)            AS radio_9_start_date,
+            MAX(CASE WHEN radiotherapy_row_number = 10 THEN radio_start_date END)           AS radio_10_start_date,
+            
+            MAX(CASE WHEN radiotherapy_row_number = 1 THEN radio_end_date END)            AS radio_1_end_date,
+            MAX(CASE WHEN radiotherapy_row_number = 2 THEN radio_end_date END)            AS radio_2_end_date,
+            MAX(CASE WHEN radiotherapy_row_number = 3 THEN radio_end_date END)            AS radio_3_end_date,
+            MAX(CASE WHEN radiotherapy_row_number = 4 THEN radio_end_date END)            AS radio_4_end_date,
+            MAX(CASE WHEN radiotherapy_row_number = 5 THEN radio_end_date END)            AS radio_5_end_date,
+            MAX(CASE WHEN radiotherapy_row_number = 6 THEN radio_end_date END)            AS radio_6_end_date,
+            MAX(CASE WHEN radiotherapy_row_number = 7 THEN radio_end_date END)            AS radio_7_end_date,
+            MAX(CASE WHEN radiotherapy_row_number = 8 THEN radio_end_date END)            AS radio_8_end_date,
+            MAX(CASE WHEN radiotherapy_row_number = 9 THEN radio_end_date END)            AS radio_9_end_date,
+            MAX(CASE WHEN radiotherapy_row_number = 10 THEN radio_end_date END)           AS radio_10_end_date
+
         FROM
             radiotherapy_ranked
         GROUP BY
@@ -1050,6 +1081,7 @@ WITH
                 ELSE 'other'
             END AS systemic_setting,
             procedure_concept.concept_name AS systemic_treatment_type,
+            procedure_concept.concept_id AS systemic_treatment_type_concept_id,
             reason_concept.concept_name AS systemic_treatment_reason_for_end_of_treatment
         FROM
             systemic_therapy_base stb
@@ -1164,10 +1196,80 @@ WITH
             MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 2 THEN systemic_treatment_regimen END) AS recurrence_systemic_treatment_2_regimen,
             MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 2 THEN systemic_setting END) AS recurrence_systemic_treatment_2_setting,
             MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 2 THEN systemic_treatment_type END) AS recurrence_systemic_treatment_2_type,
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 2 THEN systemic_treatment_reason_for_end_of_treatment END) AS recurrence_systemic_treatment_2_reason_for_end_of_treatment
-            {% if is_head_and_neck %},
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 2 THEN systemic_treatment_intent END) AS recurrence_systemic_treatment_2_intent
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 2 THEN systemic_treatment_reason_for_end_of_treatment END) AS recurrence_systemic_treatment_2_reason_for_end_of_treatment,
+            {% if is_head_and_neck %}
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 2 THEN systemic_treatment_intent END) AS recurrence_systemic_treatment_2_intent,
             {% endif %}
+
+            -- List of systemic therapy dates: chemo / immuno / targeted
+            -- CHEMO #4273629
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 4273629 AND systemic_treatment_row_number = 1 THEN systemic_treatment_start_date END)            AS chemo_1_start_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 4273629 AND systemic_treatment_row_number = 2 THEN systemic_treatment_start_date END)            AS chemo_2_start_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 4273629 AND systemic_treatment_row_number = 3 THEN systemic_treatment_start_date END)            AS chemo_3_start_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 4273629 AND systemic_treatment_row_number = 4 THEN systemic_treatment_start_date END)            AS chemo_4_start_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 4273629 AND systemic_treatment_row_number = 5 THEN systemic_treatment_start_date END)            AS chemo_5_start_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 4273629 AND systemic_treatment_row_number = 6 THEN systemic_treatment_start_date END)            AS chemo_6_start_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 4273629 AND systemic_treatment_row_number = 7 THEN systemic_treatment_start_date END)            AS chemo_7_start_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 4273629 AND systemic_treatment_row_number = 8 THEN systemic_treatment_start_date END)            AS chemo_8_start_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 4273629 AND systemic_treatment_row_number = 9 THEN systemic_treatment_start_date END)            AS chemo_9_start_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 4273629 AND systemic_treatment_row_number = 10 THEN systemic_treatment_start_date END)           AS chemo_10_start_date,
+
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 4273629 AND systemic_treatment_row_number = 1 THEN systemic_treatment_end_date END)              AS chemo_1_end_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 4273629 AND systemic_treatment_row_number = 2 THEN systemic_treatment_end_date END)              AS chemo_2_end_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 4273629 AND systemic_treatment_row_number = 3 THEN systemic_treatment_end_date END)              AS chemo_3_end_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 4273629 AND systemic_treatment_row_number = 4 THEN systemic_treatment_end_date END)              AS chemo_4_end_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 4273629 AND systemic_treatment_row_number = 5 THEN systemic_treatment_end_date END)              AS chemo_5_end_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 4273629 AND systemic_treatment_row_number = 6 THEN systemic_treatment_end_date END)              AS chemo_6_end_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 4273629 AND systemic_treatment_row_number = 7 THEN systemic_treatment_end_date END)              AS chemo_7_end_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 4273629 AND systemic_treatment_row_number = 8 THEN systemic_treatment_end_date END)              AS chemo_8_end_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 4273629 AND systemic_treatment_row_number = 9 THEN systemic_treatment_end_date END)              AS chemo_9_end_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 4273629 AND systemic_treatment_row_number = 10 THEN systemic_treatment_end_date END)             AS chemo_10_end_date,
+
+            -- IMMUNO #40310107
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 40310107 AND systemic_treatment_row_number = 1 THEN systemic_treatment_start_date END)           AS immuno_1_start_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 40310107 AND systemic_treatment_row_number = 2 THEN systemic_treatment_start_date END)           AS immuno_2_start_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 40310107 AND systemic_treatment_row_number = 3 THEN systemic_treatment_start_date END)           AS immuno_3_start_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 40310107 AND systemic_treatment_row_number = 4 THEN systemic_treatment_start_date END)           AS immuno_4_start_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 40310107 AND systemic_treatment_row_number = 5 THEN systemic_treatment_start_date END)           AS immuno_5_start_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 40310107 AND systemic_treatment_row_number = 6 THEN systemic_treatment_start_date END)           AS immuno_6_start_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 40310107 AND systemic_treatment_row_number = 7 THEN systemic_treatment_start_date END)           AS immuno_7_start_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 40310107 AND systemic_treatment_row_number = 8 THEN systemic_treatment_start_date END)           AS immuno_8_start_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 40310107 AND systemic_treatment_row_number = 9 THEN systemic_treatment_start_date END)           AS immuno_9_start_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 40310107 AND systemic_treatment_row_number = 10 THEN systemic_treatment_start_date END)          AS immuno_10_start_date, 
+            
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 40310107 AND systemic_treatment_row_number = 1 THEN systemic_treatment_end_date END)             AS immuno_1_end_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 40310107 AND systemic_treatment_row_number = 2 THEN systemic_treatment_end_date END)             AS immuno_2_end_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 40310107 AND systemic_treatment_row_number = 3 THEN systemic_treatment_end_date END)             AS immuno_3_end_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 40310107 AND systemic_treatment_row_number = 4 THEN systemic_treatment_end_date END)             AS immuno_4_end_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 40310107 AND systemic_treatment_row_number = 5 THEN systemic_treatment_end_date END)             AS immuno_5_end_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 40310107 AND systemic_treatment_row_number = 6 THEN systemic_treatment_end_date END)             AS immuno_6_end_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 40310107 AND systemic_treatment_row_number = 7 THEN systemic_treatment_end_date END)             AS immuno_7_end_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 40310107 AND systemic_treatment_row_number = 8 THEN systemic_treatment_end_date END)             AS immuno_8_end_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 40310107 AND systemic_treatment_row_number = 9 THEN systemic_treatment_end_date END)             AS immuno_9_end_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 40310107 AND systemic_treatment_row_number = 10 THEN systemic_treatment_end_date END)            AS immuno_10_end_date,
+
+            -- TARGETED #912065
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 912065 AND systemic_treatment_row_number = 1 THEN systemic_treatment_start_date END)             AS targeted_1_start_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 912065 AND systemic_treatment_row_number = 2 THEN systemic_treatment_start_date END)             AS targeted_2_start_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 912065 AND systemic_treatment_row_number = 3 THEN systemic_treatment_start_date END)             AS targeted_3_start_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 912065 AND systemic_treatment_row_number = 4 THEN systemic_treatment_start_date END)             AS targeted_4_start_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 912065 AND systemic_treatment_row_number = 5 THEN systemic_treatment_start_date END)             AS targeted_5_start_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 912065 AND systemic_treatment_row_number = 6 THEN systemic_treatment_start_date END)             AS targeted_6_start_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 912065 AND systemic_treatment_row_number = 7 THEN systemic_treatment_start_date END)             AS targeted_7_start_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 912065 AND systemic_treatment_row_number = 8 THEN systemic_treatment_start_date END)             AS targeted_8_start_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 912065 AND systemic_treatment_row_number = 9 THEN systemic_treatment_start_date END)             AS targeted_9_start_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 912065 AND systemic_treatment_row_number = 10 THEN systemic_treatment_start_date END)            AS targeted_10_start_date, 
+
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 912065 AND systemic_treatment_row_number = 1 THEN systemic_treatment_end_date END)               AS targeted_1_end_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 912065 AND systemic_treatment_row_number = 2 THEN systemic_treatment_end_date END)               AS targeted_2_end_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 912065 AND systemic_treatment_row_number = 3 THEN systemic_treatment_end_date END)               AS targeted_3_end_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 912065 AND systemic_treatment_row_number = 4 THEN systemic_treatment_end_date END)               AS targeted_4_end_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 912065 AND systemic_treatment_row_number = 5 THEN systemic_treatment_end_date END)               AS targeted_5_end_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 912065 AND systemic_treatment_row_number = 6 THEN systemic_treatment_end_date END)               AS targeted_6_end_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 912065 AND systemic_treatment_row_number = 7 THEN systemic_treatment_end_date END)               AS targeted_7_end_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 912065 AND systemic_treatment_row_number = 8 THEN systemic_treatment_end_date END)               AS targeted_8_end_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 912065 AND systemic_treatment_row_number = 9 THEN systemic_treatment_end_date END)               AS targeted_9_end_date,
+            MAX(CASE WHEN systemic_treatment_type_concept_id = 912065 AND systemic_treatment_row_number = 10 THEN systemic_treatment_end_date END)              AS targeted_10_end_date
 
         FROM
             systemic_therapy_ranked
@@ -1642,6 +1744,12 @@ SELECT
     COALESCE(surgeries_wide.surgery_5_intent, 'N/A')                as surgery_5_intent,
     COALESCE(surgeries_wide.surgery_5_margins_after_surgery, 'N/A') as surgery_5_margins_after_surgery,
 
+    surgeries_wide.surgery_6_date                                   as surgery_6_date,
+    surgeries_wide.surgery_7_date                                   as surgery_7_date,
+    surgeries_wide.surgery_8_date                                   as surgery_8_date,
+    surgeries_wide.surgery_9_date                                   as surgery_9_date,
+    surgeries_wide.surgery_10_date                                  as surgery_10_date,
+
     clinical_staging_flags.is_transit_metastasis_with_clinical_confirmation     as clinical_is_transit_metastasis_with_clinical_confirmation,
     clinical_staging_flags.is_multifocal_tumor                                  as clinical_is_multifocal_tumor,
     clinical_staging_flags.regional_nodal_metastases                            as clinical_regional_nodal_metastases,
@@ -1701,6 +1809,72 @@ SELECT
     COALESCE(systemic_therapy_wide.recurrence_systemic_treatment_2_type, 'N/A')                             as recurrence_systemic_treatment_2_type,
     COALESCE(systemic_therapy_wide.recurrence_systemic_treatment_2_reason_for_end_of_treatment, 'N/A')      as recurrence_systemic_treatment_2_reason_for_end_of_treatment,
 
+    systemic_therapy_wide.chemo_1_start_date                                                                as chemo_1_start_date,
+    systemic_therapy_wide.chemo_2_start_date                                                                as chemo_2_start_date,
+    systemic_therapy_wide.chemo_3_start_date                                                                as chemo_3_start_date,
+    systemic_therapy_wide.chemo_4_start_date                                                                as chemo_4_start_date,
+    systemic_therapy_wide.chemo_5_start_date                                                                as chemo_5_start_date,
+    systemic_therapy_wide.chemo_6_start_date                                                                as chemo_6_start_date,
+    systemic_therapy_wide.chemo_7_start_date                                                                as chemo_7_start_date,
+    systemic_therapy_wide.chemo_8_start_date                                                                as chemo_8_start_date,
+    systemic_therapy_wide.chemo_9_start_date                                                                as chemo_9_start_date,
+    systemic_therapy_wide.chemo_10_start_date                                                               as chemo_10_start_date,
+        
+    systemic_therapy_wide.chemo_1_end_date                                                                  as chemo_1_end_date,
+    systemic_therapy_wide.chemo_2_end_date                                                                  as chemo_2_end_date,
+    systemic_therapy_wide.chemo_3_end_date                                                                  as chemo_3_end_date,
+    systemic_therapy_wide.chemo_4_end_date                                                                  as chemo_4_end_date,
+    systemic_therapy_wide.chemo_5_end_date                                                                  as chemo_5_end_date,
+    systemic_therapy_wide.chemo_6_end_date                                                                  as chemo_6_end_date,
+    systemic_therapy_wide.chemo_7_end_date                                                                  as chemo_7_end_date,
+    systemic_therapy_wide.chemo_8_end_date                                                                  as chemo_8_end_date,
+    systemic_therapy_wide.chemo_9_end_date                                                                  as chemo_9_end_date,
+    systemic_therapy_wide.chemo_10_end_date                                                                 as chemo_10_end_date,
+        
+    systemic_therapy_wide.immuno_1_start_date                                                               as immuno_1_start_date,
+    systemic_therapy_wide.immuno_2_start_date                                                               as immuno_2_start_date,
+    systemic_therapy_wide.immuno_3_start_date                                                               as immuno_3_start_date,
+    systemic_therapy_wide.immuno_4_start_date                                                               as immuno_4_start_date,
+    systemic_therapy_wide.immuno_5_start_date                                                               as immuno_5_start_date,
+    systemic_therapy_wide.immuno_6_start_date                                                               as immuno_6_start_date,
+    systemic_therapy_wide.immuno_7_start_date                                                               as immuno_7_start_date,
+    systemic_therapy_wide.immuno_8_start_date                                                               as immuno_8_start_date,
+    systemic_therapy_wide.immuno_9_start_date                                                               as immuno_9_start_date,
+    systemic_therapy_wide.immuno_10_start_date                                                              as immuno_10_start_date, 
+        
+    systemic_therapy_wide.immuno_1_end_date                                                                 as immuno_1_end_date,
+    systemic_therapy_wide.immuno_2_end_date                                                                 as immuno_2_end_date,
+    systemic_therapy_wide.immuno_3_end_date                                                                 as immuno_3_end_date,
+    systemic_therapy_wide.immuno_4_end_date                                                                 as immuno_4_end_date,
+    systemic_therapy_wide.immuno_5_end_date                                                                 as immuno_5_end_date,
+    systemic_therapy_wide.immuno_6_end_date                                                                 as immuno_6_end_date,
+    systemic_therapy_wide.immuno_7_end_date                                                                 as immuno_7_end_date,
+    systemic_therapy_wide.immuno_8_end_date                                                                 as immuno_8_end_date,
+    systemic_therapy_wide.immuno_9_end_date                                                                 as immuno_9_end_date,
+    systemic_therapy_wide.immuno_10_end_date                                                                as immuno_10_end_date,
+        
+    systemic_therapy_wide.targeted_1_start_date                                                             as targeted_1_start_date,
+    systemic_therapy_wide.targeted_2_start_date                                                             as targeted_2_start_date,
+    systemic_therapy_wide.targeted_3_start_date                                                             as targeted_3_start_date,
+    systemic_therapy_wide.targeted_4_start_date                                                             as targeted_4_start_date,
+    systemic_therapy_wide.targeted_5_start_date                                                             as targeted_5_start_date,
+    systemic_therapy_wide.targeted_6_start_date                                                             as targeted_6_start_date,
+    systemic_therapy_wide.targeted_7_start_date                                                             as targeted_7_start_date,
+    systemic_therapy_wide.targeted_8_start_date                                                             as targeted_8_start_date,
+    systemic_therapy_wide.targeted_9_start_date                                                             as targeted_9_start_date,
+    systemic_therapy_wide.targeted_10_start_date                                                            as targeted_10_start_date,
+        
+    systemic_therapy_wide.targeted_1_end_date                                                               as targeted_1_end_date,
+    systemic_therapy_wide.targeted_2_end_date                                                               as targeted_2_end_date,
+    systemic_therapy_wide.targeted_3_end_date                                                               as targeted_3_end_date,
+    systemic_therapy_wide.targeted_4_end_date                                                               as targeted_4_end_date,
+    systemic_therapy_wide.targeted_5_end_date                                                               as targeted_5_end_date,
+    systemic_therapy_wide.targeted_6_end_date                                                               as targeted_6_end_date,
+    systemic_therapy_wide.targeted_7_end_date                                                               as targeted_7_end_date,
+    systemic_therapy_wide.targeted_8_end_date                                                               as targeted_8_end_date,
+    systemic_therapy_wide.targeted_9_end_date                                                               as targeted_9_end_date,
+    systemic_therapy_wide.targeted_10_end_date                                                              as targeted_10_end_date,
+
     radiotherapy_wide.pre_operative_radio_start_date                                            as pre_operative_radio_start_date,
     radiotherapy_wide.pre_operative_radio_end_date                                              as pre_operative_radio_end_date,
     COALESCE(radiotherapy_wide.pre_operative_radio_hospital, 'N/A')                             as pre_operative_radio_hospital,
@@ -1749,7 +1923,29 @@ SELECT
     radiotherapy_wide.recurrence_radio_2_total_dose_gy                                          as recurrence_radio_2_total_dose_gy,
     radiotherapy_wide.recurrence_radio_2_number_of_fractions                                    as recurrence_radio_2_number_of_fractions,
     COALESCE(radiotherapy_wide.recurrence_radio_2_treatment_completed_as_planned, 'N/A')        as recurrence_radio_2_treatment_completed_as_planned,
-    radiotherapy_wide.recurrence_radio_2_intraoperative_radio                                   as recurrence_radio_2_intraoperative_radio
+    radiotherapy_wide.recurrence_radio_2_intraoperative_radio                                   as recurrence_radio_2_intraoperative_radio,
+
+    radiotherapy_wide.radio_1_start_date                                                        as radio_1_start_date,
+    radiotherapy_wide.radio_2_start_date                                                        as radio_2_start_date,
+    radiotherapy_wide.radio_3_start_date                                                        as radio_3_start_date,
+    radiotherapy_wide.radio_4_start_date                                                        as radio_4_start_date,
+    radiotherapy_wide.radio_5_start_date                                                        as radio_5_start_date,
+    radiotherapy_wide.radio_6_start_date                                                        as radio_6_start_date,
+    radiotherapy_wide.radio_7_start_date                                                        as radio_7_start_date,
+    radiotherapy_wide.radio_8_start_date                                                        as radio_8_start_date,
+    radiotherapy_wide.radio_9_start_date                                                        as radio_9_start_date,
+    radiotherapy_wide.radio_10_start_date                                                       as radio_10_start_date,
+    
+    radiotherapy_wide.radio_1_end_date                                                          as radio_1_end_date,
+    radiotherapy_wide.radio_2_end_date                                                          as radio_2_end_date,
+    radiotherapy_wide.radio_3_end_date                                                          as radio_3_end_date,
+    radiotherapy_wide.radio_4_end_date                                                          as radio_4_end_date,
+    radiotherapy_wide.radio_5_end_date                                                          as radio_5_end_date,
+    radiotherapy_wide.radio_6_end_date                                                          as radio_6_end_date,
+    radiotherapy_wide.radio_7_end_date                                                          as radio_7_end_date,
+    radiotherapy_wide.radio_8_end_date                                                          as radio_8_end_date,
+    radiotherapy_wide.radio_9_end_date                                                          as radio_9_end_date,
+    radiotherapy_wide.radio_10_end_date                                                         as radio_10_end_date
 
 {% if is_head_and_neck %},
     COALESCE(pathological_staging.stage, 'N/A')                                         as pathological_stage,
