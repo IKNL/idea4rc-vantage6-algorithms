@@ -987,11 +987,11 @@ WITH
             MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 2 THEN radio_total_dose_gy END) AS recurrence_radio_2_total_dose_gy,
             MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 2 THEN radio_number_of_fractions END) AS recurrence_radio_2_number_of_fractions,
             MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 2 THEN radio_treatment_completed_as_planned END) AS recurrence_radio_2_treatment_completed_as_planned,
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 2 THEN intraoperative_radio END) AS recurrence_radio_2_intraoperative_radio
-            {% if is_head_and_neck %},
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 2 THEN intraoperative_radio END) AS recurrence_radio_2_intraoperative_radio,
+            {% if is_head_and_neck %}
             MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 2 THEN radio_beam_quality END) AS recurrence_radio_2_beam_quality,
             MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 2 THEN radio_total_high_dose END) AS recurrence_radio_2_total_high_dose,
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 2 THEN radio_treatment_site_distant_metastasis END) AS recurrence_radio_2_treatment_site_distant_metastasis
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 2 THEN radio_treatment_site_distant_metastasis END) AS recurrence_radio_2_treatment_site_distant_metastasis,
             {% endif %}
 
             -- List of radiotherapy start/end dates
