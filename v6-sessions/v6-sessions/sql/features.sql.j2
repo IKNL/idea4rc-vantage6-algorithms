@@ -763,6 +763,52 @@ WITH
             pid.person_id
     ),
 
+    -- Recurrences
+    recurrences_base_and_ranked AS (
+        SELECT *
+        FROM (
+            SELECT
+                pid.person_id,
+                episode.episode_id,
+                {{ cohort_safe_date('episode.episode_start_date') }} AS date_of_progression_or_recurrence,
+                ROW_NUMBER() OVER (
+                    PARTITION BY pid.person_id
+                    ORDER BY episode.episode_start_date ASC
+                ) AS progression_or_recurrence_id
+            FROM
+                patient_id_list pid
+            LEFT JOIN {{ cdm_schema }}.episode episode
+                ON pid.person_id = episode.person_id
+            LEFT JOIN primary_tumor
+                ON pid.person_id = primary_tumor.person_id
+            WHERE
+                episode_concept_id IN (32948, 2000100002) -- Progression or recurrence episodes
+                AND episode.episode_start_date >= {{ COHORT_DATE_MIN }}
+                AND episode.episode_start_date < {{ COHORT_DATE_MAX }}
+                AND episode.episode_start_date >= primary_tumor.diagnosis_date
+        ) s
+    ),
+
+    recurrences_wide AS (
+    SELECT
+        person_id,
+
+        MAX(CASE WHEN progression_or_recurrence_id = 1 THEN date_of_progression_or_recurrence END)                  AS progression_or_recurrence_1_date,
+        MAX(CASE WHEN progression_or_recurrence_id = 2 THEN date_of_progression_or_recurrence END)                  AS progression_or_recurrence_2_date,
+        MAX(CASE WHEN progression_or_recurrence_id = 3 THEN date_of_progression_or_recurrence END)                  AS progression_or_recurrence_3_date,
+        MAX(CASE WHEN progression_or_recurrence_id = 4 THEN date_of_progression_or_recurrence END)                  AS progression_or_recurrence_4_date,
+        MAX(CASE WHEN progression_or_recurrence_id = 5 THEN date_of_progression_or_recurrence END)                  AS progression_or_recurrence_5_date,
+        MAX(CASE WHEN progression_or_recurrence_id = 6 THEN date_of_progression_or_recurrence END)                  AS progression_or_recurrence_6_date,
+        MAX(CASE WHEN progression_or_recurrence_id = 7 THEN date_of_progression_or_recurrence END)                  AS progression_or_recurrence_7_date,
+        MAX(CASE WHEN progression_or_recurrence_id = 8 THEN date_of_progression_or_recurrence END)                  AS progression_or_recurrence_8_date,
+        MAX(CASE WHEN progression_or_recurrence_id = 9 THEN date_of_progression_or_recurrence END)                  AS progression_or_recurrence_9_date,
+        MAX(CASE WHEN progression_or_recurrence_id = 10 THEN date_of_progression_or_recurrence END)                 AS progression_or_recurrence_10_date
+
+    FROM recurrences_base_and_ranked
+    GROUP BY person_id
+    ),
+
+    
     -- Radiotherapies
     radiotherapy_base AS (
         SELECT
@@ -1945,7 +1991,18 @@ SELECT
     radiotherapy_wide.radio_7_end_date                                                          as radio_7_end_date,
     radiotherapy_wide.radio_8_end_date                                                          as radio_8_end_date,
     radiotherapy_wide.radio_9_end_date                                                          as radio_9_end_date,
-    radiotherapy_wide.radio_10_end_date                                                         as radio_10_end_date
+    radiotherapy_wide.radio_10_end_date                                                         as radio_10_end_date,
+
+    recurrences_wide.progression_or_recurrence_1_date                                           as progression_or_recurrence_1_date,
+    recurrences_wide.progression_or_recurrence_2_date                                           as progression_or_recurrence_2_date,
+    recurrences_wide.progression_or_recurrence_3_date                                           as progression_or_recurrence_3_date,
+    recurrences_wide.progression_or_recurrence_4_date                                           as progression_or_recurrence_4_date,
+    recurrences_wide.progression_or_recurrence_5_date                                           as progression_or_recurrence_5_date,
+    recurrences_wide.progression_or_recurrence_6_date                                           as progression_or_recurrence_6_date,
+    recurrences_wide.progression_or_recurrence_7_date                                           as progression_or_recurrence_7_date,
+    recurrences_wide.progression_or_recurrence_8_date                                           as progression_or_recurrence_8_date,
+    recurrences_wide.progression_or_recurrence_9_date                                           as progression_or_recurrence_9_date,
+    recurrences_wide.progression_or_recurrence_10_date                                          as progression_or_recurrence_10_date
 
 {% if is_head_and_neck %},
     COALESCE(pathological_staging.stage, 'N/A')                                         as pathological_stage,
@@ -2054,6 +2111,9 @@ LEFT JOIN
 LEFT JOIN
     radiotherapy_wide
     ON person.person_id = radiotherapy_wide.person_id
+LEFT JOIN
+    recurrences_wide
+    ON person.person_id = recurrences_wide.person_id
 
 {% if is_head_and_neck %}
 LEFT JOIN
