@@ -143,6 +143,8 @@ COHORT_R_DATE_COLUMNS = [
     "progression_or_recurrence_8_date",
     "progression_or_recurrence_9_date",
     "progression_or_recurrence_10_date",
+
+    "overall_treatment_response_date",
 ]
 
 
@@ -401,6 +403,7 @@ def convert_base_columns(df: pd.DataFrame) -> pd.DataFrame:
             "recurrence_radio_2_setting",
             "recurrence_radio_2_intent",
             "recurrence_radio_2_treatment_completed_as_planned",
+            "overall_treatment_response_response",
         ],
     )
 
@@ -418,7 +421,6 @@ def convert_base_columns(df: pd.DataFrame) -> pd.DataFrame:
             "recurrence_radio_1_total_dose_gy",
             "recurrence_radio_1_number_of_fractions",
             "recurrence_radio_2_total_dose_gy",
-            
             "surgery_count",
             "radio_count",
             "chemo_count",
@@ -566,6 +568,8 @@ def convert_base_columns(df: pd.DataFrame) -> pd.DataFrame:
             "progression_or_recurrence_8_date",
             "progression_or_recurrence_9_date",
             "progression_or_recurrence_10_date",
+
+            "overall_treatment_response_date",
         ],
     )
 

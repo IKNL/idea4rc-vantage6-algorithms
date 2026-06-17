@@ -783,7 +783,7 @@ WITH
             LEFT JOIN primary_tumor
                 ON pid.person_id = primary_tumor.person_id
             WHERE
-                episode_concept_id IN (32948, 2000100002) -- Progression or recurrence episodes
+                episode_concept_id IN (32949, 2000100002) -- Progression or recurrence episodes
                 AND episode.episode_start_date >= {{ COHORT_DATE_MIN }}
                 AND episode.episode_start_date < {{ COHORT_DATE_MAX }}
                 AND episode.episode_start_date >= primary_tumor.diagnosis_date
@@ -843,7 +843,7 @@ WITH
                 person_id,
                 MIN(episode_start_date) AS first_progression_recurrence_date
             FROM {{ cdm_schema }}.episode 
-            WHERE episode_concept_id IN (32948, 2000100002) -- Progression or recurrence episodes
+            WHERE episode_concept_id IN (32949, 2000100002) -- Progression or recurrence episodes
               AND episode_start_date >= {{ COHORT_DATE_MIN }}
               AND episode_start_date < {{ COHORT_DATE_MAX }}
             GROUP BY person_id
@@ -1111,7 +1111,7 @@ WITH
                 person_id,
                 MIN(episode_start_date) AS first_progression_recurrence_date
             FROM {{ cdm_schema }}.episode 
-            WHERE episode_concept_id IN (32948, 2000100002) -- Progression or recurrence episodes
+            WHERE episode_concept_id IN (32949, 2000100002) -- Progression or recurrence episodes
               AND episode_start_date >= {{ COHORT_DATE_MIN }}
               AND episode_start_date < {{ COHORT_DATE_MAX }}
             GROUP BY person_id
@@ -1342,6 +1342,91 @@ WITH
             person_id
     ),
 
+    -- Overall treatment response
+    last_treatment_date AS (
+        SELECT
+            person_id,
+
+            GREATEST(
+                MAX(systemic_treatment_end_date),
+                MAX(radio_end_date),
+                MAX(date_of_surgery)
+            ) AS last_treatment_end_date
+
+        FROM (
+            -- Systemic
+            SELECT person_id, systemic_treatment_end_date, NULL AS radio_end_date, NULL AS date_of_surgery
+            FROM systemic_therapy_base
+
+            UNION ALL
+
+            -- Radiotherapy
+            SELECT person_id, NULL, radio_end_date, NULL
+            FROM radiotherapy_base
+
+            UNION ALL
+
+            -- Surgery
+            SELECT person_id, NULL, NULL, date_of_surgery
+            FROM surgeries
+        ) t
+        GROUP BY person_id
+    ),
+
+    first_recurrence AS (
+        SELECT
+            person_id,
+            MIN(date_of_progression_or_recurrence) AS first_recurrence_date
+        FROM recurrences_base_and_ranked
+        GROUP BY person_id
+    ),
+
+    overall_treatment_response AS (
+        SELECT
+            pid.person_id,
+
+            response_concept.concept_name AS overall_treatment_response_response,
+            {{ cohort_safe_date('episode.episode_start_date') }} AS overall_treatment_response_date,
+
+            ROW_NUMBER() OVER (
+                PARTITION BY pid.person_id
+                ORDER BY episode.episode_start_date ASC
+            ) AS rn
+
+        FROM patient_id_list pid
+        LEFT JOIN {{ cdm_schema }}.episode episode
+            ON pid.person_id = episode.person_id
+        LEFT JOIN {{ cdm_schema }}.concept response_concept
+            ON episode.episode_concept_id = response_concept.concept_id
+        LEFT JOIN primary_tumor
+            ON pid.person_id = primary_tumor.person_id
+        LEFT JOIN last_treatment_date ltd
+            ON pid.person_id = ltd.person_id
+        LEFT JOIN first_recurrence fr
+            ON pid.person_id = fr.person_id
+
+        WHERE
+            episode.episode_concept_id IN (32946, 32947, 32948, 32949)
+            AND episode.episode_start_date >= primary_tumor.diagnosis_date -- after diagnosis
+            AND episode.episode_start_date >= ltd.last_treatment_end_date -- after last treatment (inclusive)
+            AND (
+                fr.first_recurrence_date IS NULL
+                OR episode.episode_start_date < fr.first_recurrence_date
+            ) -- before first recurrence (exclusive)
+            AND episode.episode_start_date >= {{ COHORT_DATE_MIN }}
+            AND episode.episode_start_date < {{ COHORT_DATE_MAX }}
+    ),
+
+    overall_treatment_response_wide AS (
+        SELECT
+            person_id,
+            overall_treatment_response_response,
+            overall_treatment_response_date
+        FROM overall_treatment_response
+        WHERE rn = 1
+    ),
+
+    -- Drugs
     drugs_base AS (
         SELECT
             str.person_id,
@@ -2103,10 +2188,7 @@ SELECT
 
     recurrences_wide.progression_or_recurrence_count                                            as progression_or_recurrence_count,
 
-    -- =========================
     -- DRUGS PER SYSTEMIC TREATMENT
-    -- =========================
-
     {% for setting in ['pre-operative','post-operative','recurrence'] %}
     {% set prefix = setting.replace('-', '_') %}
 
@@ -2127,6 +2209,10 @@ SELECT
             {% endfor %}
         {% endfor %}
     {% endfor %}
+
+    COALESCE(overall_treatment_response_wide.overall_treatment_response_response, 'N/A')        as overall_treatment_response_response,
+    overall_treatment_response_wide.overall_treatment_response_date                             as overall_treatment_response_date
+
 
 {% if is_head_and_neck %},
     COALESCE(pathological_staging.stage, 'N/A')                                         as pathological_stage,
@@ -2240,6 +2326,8 @@ LEFT JOIN
     ON person.person_id = recurrences_wide.person_id
 LEFT JOIN drugs_wide
     ON person.person_id = drugs_wide.person_id
+LEFT JOIN overall_treatment_response_wide
+    ON person.person_id = overall_treatment_response_wide.person_id
 
 {% if is_head_and_neck %}
 LEFT JOIN
