@@ -402,6 +402,13 @@ def convert_base_columns(df: pd.DataFrame) -> pd.DataFrame:
             "recurrence_radio_1_total_dose_gy",
             "recurrence_radio_1_number_of_fractions",
             "recurrence_radio_2_total_dose_gy",
+            
+            "surgery_count",
+            "radio_count",
+            "chemo_count",
+            "immuno_count",
+            "targeted_count",
+            "progression_or_recurrence_count"
         ])
 
     # FIXME: temp test if this works for int
