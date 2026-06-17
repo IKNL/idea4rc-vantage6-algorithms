@@ -1411,7 +1411,7 @@ WITH
             AND episode.episode_start_date >= ltd.last_treatment_end_date -- after last treatment (inclusive)
             AND (
                 fr.first_recurrence_date IS NULL
-                OR episode.episode_start_date < fr.first_recurrence_date
+                OR episode.episode_start_date <= fr.first_recurrence_date
             ) -- before first recurrence (exclusive)
             AND episode.episode_start_date >= {{ COHORT_DATE_MIN }}
             AND episode.episode_start_date < {{ COHORT_DATE_MAX }}
