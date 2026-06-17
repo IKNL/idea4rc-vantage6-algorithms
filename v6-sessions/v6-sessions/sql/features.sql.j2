@@ -1340,6 +1340,77 @@ WITH
             systemic_therapy_ranked
         GROUP BY
             person_id
+    ),
+
+    drugs_base AS (
+        SELECT
+            str.person_id,
+            str.episode_id,
+            str.systemic_treatment_row_number,
+            str.treatment_setting,
+            
+            de.drug_exposure_id,
+            de.drug_concept_id,
+            c.concept_name AS drug_name,
+
+            ROW_NUMBER() OVER (
+                PARTITION BY 
+                    str.person_id,
+                    str.episode_id
+                ORDER BY de.drug_exposure_start_date, de.drug_concept_id
+            ) AS drug_row_number
+
+        FROM systemic_therapy_ranked str
+
+        LEFT JOIN {{ cdm_schema }}.drug_exposure de
+            ON str.person_id = de.person_id
+            AND de.drug_exposure_start_date = str.systemic_treatment_start_date
+            AND COALESCE(de.drug_exposure_end_date, de.drug_exposure_start_date)
+                = str.systemic_treatment_end_date
+
+        LEFT JOIN {{ cdm_schema }}.concept c
+            ON de.drug_concept_id = c.concept_id
+
+        WHERE de.drug_concept_id IS NOT NULL
+    )
+
+    drugs_wide AS (
+        SELECT
+            person_id,
+
+            {% for setting in ['pre-operative','post-operative','recurrence'] %}
+            {% set prefix = setting.replace('-', '_') %}
+
+            -- =========================
+            -- {{ setting | upper }} SYSTEMIC TREATMENTS
+            -- =========================
+
+            {% for i in range(1, 11) %}
+
+                -- Treatment {{ i }} drugs
+                {% for j in range(1, 11) %}
+                    MAX(CASE 
+                        WHEN treatment_setting = '{{ setting }}'
+                        AND systemic_treatment_row_number = {{ i }}
+                        AND drug_row_number = {{ j }}
+                        THEN drug_name
+                    END) AS {{ prefix }}_systemic_treatment_{{ i }}_drugs_for_treatments_{{ j }},
+
+                {% endfor %}
+
+                -- Drug count for treatment {{ i }}
+                COUNT(DISTINCT CASE 
+                    WHEN treatment_setting = '{{ setting }}'
+                    AND systemic_treatment_row_number = {{ i }}
+                    THEN drug_row_number
+                END) AS {{ prefix }}_systemic_treatment_{{ i }}_drugs_for_treatments_count,
+
+            {% endfor %}
+
+            {% endfor %}
+
+        FROM drugs_base
+        GROUP BY person_id
     )
 
 {% if is_head_and_neck %},
@@ -2030,7 +2101,32 @@ SELECT
     recurrences_wide.progression_or_recurrence_9_date                                           as progression_or_recurrence_9_date,
     recurrences_wide.progression_or_recurrence_10_date                                          as progression_or_recurrence_10_date,
 
-    recurrences_wide.progression_or_recurrence_count                                            as progression_or_recurrence_count
+    recurrences_wide.progression_or_recurrence_count                                            as progression_or_recurrence_count,
+
+    -- =========================
+    -- DRUGS PER SYSTEMIC TREATMENT
+    -- =========================
+
+    {% for setting in ['pre-operative','post-operative','recurrence'] %}
+    {% set prefix = setting.replace('-', '_') %}
+
+        {% for i in range(1, 11) %}
+
+            -- {{ setting }} treatment {{ i }} drug count
+            drugs_wide.{{ prefix }}_systemic_treatment_{{ i }}_drugs_for_treatments_count
+                AS {{ prefix }}_systemic_treatment_{{ i }}_drugs_for_treatments_count,
+
+            {% for j in range(1, 11) %}
+
+                -- drug {{ j }}
+                COALESCE(
+                    drugs_wide.{{ prefix }}_systemic_treatment_{{ i }}_drugs_for_treatments_{{ j }},
+                    'N/A'
+                ) AS {{ prefix }}_systemic_treatment_{{ i }}_drugs_for_treatments_{{ j }},
+
+            {% endfor %}
+        {% endfor %}
+    {% endfor %}
 
 {% if is_head_and_neck %},
     COALESCE(pathological_staging.stage, 'N/A')                                         as pathological_stage,
@@ -2142,6 +2238,8 @@ LEFT JOIN
 LEFT JOIN
     recurrences_wide
     ON person.person_id = recurrences_wide.person_id
+LEFT JOIN drugs_wide
+    ON person.person_id = drugs_wide.person_id
 
 {% if is_head_and_neck %}
 LEFT JOIN

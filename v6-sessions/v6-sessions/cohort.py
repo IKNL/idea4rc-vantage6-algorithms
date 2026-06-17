@@ -321,6 +321,22 @@ def __create_cohort_dataframe(
 
     return pa.Table.from_pandas(sub_df)
 
+def generate_drug_columns():
+    columns = []
+
+    settings = ["pre_operative", "post_operative", "recurrence"]
+
+    for setting in settings:
+        for i in range(1, 11):  # treatments
+            # count column
+            columns.append(f"{setting}_systemic_treatment_{i}_drugs_for_treatments_count")
+
+            for j in range(1, 11):  # drugs
+                columns.append(
+                    f"{setting}_systemic_treatment_{i}_drugs_for_treatments_{j}"
+                )
+
+    return columns
 
 def convert_base_columns(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -408,8 +424,10 @@ def convert_base_columns(df: pd.DataFrame) -> pd.DataFrame:
             "chemo_count",
             "immuno_count",
             "targeted_count",
-            "progression_or_recurrence_count"
-        ])
+            "progression_or_recurrence_count",
+
+        ] + generate_drug_columns()
+        )
 
     # FIXME: temp test if this works for int
     df["recurrence_radio_2_number_of_fractions"] = pd.to_numeric(df["recurrence_radio_2_number_of_fractions"].astype(str), errors="coerce").astype("Int64")
