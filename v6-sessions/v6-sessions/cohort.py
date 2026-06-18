@@ -6,7 +6,14 @@ import pandas as pd
 import pyarrow as pa
 from jinja2 import Template
 from ohdsi import common, database_connector
-from rpy2.rinterface_lib.sexp import NACharacterType
+from rpy2.rinterface_lib.sexp import (
+    NACharacterType,
+    NAComplexType,
+    NAIntegerType,
+    NALogicalType,
+    NARealType,
+)
+
 from rpy2.robjects import RS4
 from v6_idea4rc_common import (
     to_boolean as _to_boolean,
@@ -17,6 +24,7 @@ from v6_idea4rc_common import (
 from vantage6.algorithm.decorator import data_extraction
 from vantage6.algorithm.tools.util import error, get_env_var, info
 
+_R_NA_TYPES = (NACharacterType, NAComplexType, NAIntegerType, NALogicalType, NARealType)
 
 COHORT_R_DATE_COLUMNS = [
     "date_of_surgery",
@@ -285,7 +293,7 @@ def __create_cohort_dataframe(
         raise e
 
     converted_df = converted_df.applymap(
-        lambda val: np.nan if isinstance(val, NACharacterType) else val
+        lambda val: np.nan if isinstance(val, _R_NA_TYPES) else val
     )
 
     # Somehow the dataframe is missing some metadata, so we need to create a new
@@ -323,22 +331,23 @@ def __create_cohort_dataframe(
 
     return pa.Table.from_pandas(sub_df)
 
-def generate_drug_columns():
-    columns = []
-
+def generate_drug_count_columns():
     settings = ["pre_operative", "post_operative", "recurrence"]
+    return [
+        f"{setting}_systemic_treatment_{i}_drugs_for_treatments_count"
+        for setting in settings
+        for i in range(1, 11)
+    ]
 
-    for setting in settings:
-        for i in range(1, 11):  # treatments
-            # count column
-            columns.append(f"{setting}_systemic_treatment_{i}_drugs_for_treatments_count")
 
-            for j in range(1, 11):  # drugs
-                columns.append(
-                    f"{setting}_systemic_treatment_{i}_drugs_for_treatments_{j}"
-                )
-
-    return columns
+def generate_drug_name_columns():
+    settings = ["pre_operative", "post_operative", "recurrence"]
+    return [
+        f"{setting}_systemic_treatment_{i}_drugs_for_treatments_{j}"
+        for setting in settings
+        for i in range(1, 11)
+        for j in range(1, 11)
+    ]
 
 def convert_base_columns(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -404,13 +413,13 @@ def convert_base_columns(df: pd.DataFrame) -> pd.DataFrame:
             "recurrence_radio_2_intent",
             "recurrence_radio_2_treatment_completed_as_planned",
             "overall_treatment_response_response",
-        ],
+        ] + generate_drug_name_columns(),
     )
 
     df = _to_int64(
-        df, 
+        df,
         [
-            "year_of_birth", 
+            "year_of_birth",
             "age_at_diagnosis", 
             "pre_operative_radio_total_dose_gy",
             "pre_operative_radio_number_of_fractions",
@@ -427,12 +436,10 @@ def convert_base_columns(df: pd.DataFrame) -> pd.DataFrame:
             "immuno_count",
             "targeted_count",
             "progression_or_recurrence_count",
+        ] + generate_drug_count_columns()
+    )
 
-        ] + generate_drug_columns()
-        )
 
-    # FIXME: temp test if this works for int
-    df["recurrence_radio_2_number_of_fractions"] = pd.to_numeric(df["recurrence_radio_2_number_of_fractions"].astype(str), errors="coerce").astype("Int64")
 
     df = _to_datetime(
         df,

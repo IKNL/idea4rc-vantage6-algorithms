@@ -1355,19 +1355,19 @@ WITH
 
         FROM (
             -- Systemic
-            SELECT person_id, systemic_treatment_end_date, NULL AS radio_end_date, NULL AS date_of_surgery
+            SELECT person_id, systemic_treatment_end_date, NULL::date AS radio_end_date, NULL::date AS date_of_surgery
             FROM systemic_therapy_base
 
             UNION ALL
 
             -- Radiotherapy
-            SELECT person_id, NULL, radio_end_date, NULL
+            SELECT person_id, NULL::date, radio_end_date, NULL::date
             FROM radiotherapy_base
 
             UNION ALL
 
             -- Surgery
-            SELECT person_id, NULL, NULL, date_of_surgery
+            SELECT person_id, NULL::date, NULL::date, date_of_surgery
             FROM surgeries
         ) t
         GROUP BY person_id
@@ -1488,7 +1488,7 @@ WITH
                     WHEN treatment_setting = '{{ setting }}'
                     AND systemic_treatment_row_number = {{ i }}
                     THEN drug_row_number
-                END) AS {{ prefix }}_systemic_treatment_{{ i }}_drugs_for_treatments_count,
+                END) AS {{ prefix }}_systemic_treatment_{{ i }}_drugs_for_treatments_count{% if not (loop.last and setting == 'recurrence') %},{% endif %}
 
             {% endfor %}
 
