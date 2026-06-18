@@ -9,6 +9,7 @@ from .annotate_event import (
     annotate_event_by_date_range,
     annotate_event_within_window,
 )
+from .annotate_treatment_patterns import annotate_treatment_patterns
 
 __all__ = [
     "timedelta",
@@ -20,4 +21,5 @@ __all__ = [
     "annotate_event_by_index",
     "annotate_event_by_date_range",
     "annotate_event_within_window",
+    "annotate_treatment_patterns",
 ]
