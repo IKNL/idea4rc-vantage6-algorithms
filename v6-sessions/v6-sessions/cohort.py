@@ -430,6 +430,7 @@ def convert_base_columns(df: pd.DataFrame) -> pd.DataFrame:
             "recurrence_radio_1_total_dose_gy",
             "recurrence_radio_1_number_of_fractions",
             "recurrence_radio_2_total_dose_gy",
+            "recurrence_radio_2_number_of_fractions",
             "surgery_count",
             "radio_count",
             "chemo_count",
