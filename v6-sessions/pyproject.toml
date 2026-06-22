@@ -25,7 +25,11 @@ packages = ["v6-sessions"]
 include-package-data = true
 
 [tool.setuptools.package-data]
-"*" = ["sql/*.sql.j2"]
+"*" = [
+    "sql/*.sql.j2",
+    "mapping/*.csv"
+]
+
 
 [tool.uv.sources]
 v6-idea4rc-common = { path = "../v6-idea4rc-common" }
