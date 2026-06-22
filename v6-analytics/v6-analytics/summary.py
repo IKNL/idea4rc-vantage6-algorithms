@@ -217,29 +217,14 @@ def _aggregate_partial_summaries(results: list[dict], lookup_organizations) -> d
         incoming_value: Any,
         prefer_min: bool,
     ) -> Any:
-        """Merge date bounds while safely handling None/NaT values."""
-        current_missing = current_value is None or pd.isna(current_value)
-        incoming_missing = incoming_value is None or pd.isna(incoming_value)
-
-        if current_missing and incoming_missing:
-            return current_value
-        if current_missing:
+        """Merge year bounds while safely handling None values."""
+        if current_value is None and incoming_value is None:
+            return None
+        if current_value is None:
             return incoming_value
-        if incoming_missing:
+        if incoming_value is None:
             return current_value
-
-        current_dt = pd.to_datetime(current_value, utc=True, errors="coerce")
-        incoming_dt = pd.to_datetime(incoming_value, utc=True, errors="coerce")
-        if pd.isna(current_dt) and pd.isna(incoming_dt):
-            return current_value
-        if pd.isna(current_dt):
-            return incoming_dt.date().isoformat()
-        if pd.isna(incoming_dt):
-            return current_dt.date().isoformat()
-
-        if prefer_min:
-            return min(current_dt, incoming_dt).date().isoformat()
-        return max(current_dt, incoming_dt).date().isoformat()
+        return min(current_value, incoming_value) if prefer_min else max(current_value, incoming_value)
 
     def _normalize_date_summary(date_summary: Any) -> dict[str, dict[str, Any]]:
         """Normalize date summary payload to dict format for aggregation."""
@@ -714,7 +699,12 @@ def _get_date_summary(df: pd.DataFrame) -> pd.DataFrame:
     """
     summary_date = df.describe()
     summary_date.loc["missing"] = df.isna().sum()
-    summary_date.drop(["25%", "50%", "75%"], inplace=True)
+    summary_date.drop(["25%", "50%", "75%", "mean"], inplace=True)
+    for col in summary_date.columns:
+        min_val = summary_date.loc["min", col]
+        max_val = summary_date.loc["max", col]
+        summary_date.loc["min", col] = pd.Timestamp(min_val).year if pd.notna(min_val) else None
+        summary_date.loc["max", col] = pd.Timestamp(max_val).year if pd.notna(max_val) else None
     return summary_date
 
 def _get_counts_unique_values(df: pd.DataFrame) -> dict:
