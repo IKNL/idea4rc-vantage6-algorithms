@@ -306,6 +306,13 @@ def _aggregate_partial_summaries(results: list[dict], lookup_organizations) -> d
 
         # aggregate data for numeric columns
         for column in result["numeric"]:
+            if column not in aggregate["numeric"]:
+                # Column absent from seed node — initialize from this node
+                aggregate["numeric"][column] = copy.deepcopy(result["numeric"][column])
+                aggregate["numeric"][column]["median"] = {organization_name: result["numeric"][column]["median"]}
+                aggregate["numeric"][column]["q_25"] = {organization_name: result["numeric"][column]["q_25"]}
+                aggregate["numeric"][column]["q_75"] = {organization_name: result["numeric"][column]["q_75"]}
+                continue
             aggregated_dict = aggregate["numeric"][column]
             aggregated_dict["count"] += result["numeric"][column]["count"]
             aggregated_dict["min"] = _merge_numeric_bound(
@@ -320,24 +327,24 @@ def _aggregate_partial_summaries(results: list[dict], lookup_organizations) -> d
             )
             aggregated_dict["missing"] += result["numeric"][column]["missing"]
             aggregated_dict["sum"] += result["numeric"][column]["sum"]
-            aggregated_dict["median"][organization_name] = result["numeric"][column][
-                "median"
-            ]
-            aggregated_dict["q_25"][organization_name] = result["numeric"][column][
-                "q_25"
-            ]
-            aggregated_dict["q_75"][organization_name] = result["numeric"][column][
-                "q_75"
-            ]
+            aggregated_dict["median"][organization_name] = result["numeric"][column]["median"]
+            aggregated_dict["q_25"][organization_name] = result["numeric"][column]["q_25"]
+            aggregated_dict["q_75"][organization_name] = result["numeric"][column]["q_75"]
 
         # aggregate data for categorical columns
         for column in result["categorical"]:
+            if column not in aggregate["categorical"]:
+                aggregate["categorical"][column] = copy.deepcopy(result["categorical"][column])
+                continue
             aggregated_dict = aggregate["categorical"][column]
             aggregated_dict["count"] += result["categorical"][column]["count"]
             aggregated_dict["missing"] += result["categorical"][column]["missing"]
-        
+
         # aggregate data for date columns
         for column in result["date"]:
+            if column not in aggregate["date"]:
+                aggregate["date"][column] = copy.deepcopy(result["date"][column])
+                continue
             aggregated_dict = aggregate["date"][column]
             aggregated_dict["count"] += result["date"][column]["count"]
             aggregated_dict["missing"] += result["date"][column]["missing"]
