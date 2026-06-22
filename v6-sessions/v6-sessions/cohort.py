@@ -52,7 +52,6 @@ COHORT_R_DATE_COLUMNS = [
     "recurrence_systemic_treatment_1_end_date",
     "recurrence_systemic_treatment_2_start_date",
     "recurrence_systemic_treatment_2_end_date",
-
     "radio_1_start_date",
     "radio_2_start_date",
     "radio_3_start_date",
@@ -63,7 +62,6 @@ COHORT_R_DATE_COLUMNS = [
     "radio_8_start_date",
     "radio_9_start_date",
     "radio_10_start_date",
-    
     "radio_1_end_date",
     "radio_2_end_date",
     "radio_3_end_date",
@@ -74,7 +72,6 @@ COHORT_R_DATE_COLUMNS = [
     "radio_8_end_date",
     "radio_9_end_date",
     "radio_10_end_date",
-
     "chemo_1_start_date",
     "chemo_2_start_date",
     "chemo_3_start_date",
@@ -85,7 +82,6 @@ COHORT_R_DATE_COLUMNS = [
     "chemo_8_start_date",
     "chemo_9_start_date",
     "chemo_10_start_date",
-
     "chemo_1_end_date",
     "chemo_2_end_date",
     "chemo_3_end_date",
@@ -96,7 +92,6 @@ COHORT_R_DATE_COLUMNS = [
     "chemo_8_end_date",
     "chemo_9_end_date",
     "chemo_10_end_date",
-    
     "immuno_1_start_date",
     "immuno_2_start_date",
     "immuno_3_start_date",
@@ -106,8 +101,7 @@ COHORT_R_DATE_COLUMNS = [
     "immuno_7_start_date",
     "immuno_8_start_date",
     "immuno_9_start_date",
-    "immuno_10_start_date", 
-
+    "immuno_10_start_date",
     "immuno_1_end_date",
     "immuno_2_end_date",
     "immuno_3_end_date",
@@ -118,7 +112,6 @@ COHORT_R_DATE_COLUMNS = [
     "immuno_8_end_date",
     "immuno_9_end_date",
     "immuno_10_end_date",
-
     "targeted_1_start_date",
     "targeted_2_start_date",
     "targeted_3_start_date",
@@ -129,7 +122,6 @@ COHORT_R_DATE_COLUMNS = [
     "targeted_8_start_date",
     "targeted_9_start_date",
     "targeted_10_start_date",
-
     "targeted_1_end_date",
     "targeted_2_end_date",
     "targeted_3_end_date",
@@ -140,7 +132,6 @@ COHORT_R_DATE_COLUMNS = [
     "targeted_8_end_date",
     "targeted_9_end_date",
     "targeted_10_end_date",
-
     "progression_or_recurrence_1_date",
     "progression_or_recurrence_2_date",
     "progression_or_recurrence_3_date",
@@ -151,12 +142,13 @@ COHORT_R_DATE_COLUMNS = [
     "progression_or_recurrence_8_date",
     "progression_or_recurrence_9_date",
     "progression_or_recurrence_10_date",
-
     "overall_treatment_response_date",
 ]
 
 
-def _convert_r_date_columns_safe(df: pd.DataFrame, cols: list[str], max_abs_days: float = 120_000) -> pd.DataFrame:
+def _convert_r_date_columns_safe(
+    df: pd.DataFrame, cols: list[str], max_abs_days: float = 120_000
+) -> pd.DataFrame:
     """R Date is days since 1970-01-01. Outliers overflow vectorized ohdsi/pandas conversion."""
     colmap = {str(c).lower(): c for c in df.columns}
     for want in cols:
@@ -318,6 +310,9 @@ def __create_cohort_dataframe(
     sub_df = sub_df.drop(columns=["patient_id"])
     info("Removed patient_id column from dataframe")
 
+    info("Enhancing dataframe with groupints")
+    sub_df = apply_mappings(sub_df)
+
     info(f"Converting column types for features: {features}")
     sub_df = convert_base_columns(sub_df)
     if features == "head_and_neck":
@@ -330,6 +325,38 @@ def __create_cohort_dataframe(
     info("-->  Done")
 
     return pa.Table.from_pandas(sub_df)
+
+
+def apply_mappings(df: pd.DataFrame) -> pd.DataFrame:
+
+    info("Loading CSV mapping files: topology and morpology")
+    ref_topo = files("v6-sessions").joinpath("mapping", "topography_mapping.csv")
+    ref_morp = files("v6-sessions").joinpath("mapping", "morphology_mapping.csv")
+    try:
+        with as_file(ref_topo) as topo_file:
+            topo_map_df = pd.read_csv(topo_file)
+        with as_file(ref_morp) as morp_file:
+            morp_map_df = pd.read_csv(morp_file)
+    except Exception as e:
+        error(f"Failed to read CSV file: {e}")
+        traceback.print_exc()
+        raise e
+
+    # FIXME: as we had multiple duplicate ICDO3 codes in the mappers
+    topo_map_df = topo_map_df.drop_duplicates(subset="ICDO3", keep="first").set_index("ICDO3")
+    morp_map_df = morp_map_df.drop_duplicates(subset="ICDO3", keep="first").set_index("ICDO3")
+
+    # Topology
+    df["topography_subsite"] = df["topography"].map(topo_map_df["subsite"]).fillna("Code unknown")
+    df["topography_group"] = df["topography"].map(topo_map_df["group"]).fillna("Code unknown")
+    df["topography_macrogroup"] = df["topography"].map(topo_map_df["macrogroup"]).fillna("Code unknown")
+
+    # Morphology
+    df["morphology_subtype"] = df["morphology"].map(morp_map_df["subtype"]).fillna("Code unknown")
+    df["morphology_type"] = df["morphology"].map(morp_map_df["type"]).fillna("Code unknown")
+
+    return df
+
 
 def generate_drug_count_columns():
     settings = ["pre_operative", "post_operative", "recurrence"]
@@ -348,6 +375,7 @@ def generate_drug_name_columns():
         for i in range(1, 11)
         for j in range(1, 11)
     ]
+
 
 def convert_base_columns(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -413,14 +441,20 @@ def convert_base_columns(df: pd.DataFrame) -> pd.DataFrame:
             "recurrence_radio_2_intent",
             "recurrence_radio_2_treatment_completed_as_planned",
             "overall_treatment_response_response",
-        ] + generate_drug_name_columns(),
+            "topography_subsite",
+            "topography_group",
+            "topography_macrogroup",
+            "morphology_subtype",
+            "morphology_type"
+        ]
+        + generate_drug_name_columns(),
     )
 
     df = _to_int64(
         df,
         [
             "year_of_birth",
-            "age_at_diagnosis", 
+            "age_at_diagnosis",
             "pre_operative_radio_total_dose_gy",
             "pre_operative_radio_number_of_fractions",
             "post_operative_radio_1_total_dose_gy",
@@ -437,10 +471,9 @@ def convert_base_columns(df: pd.DataFrame) -> pd.DataFrame:
             "immuno_count",
             "targeted_count",
             "progression_or_recurrence_count",
-        ] + generate_drug_count_columns()
+        ]
+        + generate_drug_count_columns(),
     )
-
-
 
     df = _to_datetime(
         df,
@@ -477,7 +510,6 @@ def convert_base_columns(df: pd.DataFrame) -> pd.DataFrame:
             "recurrence_radio_1_end_date",
             "recurrence_radio_2_start_date",
             "recurrence_radio_2_end_date",
-            
             "radio_1_start_date",
             "radio_2_start_date",
             "radio_3_start_date",
@@ -488,7 +520,6 @@ def convert_base_columns(df: pd.DataFrame) -> pd.DataFrame:
             "radio_8_start_date",
             "radio_9_start_date",
             "radio_10_start_date",
-            
             "radio_1_end_date",
             "radio_2_end_date",
             "radio_3_end_date",
@@ -499,7 +530,6 @@ def convert_base_columns(df: pd.DataFrame) -> pd.DataFrame:
             "radio_8_end_date",
             "radio_9_end_date",
             "radio_10_end_date",
-
             "chemo_1_start_date",
             "chemo_2_start_date",
             "chemo_3_start_date",
@@ -510,7 +540,6 @@ def convert_base_columns(df: pd.DataFrame) -> pd.DataFrame:
             "chemo_8_start_date",
             "chemo_9_start_date",
             "chemo_10_start_date",
-    
             "chemo_1_end_date",
             "chemo_2_end_date",
             "chemo_3_end_date",
@@ -521,7 +550,6 @@ def convert_base_columns(df: pd.DataFrame) -> pd.DataFrame:
             "chemo_8_end_date",
             "chemo_9_end_date",
             "chemo_10_end_date",
-            
             "immuno_1_start_date",
             "immuno_2_start_date",
             "immuno_3_start_date",
@@ -531,8 +559,7 @@ def convert_base_columns(df: pd.DataFrame) -> pd.DataFrame:
             "immuno_7_start_date",
             "immuno_8_start_date",
             "immuno_9_start_date",
-            "immuno_10_start_date", 
-    
+            "immuno_10_start_date",
             "immuno_1_end_date",
             "immuno_2_end_date",
             "immuno_3_end_date",
@@ -543,7 +570,6 @@ def convert_base_columns(df: pd.DataFrame) -> pd.DataFrame:
             "immuno_8_end_date",
             "immuno_9_end_date",
             "immuno_10_end_date",
-    
             "targeted_1_start_date",
             "targeted_2_start_date",
             "targeted_3_start_date",
@@ -554,7 +580,6 @@ def convert_base_columns(df: pd.DataFrame) -> pd.DataFrame:
             "targeted_8_start_date",
             "targeted_9_start_date",
             "targeted_10_start_date",
-    
             "targeted_1_end_date",
             "targeted_2_end_date",
             "targeted_3_end_date",
@@ -565,7 +590,6 @@ def convert_base_columns(df: pd.DataFrame) -> pd.DataFrame:
             "targeted_8_end_date",
             "targeted_9_end_date",
             "targeted_10_end_date",
-
             "progression_or_recurrence_1_date",
             "progression_or_recurrence_2_date",
             "progression_or_recurrence_3_date",
@@ -576,12 +600,12 @@ def convert_base_columns(df: pd.DataFrame) -> pd.DataFrame:
             "progression_or_recurrence_8_date",
             "progression_or_recurrence_9_date",
             "progression_or_recurrence_10_date",
-
             "overall_treatment_response_date",
         ],
     )
 
-    df = _to_boolean(df, 
+    df = _to_boolean(
+        df,
         [
             "clinical_is_transit_metastasis_with_clinical_confirmation",
             "clinical_is_multifocal_tumor",
@@ -612,7 +636,7 @@ def convert_base_columns(df: pd.DataFrame) -> pd.DataFrame:
             "post_operative_radio_2_intraoperative_radio",
             "recurrence_radio_1_intraoperative_radio",
             "recurrence_radio_2_intraoperative_radio",
-        ]
+        ],
     )
 
     return df
@@ -633,31 +657,26 @@ def convert_head_neck_columns(df: pd.DataFrame) -> pd.DataFrame:
             "clinical_stage_cm",
             "clinical_stage_extra_nodal_extension",
             "pathological_stage_extra_nodal_extension",
-
             "surgery_1_extra_nodal_extension",
             "surgery_2_extra_nodal_extension",
             "surgery_3_extra_nodal_extension",
             "surgery_4_extra_nodal_extension",
             "surgery_5_extra_nodal_extension",
-
             "surgery_1_laterality_of_the_dissection",
             "surgery_2_laterality_of_the_dissection",
             "surgery_3_laterality_of_the_dissection",
             "surgery_4_laterality_of_the_dissection",
             "surgery_5_laterality_of_the_dissection",
-
             "pre_operative_systemic_treatment_intent",
             "post_operative_systemic_treatment_1_intent",
             "post_operative_systemic_treatment_2_intent",
             "recurrence_systemic_treatment_1_intent",
             "recurrence_systemic_treatment_2_intent",
-
             "pre_operative_radio_beam_quality",
             "post_operative_radio_1_beam_quality",
             "post_operative_radio_2_beam_quality",
             "recurrence_radio_1_beam_quality",
             "recurrence_radio_2_beam_quality",
-
             "surgery_1_surgery_hospital",
             "surgery_2_surgery_hospital",
             "surgery_3_surgery_hospital",
@@ -665,17 +684,18 @@ def convert_head_neck_columns(df: pd.DataFrame) -> pd.DataFrame:
             "surgery_5_surgery_hospital",
         ],
     )
-    
+
     df = _to_int64(
-        df, 
+        df,
         [
             "pre_operative_radio_total_high_dose",
             "post_operative_radio_1_total_high_dose",
             "post_operative_radio_2_total_high_dose",
             "recurrence_radio_1_total_high_dose",
             "recurrence_radio_2_total_high_dose",
-        ])
-    
+        ],
+    )
+
     df = _to_datetime(
         df,
         [
@@ -687,23 +707,24 @@ def convert_head_neck_columns(df: pd.DataFrame) -> pd.DataFrame:
         ],
     )
 
-    df = _to_boolean(df, 
+    df = _to_boolean(
+        df,
         [
             "surgery_1_neck_surgery",
             "surgery_2_neck_surgery",
             "surgery_3_neck_surgery",
             "surgery_4_neck_surgery",
             "surgery_5_neck_surgery",
-
             "pre_operative_radio_treatment_site_distant_metastasis",
             "post_operative_radio_1_treatment_site_distant_metastasis",
             "post_operative_radio_2_treatment_site_distant_metastasis",
             "recurrence_radio_1_treatment_site_distant_metastasis",
-            "recurrence_radio_2_treatment_site_distant_metastasis"
-        ]
+            "recurrence_radio_2_treatment_site_distant_metastasis",
+        ],
     )
 
     return df
+
 
 def convert_sarcoma_columns(df: pd.DataFrame) -> pd.DataFrame:
     df = _to_category(
@@ -714,7 +735,7 @@ def convert_sarcoma_columns(df: pd.DataFrame) -> pd.DataFrame:
     )
 
     df = _to_int64(
-        df, 
+        df,
         [
             "clinical_number_of_tumor_nodules",
             "pathological_number_of_tumor_nodules",
@@ -738,6 +759,6 @@ def convert_sarcoma_columns(df: pd.DataFrame) -> pd.DataFrame:
             "pathological_loco_regional",
             "pathological_is_transit_metastasis_with_clinical_confirmation",
             "pathological_is_multifocal_tumor",
-        ]
+        ],
     )
     return df

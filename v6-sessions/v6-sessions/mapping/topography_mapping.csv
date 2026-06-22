@@ -1,0 +1,372 @@
+ICDO3,subsite,group,macrogroup
+C00.0,External lip upper,LIP,Head and neck
+C00.1,External lip lower,LIP,Head and neck
+C00.2,External lip NOS,LIP,Head and neck
+C00.3,"Upper lip, mucosa",LIP,Head and neck
+C00.4,"Lower lip, mucosa",LIP,Head and neck
+C00.5,"Mucosa lip, NOS",LIP,Head and neck
+C00.6,Commissure lip,LIP,Head and neck
+C00.8,Overlapping lesion of lip,LIP,Head and neck
+C00.9,"Lip, NOS",LIP,Head and neck
+C01.9,"Base of tongue, NOS",OROPHARYNX,Head and neck
+C02.0,"Dorsal surface tongue, NOS",ORAL CAVITY,Head and neck
+C02.1,Border of tongue,ORAL CAVITY,Head and neck
+C02.2,Ventral surface of tongue NOS,ORAL CAVITY,Head and neck
+C02.3,Anterior 2/3 of tongue NOS,ORAL CAVITY,Head and neck
+C02.4,Lingual tonsil,OROPHARYNX,Head and neck
+C02.8,Overlapping lesion of tongue,OROPHARYNX,Head and neck
+C02.9,"Tongue, NOS",ORAL CAVITY,Head and neck
+C03.0,Upper gum,ORAL CAVITY,Head and neck
+C03.1,Lower gum,ORAL CAVITY,Head and neck
+C03.9,"Gum, NOS",ORAL CAVITY,Head and neck
+C04.0,Anterior floor of mouth,ORAL CAVITY,Head and neck
+C04.1,Lateral floor of mouth,ORAL CAVITY,Head and neck
+C04.8,Overlapping lesion of floor of mouth,ORAL CAVITY,Head and neck
+C04.9,"Floor of mouth, NOS",ORAL CAVITY,Head and neck
+C05.0,Hard palate,ORAL CAVITY,Head and neck
+C05.1,Soft palate NOS (excludes Nasopharyngcal surface C11.3),OROPHARYNX,Head and neck
+C05.2,Uvula,OROPHARYNX,Head and neck
+C05.8,Overlapping lesion of palate,OROPHARYNX,Head and neck
+C05.9,"Palate, NOS",OROPHARYNX,Head and neck
+C06.0,Cheek mucosa,ORAL CAVITY,Head and neck
+C06.1,Vestibule of mouth,ORAL CAVITY,Head and neck
+C06.2,Retromolar area,ORAL CAVITY,Head and neck
+C06.8,Overlapping lesion of other and unspecified parts of mouth,ORAL CAVITY,Head and neck
+C06.9,"Mouth, NOS",ORAL CAVITY,Head and neck
+C07.9,Parotid gland,PAROTID GLAND,Head and neck
+C08.0,Submandibular gland,SUBMANDIBULAR GLAND,Head and neck
+C08.1,Sublingual gland,SUBLINGUAL GLAND,Head and neck
+C08.8,Overlapping lesion of major salivary glands,MAJOR SALIVARY GLAND,Head and neck
+C08.9,"Major salivary gland, NOS",MAJOR SALIVARY GLAND,Head and neck
+C09.0,Tonsillar fossa,OROPHARYNX,Head and neck
+C09.1,Tonsillar pillar,OROPHARYNX,Head and neck
+C09.8,Overlapping lesion of tonsil,OROPHARYNX,Head and neck
+C09.9,"Tonsil, NOS",OROPHARYNX,Head and neck
+C10.0,Vallecula,OROPHARYNX,Head and neck
+C10.1,Anterior surface of epiglottis,OROPHARYNX,Head and neck
+C10.2,Lateral wall of mesopharynx,Pharynx,Head and neck
+C10.2,Lateral wall of oropharynx,Pharynx,Head and neck
+C10.2,Lateral wall oropharynx,OROPHARYNX,Head and neck
+C10.3,Posterior wall of mesopharynx,Pharynx,Head and neck
+C10.3,Posterior wall of oropharynx,Pharynx,Head and neck
+C10.3,Posterior wall oropharynx,OROPHARYNX,Head and neck
+C10.4,Branchial cleft (site of neoplasm),Pharynx,Head and neck
+C10.4,Branchial cleft (site of neoplosm),OROPHARYNX,Head and neck
+C10.8,Junctional region of oropharynx,Pharynx,Head and neck
+C10.8,Overlapping lesion of oropharynx,OROPHARYNX,Head and neck
+C10.9,"Fauces, NOS",Pharynx,Head and neck
+C10.9,"Mesopharynx, NOS",Pharynx,Head and neck
+C10.9,"Oropharynx, NOS",OROPHARYNX,Head and neck
+C11.0,Roof of nasopharynx,Pharynx,Head and neck
+C11.0,Superior wall of nasopharynx,NASOPHARYNX,Head and neck
+C11.1,Adenoid,Pharynx,Head and neck
+C11.1,Pharyngeal tonsil,Pharynx,Head and neck
+C11.1,Posterior wall of nasopharynx,NASOPHARYNX,Head and neck
+C11.2,Fossa of Rosenmuller,Pharynx,Head and neck
+C11.2,Lateral wall of nasopharynx,NASOPHARYNX,Head and neck
+C11.3,Anterior wall of nasopharynx,NASOPHARYNX,Head and neck
+C11.3,Choana,Pharynx,Head and neck
+C11.3,Nasopharyngeal surface of soft palate,Pharynx,Head and neck
+C11.3,Pharyngeal fornix,Pharynx,Head and neck
+C11.3,Posterior margin of nasal septum,Pharynx,Head and neck
+C11.8,Overlapping lesion of nasopharynx,NASOPHARYNX,Head and neck
+C11.9,Nasopharyngeal wall,Pharynx,Head and neck
+C11.9,"Nasopharynx, NOS",NASOPHARYNX,Head and neck
+C12.9,Piriform fossa,Pharynx,Head and neck
+C12.9,Piriform sinus,Pharynx,Head and neck
+C12.9,Pyriform fossa,Pharynx,Head and neck
+C12.9,Pyriform sinus,HYPOPHARYNX,Head and neck
+C13.0,"Cricoid, NOS",Pharynx,Head and neck
+C13.0,Cricopharynx,Pharynx,Head and neck
+C13.0,Postcricoid region,HYPOPHARYNX,Head and neck
+C13.1,"Aryepiglottic fold, NOS (excludes laryngeal aspect of aryepiglottic fold C32.1)",Pharynx,Head and neck
+C13.1,Arytenoid fold,Pharynx,Head and neck
+C13.1,Hypopharyngeal aspect of aryepiglottic fold,HYPOPHARYNX,Head and neck
+C13.2,Posterior wall hypopharynx,HYPOPHARYNX,Head and neck
+C13.2,Posterior wall of hypopharynx,Pharynx,Head and neck
+C13.8,Overlapping lesion of hypopharynx,HYPOPHARYNX,Head and neck
+C13.9,Hypopharyngeal wall,Pharynx,Head and neck
+C13.9,"Hypopharynx, NOS",HYPOPHARYNX,Head and neck
+C13.9,Laryngopharynx,Pharynx,Head and neck
+C14.0,"Lateral wall of pharynx, NOS",Pharynx,Head and neck
+C14.0,"Pharyngeal wall, NOS",Pharynx,Head and neck
+C14.0,Pharynx NOS,OROPHARYNX,Head and neck
+C14.0,"Pharynx, NOS",Pharynx,Head and neck
+C14.0,"Posterior wall of pharynx, NOS",Pharynx,Head and neck
+C14.0,Retropharynx,Pharynx,Head and neck
+C14.0,Throat,Pharynx,Head and neck
+C14.0,"Wall of pharynx, NOS",Pharynx,Head and neck
+C14.2,Waldeyer ring,OROPHARYNX,Head and neck
+C14.8,"Overlapping lesion of lip, oral cavity and pharynx",ORAL CAVITY,Head and neck
+C15.0,Cervical esophagus,Thorax,Soft tissue
+C15.1,Thoracic esophagus,Thorax,Soft tissue
+C15.2,Abdominal esophagus,Thorax,Soft tissue
+C15.3,Upper third of esophagus,Thorax,Soft tissue
+C15.4,Middle third of esophagus,Thorax,Soft tissue
+C15.5,Lower third of esophagus,Thorax,Soft tissue
+C15.8,Overlapping lesion of esophagus,Thorax,Soft tissue
+C16.1,Fundus of stomach,Abdomen,Soft tissue
+C16.2,Body of stomach,Abdomen,Soft tissue
+C16.3,Gastric antrum,Abdomen,Soft tissue
+C16.4,Pylorus,Abdomen,Soft tissue
+C16.8,Overlapping lesion of stomach,Abdomen,Soft tissue
+C17.0,Duodenum,Abdomen,Soft tissue
+C17.1,Jejunum,Abdomen,Soft tissue
+C17.2,Ileum,Abdomen,Soft tissue
+C17.3,Meckel diverticulum,Abdomen,Soft tissue
+C17.8,Overlapping lesion of small,Abdomen,Soft tissue
+C17.9,"Small intestine, NOS",Abdomen,Soft tissue
+C18.0,Cecum,Abdomen,Soft tissue
+C18.1,Appendix,Abdomen,Soft tissue
+C18.2,Ascending colon,Abdomen,Soft tissue
+C18.3,Hepatic flexure of colon,Abdomen,Soft tissue
+C18.4,Transverse colon,Abdomen,Soft tissue
+C18.5,Splenic flexure of colon,Abdomen,Soft tissue
+C18.6,Descending colon,Abdomen,Soft tissue
+C18.7,Sigmoid colon,Abdomen,Soft tissue
+C18.8,Overlapping lesion of colon,Abdomen,Soft tissue
+C19.9,Rectosigmoid junction,Abdomen,Soft tissue
+C20.9,Rectum,Abdomen,Soft tissue
+C21.1,Anal canal,Abdomen,Soft tissue
+C21.2,Cloacogenic zone,Abdomen,Soft tissue
+C22.0,Liver,Abdomen,Soft tissue
+C22.1,Intrahepatic bile duct,Abdomen,Soft tissue
+C23.9,Gallbladder,Abdomen,Soft tissue
+C24.0,Extrahepatic bile duct,Abdomen,Soft tissue
+C24.1,Ampulla of Vater,Abdomen,Soft tissue
+C24.8,Overlapping lesion of biliary tract,Abdomen,Soft tissue
+C25.0,Head of pancreas,Abdomen,Soft tissue
+C25.1,Body of pancreas,Abdomen,Soft tissue
+C25.2,Tail of pancreas,Abdomen,Soft tissue
+C25.3,Pancreatic duct,Abdomen,Soft tissue
+C25.4,Islets of Langerhans,Abdomen,Soft tissue
+C25.7,Other specified parts of pancreas,Abdomen,Soft tissue
+C25.8,Overlapping lesion of pancreas,Abdomen,Soft tissue
+C30.0,Nasal cavity,NASAL CAVITY AND PARANASAL SINUSES,Head and neck
+C30.1,Middle ear,MIDDLE EAR,Head and neck
+C31.0,Maxillary sinus,NASAL CAVITY AND PARANASAL SINUSES,Head and neck
+C31.1,Ethmoid sinus,NASAL CAVITY AND PARANASAL SINUSES,Head and neck
+C31.2,Frontal sinus,NASAL CAVITY AND PARANASAL SINUSES,Head and neck
+C31.3,Sphenoid sinus,NASAL CAVITY AND PARANASAL SINUSES,Head and neck
+C31.8,Overlapping lesion of accessory sinuses,NASAL CAVITY AND PARANASAL SINUSES,Head and neck
+C31.9,"Accessory sinus, NOS",NASAL CAVITY AND PARANASAL SINUSES,Head and neck
+C32.0,Glottis,LARYNX,Head and neck
+C32.0,Intrinsic larynx,Larynx,Head and neck
+C32.0,Laryngeal commissure,Larynx,Head and neck
+C32.0,True cord,Larynx,Head and neck
+C32.0,True vocal cord,Larynx,Head and neck
+C32.0,"Vocal cord, NOS",Larynx,Head and neck
+C32.1,"Epiglottis, NOS (excludes anterior surface of epiglottis C10.1)",Larynx,Head and neck
+C32.1,Extrinsic larynx,Larynx,Head and neck
+C32.1,False cord,Larynx,Head and neck
+C32.1,False vocal cord,Larynx,Head and neck
+C32.1,Laryngeal aspect of aryepiglottic fold,Larynx,Head and neck
+C32.1,Posterior surface of epiglottis,Larynx,Head and neck
+C32.1,Supraglottis,LARYNX,Head and neck
+C32.1,Ventricular band of larynx,Larynx,Head and neck
+C32.2,Subglottis,LARYNX,Head and neck
+C32.3,Arytenoid cartilage,Larynx,Head and neck
+C32.3,Cricoid cartilage,Larynx,Head and neck
+C32.3,Cuneiform cartilage,Larynx,Head and neck
+C32.3,Laryngeal cartilage,LARYNX,Head and neck
+C32.3,Thyroid cartilage,Larynx,Head and neck
+C32.8,Overlapping lesion of larynx,LARYNX,Head and neck
+C32.9,"Larynx, NOS",LARYNX,Head and neck
+C33.9,Trachea,Thorax,Soft tissue
+C34.0,Bronchus,Thorax,Soft tissue
+C34.0,Main bronchus,Thorax,Soft tissue
+C34.8,Overlapping lesion of lung,Thorax,Soft tissue
+C37.9,Thymus,Thorax,Soft tissue
+C38.0,Heart,Thorax,Soft tissue
+C38.1,Anterior mediastinum,Thorax,Soft tissue
+C38.2,Posterior mediastinum,Thorax,Soft tissue
+C38.4,Pleura,Thorax,Soft tissue
+C41.0,Bones of skull and face and associated joints,"BONES, JOINTS, AND ARTICULAR CARTILAGE",Head and neck
+C41.1,Mandible,"BONES, JOINTS, AND ARTICULAR CARTILAGE",Head and neck
+C41.2,Vertebral column,"BONES, JOINTS, AND ARTICULAR CARTILAGE",Head and neck
+C41.8,"Overlapping lesion of bones, joints, and articular cartilage","BONES, JOINTS, AND ARTICULAR CARTILAGE",Head and neck
+C44.0,"Skin of lip, NOS",SKIN,Head and neck
+C44.1,Eyelid,SKIN,Head and neck
+C44.2,External ear,SKIN,Head and neck
+C44.3,Skin of other and unspecified parts of face,SKIN,Head and neck
+C44.4,Skin of scalp and neck,SKIN,Head and neck
+C44.8,Overlapping lesion of skin,SKIN,Head and neck
+C47.0,"Peripheral nerves and autonomic nervous system of head, face, and neck",PERIPHERAL NERVES AND AUTONOMIC NERVOUS SYSTEM,Head and neck
+C48.0,Retroperitoneum,Retroperitoneum,Soft tissue
+C48.1,Mesentery,Retroperitoneum,Soft tissue
+C48.1,Mesoappendix,Peritoneum,Soft tissue
+C48.1,Mesocolon,Peritoneum,Soft tissue
+C48.1,Omentum,Peritoneum,Soft tissue
+C48.1,Pelvic peritoneum,Peritoneum,Soft tissue
+C48.1,Peritoneum,Peritoneum,Soft tissue
+C48.1,Rectouterine pouch,Peritoneum,Soft tissue
+C49.0,Auricolar cartilage (cartilage of ear),Soft tissue,Head and neck
+C49.0,Carotid artery,Soft tissue,Head and neck
+C49.0,Cervical region,Soft tissue,Head and neck
+C49.0,Cheek,Soft tissue,Head and neck
+C49.0,Chin,Soft tissue,Head and neck
+C49.0,Face,Soft tissue,Head and neck
+C49.0,Forehead,Soft tissue,Head and neck
+C49.0,Head,Soft tissue,Head and neck
+C49.0,Masseter muscle,Soft tissue,Head and neck
+C49.0,Neck,Soft tissue,Head and neck
+C49.0,Paravertebral – cervical,Soft tissue,Head and neck
+C49.0,Pterygoid fossa,Soft tissue,Head and neck
+C49.0,Scalp,Soft tissue,Head and neck
+C49.0,Sternocleidomastoidoid muscle,Soft tissue,Head and neck
+C49.0,Supraclavear,Soft tissue,Head and neck
+C49.0,Supraclavicular region,Soft tissue,Head and neck
+C49.0,Temple,Soft tissue,Head and neck
+C49.1,Biceps brachii muscle,Upper limbs,Soft tissue
+C49.1,Brachialis muscle,Upper limbs,Soft tissue
+C49.1,Coracobrachialis muscle,Upper limbs,Soft tissue
+C49.1,Deltoid,Upper limbs,Soft tissue
+C49.1,Elbow/Antecubital fossa,Upper limbs,Soft tissue
+C49.1,Forearm,Upper limbs,Soft tissue
+C49.1,Hand,Upper limbs,Soft tissue
+C49.1,Palmar aponeurosis,Upper limbs,Soft tissue
+C49.1,Palmar fascia,Upper limbs,Soft tissue
+C49.1,Radial artery,Upper limbs,Soft tissue
+C49.1,Triceps brachii muscle,Upper limbs,Soft tissue
+C49.1,Ulnar artery,Upper limbs,Soft tissue
+C49.1,Upper arm,Upper limbs,Soft tissue
+C49.1,Wrist,Upper limbs,Soft tissue
+C49.2,Ankle,Lower limbs,Soft tissue
+C49.2,Biceps femoris muscle,Lower limbs,Soft tissue
+C49.2,Femoral artery,Lower limbs,Soft tissue
+C49.2,Foot,Lower limbs,Soft tissue
+C49.2,Gastrocnemius muscle,Lower limbs,Soft tissue
+C49.2,Knee/popliteal fossa,Lower limbs,Soft tissue
+C49.2,Leg,Lower limbs,Soft tissue
+C49.2,Plantar aponeurosis,Lower limbs,Soft tissue
+C49.2,Plantar fascia,Lower limbs,Soft tissue
+C49.2,Quadriceps femoris muscle,Lower limbs,Soft tissue
+C49.2,Upper leg,Lower limbs,Soft tissue
+C49.2,calf,Lower limbs,Soft tissue
+C49.2,heel,Lower limbs,Soft tissue
+C49.2,hip,Lower limbs,Soft tissue
+C49.3,Aorta,Thorax,Soft tissue
+C49.3,Axilla,Trunk wall,Soft tissue
+C49.3,Axillary Artery,Trunk wall,Soft tissue
+C49.3,Intercostal muscle,Trunk wall,Soft tissue
+C49.3,Latissimus dorsi muscle,Trunk wall,Soft tissue
+C49.3,Pectoral,Trunk wall,Soft tissue
+C49.3,Pectoralis major muscle,Trunk wall,Soft tissue
+C49.3,Periscapular,Trunk wall,Soft tissue
+C49.3,Subclavian vessels,Thorax,Soft tissue
+C49.3,Superior vena cava,Thorax,Soft tissue
+C49.3,Thoracic Wall,Trunk wall,Soft tissue
+C49.3,Trapezius muscle,Trunk wall,Soft tissue
+C49.4,Abdominal wall muscle,Trunk wall,Soft tissue
+C49.4,Aorta,Retroperitoneum,Soft tissue
+C49.4,Iliopsoas muscle,Trunk wall,Soft tissue
+C49.4,Inferior vena cava,Retroperitoneum,Soft tissue
+C49.4,Mesenteric vessels,Retroperitoneum,Soft tissue
+C49.4,Pelvis,Pelvis,Soft tissue
+C49.4,Psoas muscle,Trunk wall,Soft tissue
+C49.4,Rectus abdominis muscle,Trunk wall,Soft tissue
+C49.4,Renal vessels,Retroperitoneum,Soft tissue
+C49.4,Umbilicus,Trunk wall,Soft tissue
+C49.5,Buttock,Trunk wall,Soft tissue
+C49.5,Gluteal Region,Trunk wall,Soft tissue
+C49.5,Gluteus Maximus Muscle,Trunk wall,Soft tissue
+C49.5,Groin,Trunk wall,Soft tissue
+C49.5,Iliac vessels,Retroperitoneum,Soft tissue
+C49.5,Inguinal Region,Trunk wall,Soft tissue
+C49.5,Perineum,Pelvis,Soft tissue
+C49.5,Sacrococcygeal region,Trunk wall,Soft tissue
+C49.6,Back,Trunk wall,Soft tissue
+C49.6,Flank,Trunk wall,Soft tissue
+C49.6,Trunk,Trunk wall,Soft tissue
+C50.0,Nipple,Breast,Breast
+C50.1,Central portion of breast,Breast,Breast
+C50.2,Upper-inner quadrant of breast,Breast,Breast
+C50.3,Lower-inner quadrant of breast,Breast,Breast
+C50.4,Upper-outer quadrant of breast,Breast,Breast
+C50.5,Lower-outer quadrant of breast,Breast,Breast
+C50.6,Axillary tail of breast,Breast,Breast
+C50.8,Overlapping lesion of breast,Breast,Breast
+C51.0,Labium majus,Genitourinary (female),Female genital tumor
+C51.1,Labium minus,Genitourinary (female),Female genital tumor
+C51.2,Clitoris,Genitourinary (female),Female genital tumor
+C51.8,Overlapping lesion of vulva,Genitourinary (female),Female genital tumor
+C52.9,Vagina,Genitourinary (female),Female genital tumor
+C53,CERVIX UTERI (C53.0 Endocervix,Genitourinary (female),Female genital tumor
+C53.1,Exocervix,Genitourinary (female),Female genital tumor
+C53.8,Overlapping lesion of cervix uteri,Genitourinary (female),Female genital tumor
+C53.9,Cervix uteri),Genitourinary (female),Female genital tumor
+C54,CORPUS UTERI (C54.0 Isthmus uteri,Genitourinary (female),Female genital tumor
+C54.1,Endometrium,Genitourinary (female),Female genital tumor
+C54.2,Myometrium,Genitourinary (female),Female genital tumor
+C54.3,Fundus uteri,Genitourinary (female),Female genital tumor
+C54.8,Overlapping lesion of corpus uteri,Genitourinary (female),Female genital tumor
+C54.9,Corpus uteri),Genitourinary (female),Female genital tumor
+C56.9,Ovary,Genitourinary (female),Female genital tumor
+C57.0,Fallopian tube,Genitourinary (female),Female genital tumor
+C57.1,Broad ligament,Genitourinary (female),Female genital tumor
+C57.2,Round ligament,Genitourinary (female),Female genital tumor
+C57.3,Parametrium,Genitourinary (female),Female genital tumor
+C57.4,Uterine adnexa,Genitourinary (female),Female genital tumor
+C57.7,Other specified parts of female genital organs,Genitourinary (female),Female genital tumor
+C57.8,Overlapping lesion of female genital organs,Genitourinary (female),Female genital tumor
+C60.0,Prepuce,Genitourinary (male),Urinary and male genital tumor
+C60.1,Glans penis,Genitourinary (male),Urinary and male genital tumor
+C60.2,Body of penis,Genitourinary (male),Urinary and male genital tumor
+C60.8,Overlapping lesion of penis,Genitourinary (male),Urinary and male genital tumor
+C61.9,Prostate gland,Genitourinary (male),Urinary and male genital tumor
+C62.0,Undescended testis,Genitourinary (male),Urinary and male genital tumor
+C62.1,Descended testis,Genitourinary (male),Urinary and male genital tumor
+C63.1,Spermatic Cord,Genitourinary (male),Urinary and male genital tumor
+C63.7,Seminal Vescicle,Genitourinary (male),Urinary and male genital tumor
+C65,RENAL PELVIS (C65.9 Renal pelvis),Urinary,Urinary and male genital tumor
+C66.9,Ureter,Urinary,Urinary and male genital tumor
+C67.0,Trigone of bladder,Urinary,Urinary and male genital tumor
+C67.1,Dome of bladder,Urinary,Urinary and male genital tumor
+C67.2,Lateral wall of bladder,Urinary,Urinary and male genital tumor
+C67.3,Anterior wall of  ladder,Urinary,Urinary and male genital tumor
+C67.4,Posterior wall of bladder,Urinary,Urinary and male genital tumor
+C67.5,Bladder neck,Urinary,Urinary and male genital tumor
+C67.6,Ureteric orifice,Urinary,Urinary and male genital tumor
+C67.7,Urachus,Urinary,Urinary and male genital tumor
+C67.8,Overlapping lesion of bladder,Urinary,Urinary and male genital tumor
+C68.0,Urethra,Urinary,Urinary and male genital tumor
+C68.1,Paraurethral gland,Urinary,Urinary and male genital tumor
+C68.8,Overlapping lesion of urinary organs,Urinary,Urinary and male genital tumor
+C69.0,Conjunctiva,Eye and adnexa,CNS
+C69.1,"Cornea, NOS",Eye and adnexa,CNS
+C69.2,Retina,Eye and adnexa,CNS
+C69.3,Choroid,Eye and adnexa,CNS
+C69.4,Ciliary body,Eye and adnexa,CNS
+C69.5,Lacrimal gland,Eye and adnexa,CNS
+C69.6,"Orbit, NOS",Eye and adnexa,CNS
+C69.9,"Eye, NOS",Eye and adnexa,CNS
+C70.0,Cerebral meninges,Meninges,CNS
+C70.1,Spinal meninges,Meninges,CNS
+C71.0,Cerebrum,Brain,CNS
+C71.1,Frontal lobe,Brain,CNS
+C71.2,Temporal lobe,Brain,CNS
+C71.3,Parietal lobe,Brain,CNS
+C71.4,Occipital lobe,Brain,CNS
+C71.5,"Ventricle, NOS",Brain,CNS
+C71.6,"Cerebellum, NOS",Brain,CNS
+C71.7,Brain stem,Brain,CNS
+C71.9,"Brain, NOS",Brain,CNS
+C72.0,Spinal cord,Spinal cord,CNS
+C72.1,Cauda equina,Spinal cord,CNS
+C72.2,Olfactory nerve,Cranial nerve,CNS
+C72.3,Optic nerve,Cranial nerve,CNS
+C72.4,Acoustic nerve,Cranial nerve,CNS
+C72.5,"Cranial nerve, NOS",Cranial nerve,CNS
+C72.9,"Nervous system, NOS",CNS,CNS
+C73.9,Thyroid gland,Thyroid gland,Head and neck
+C74.0,Cortex of adrenal gland,Retroperitoneum,Soft tissue
+C74.1,Medulla of adrenal gland,Retroperitoneum,Soft tissue
+C75.0,Parathyroid gland,Parathyroid gland,Head and neck
+C75.1,Pituitary gland,Brain,CNS
+C75.3,Pineal gland,Brain,CNS
+C77.0,"Lymph nodes of head, face and neck",LYMPH NODES OF HEAD AND NECK,Head and neck
+C77.1,Intrathoracic lymph nodes,Thorax,Soft tissue
+C77.2,Intra-abdominal lymph nodes,Abdomen,Soft tissue
+C77.3,Lymph nodes of axilla or arm,Upper limbs,Soft tissue
+C77.4,Lymph nodes of inguinal region or leg,Lower limbs,Soft tissue
+C77.5,Pelvic lymph nodes,Pelvis,Soft tissue
