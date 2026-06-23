@@ -143,6 +143,21 @@ COHORT_R_DATE_COLUMNS = [
     "progression_or_recurrence_9_date",
     "progression_or_recurrence_10_date",
     "overall_treatment_response_date",
+    "pre_operative_radio_start_date",
+    "pre_operative_radio_end_date",
+    "post_operative_radio_1_start_date",
+    "post_operative_radio_1_end_date",
+    "post_operative_radio_2_start_date",
+    "post_operative_radio_2_end_date",
+    "recurrence_radio_1_start_date",
+    "recurrence_radio_1_end_date",
+    "recurrence_radio_2_start_date",
+    "recurrence_radio_2_end_date",
+    "surgery_1_date_of_neck_surgery",
+    "surgery_2_date_of_neck_surgery",
+    "surgery_3_date_of_neck_surgery",
+    "surgery_4_date_of_neck_surgery",
+    "surgery_5_date_of_neck_surgery",
 ]
 
 
