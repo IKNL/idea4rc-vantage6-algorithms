@@ -10,6 +10,7 @@ from .annotate_event import (
     annotate_event_within_window,
 )
 from .annotate_treatment_patterns import annotate_treatment_patterns
+from .to_boolean import to_boolean
 
 __all__ = [
     "timedelta",
@@ -17,6 +18,7 @@ __all__ = [
     "one_hot_encode",
     "merge_variables",
     "drop_column",
+    "to_boolean",
     "basic_arithmetic",
     "annotate_event_by_index",
     "annotate_event_by_date_range",
