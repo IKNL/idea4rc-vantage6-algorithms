@@ -29,6 +29,7 @@ This folder contains all documentation required for the vantage6 components to b
   - [Basic Arithmetic](#basic-arithmetic) - [Notebook](./raven-api-documentation/14-preprocessing-basic-arithmetic.ipynb)
   - [Drop column](#drop-column) - [Notebook](./raven-api-documentation/13-preprocessing-drop-variable.ipynb)
   - [To boolean](#to-boolean) - [Notebook](./raven-api-documentation/15-preprocessing-to-boolean.ipynb)
+  - [Annotate Treatment Patterns](#annotate-treatment-patterns) - [Notebook](./raven-api-documentation/17-preprocessing-annotate-treatment-patterns.ipynb)
   
 
 ## Introduction
@@ -72,6 +73,7 @@ deliverables/
 │   ├── 13-preprocessing-drop-variable.ipynb
 │   ├── 14-preprocessing-basic-arithmetic.ipynb
 │   ├── 15-preprocessing-to-boolean.ipynb
+│   ├── 17-preprocessing-annotate-treatment-patterns.ipynb
 │   └── token.txt # used for authentication in the 0-X notebooks, not in the repo. Create yourself.
 ├── security-and-privacy/ # Security analysis per algorithm required by the CoEs
 │   ├── Security & Privacy Summary.pdf      
@@ -531,6 +533,63 @@ The input parameters are as follows:
 |`output_column`|✅|✅|`str`|The name of the new column.
 |`true_values`|⚠️|✅|`list[str]`|List of categories that are considered to be `true`. If not set, `false_values` should be provided. Can not be used when `false_values` is provided.
 |`false_values`|⚠️|✅|`list[str]`|List of categories that are considered to be `false`. If not set, `true_values` should be provided. Can not be used when `true_values` is provided.
+
+### Annotate Treatment Patterns
+
+[API documentation Notebook](./raven-api-documentation/17-preprocessing-annotate-treatment-patterns.ipynb)
+
+Classifies each patient into 20 mutually-independent boolean treatment pattern flags based on their treatment timeline relative to the diagnosis date. A patient can match multiple rules simultaneously; the `other` column is `True` when none of rules 1–19 match.
+
+All output columns are named `{prefix}{suffix}` where `prefix` defaults to `"trt_pattern_"`.
+
+| Suffix | Pattern |
+|---|---|
+| `only_surgery` | Surgery only (within `general_rule_days` of diagnosis) |
+| `only_radio` | Radiotherapy only |
+| `only_chemo` | Chemotherapy only |
+| `only_immuno` | Immunotherapy only |
+| `only_target` | Targeted therapy only |
+| `concomitant_systemic_radio` | Concomitant systemic + radiotherapy |
+| `surgery_postop_radio` | Surgery + post-operative radiotherapy |
+| `surgery_adj_chemo` | Surgery + adjuvant chemotherapy |
+| `surgery_postop_radio_concomi_chemo` | Surgery + post-op radio + concomitant chemo |
+| `radio_adj_chemo` | Radiotherapy + adjuvant chemotherapy |
+| `concomi_chemo_radio_adj_chemo` | Concomitant chemo-radio + adjuvant chemo |
+| `chemo_immuno` | Chemotherapy + immunotherapy |
+| `chemo_target` | Chemotherapy + targeted therapy |
+| `immuno_target` | Immunotherapy + targeted therapy |
+| `neoadj_chemo_radio` | Neoadjuvant chemo → radiotherapy |
+| `neoadj_chemo_surgery` | Neoadjuvant chemo → surgery |
+| `neoadj_chemo_concomi_chemo_radio` | Neoadj chemo → concomitant chemo-radio |
+| `neoadj_chemo_concomi_chemo_radio_adj_chemo` | Neoadj chemo → concomitant chemo-radio → adjuvant chemo |
+| `neoadj_chemo_radio_adj_chemo` | Neoadj chemo → radio → adjuvant chemo |
+| `other` | None of the above patterns matched |
+
+The input parameters are as follows:
+
+|Argument|Required|Type|Default|Description|
+|---|---|---|---|---|
+|`prefix`|No|`str`|`"trt_pattern_"`|Prefix for all 20 output column names.|
+|`general_rule_days`|No|`int`|`90`|Max days from diagnosis to first treatment for single-modality rules (1–5) and as a shared upper bound in most other rules.|
+|`concomitant_start_gap`|No|`int`|`14`|Max \|systemic\_start − radio\_start\| in days (rule 6).|
+|`concomitant_end_gap`|No|`int`|`14`|Max \|systemic\_end − radio\_end\| in days (rule 6).|
+|`surgery_postop_radio_days`|No|`int`|`120`|Max days from surgery to radio start (rules 7, 9).|
+|`surgery_adjuvant_chemo_days`|No|`int`|`120`|Max days from surgery to chemo start (rule 8).|
+|`postop_radio_concomi_start_gap`|No|`int`|`14`|Max \|chemo\_start − radio\_start\| in days (rule 9).|
+|`postop_radio_concomi_end_gap`|No|`int`|`14`|Max \|chemo\_end − radio\_end\| in days (rule 9).|
+|`radio_adjuvant_chemo_days`|No|`int`|`120`|Max days from radio end to chemo start (rule 10).|
+|`concomi_radio_adj_start_gap`|No|`int`|`14`|Max \|chemo1\_start − radio\_start\| in days (rule 11).|
+|`concomi_radio_adj_end_gap`|No|`int`|`14`|Max \|chemo1\_end − radio\_end\| in days (rule 11).|
+|`concomi_radio_adj_to_next`|No|`int`|`90`|Max days from max(chemo1\_end, radio\_end) to chemo2\_start (rule 11).|
+|`chemo_immuno_days`|No|`int`|`180`|Max days from diagnosis to chemo/immuno start (rule 12).|
+|`neoadj_chemo_to_radio`|No|`int`|`90`|Max days from chemo end to radio start (rule 15).|
+|`neoadj_chemo_to_surgery`|No|`int`|`90`|Max days from chemo end to surgery (rule 16).|
+|`neoadj_concomi_to_phase`|No|`int`|`90`|Max days from chemo1 end to chemo2/radio start (rules 17, 18).|
+|`neoadj_concomi_chemo2_start_gap`|No|`int`|`14`|Max \|chemo2\_start − radio\_start\| in days (rules 17, 18).|
+|`neoadj_concomi_chemo2_end_gap`|No|`int`|`14`|Max \|chemo2\_end − radio\_end\| in days (rules 17, 18).|
+|`neoadj_concomi_adj_to_next`|No|`int`|`90`|Max days from max(chemo2\_end, radio\_end) to chemo3\_start (rule 18).|
+|`neoadj_radio_adj_chemo1_to_radio`|No|`int`|`90`|Max days from chemo1 end to radio start (rule 19).|
+|`neoadj_radio_adj_chemo2_to_chemo`|No|`int`|`90`|Max days from radio end to chemo2 start (rule 19).|
 
 ## Analytics Algorithms 
 
