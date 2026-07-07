@@ -954,7 +954,22 @@ WITH
             ROW_NUMBER() OVER (
                 PARTITION BY rtem.person_id
                 ORDER BY rtem.radio_start_date
-            ) AS radiotherapy_row_number
+            ) AS radiotherapy_row_number,
+
+            ROW_NUMBER() OVER (
+                PARTITION BY 
+                    rtem.person_id,
+                    rtem.radio_setting
+                ORDER BY rtem.radio_start_date DESC
+            ) AS radiotherapy_row_number_desc,
+
+            ROW_NUMBER() OVER (
+                PARTITION BY 
+                    rtem.person_id,
+                    rtem.radio_setting
+                ORDER BY rtem.radio_start_date
+            ) AS radiotherapy_row_number_asc
+
         FROM
             radiotherapy_enriched_with_more rtem
     ),
@@ -964,83 +979,83 @@ WITH
             person_id,
 
             -- Pre-operative radiotherapy
-            MAX(CASE WHEN treatment_setting = 'pre-operative' THEN radio_start_date END) AS pre_operative_radio_start_date,
-            MAX(CASE WHEN treatment_setting = 'pre-operative' THEN radio_end_date END) AS pre_operative_radio_end_date,
-            MAX(CASE WHEN treatment_setting = 'pre-operative' THEN radio_hospital END) AS pre_operative_radio_hospital,
-            MAX(CASE WHEN treatment_setting = 'pre-operative' THEN radio_setting END) AS pre_operative_radio_setting,
-            MAX(CASE WHEN treatment_setting = 'pre-operative' THEN radio_intent END) AS pre_operative_radio_intent,
-            MAX(CASE WHEN treatment_setting = 'pre-operative' THEN radio_total_dose_gy END) AS pre_operative_radio_total_dose_gy,
-            MAX(CASE WHEN treatment_setting = 'pre-operative' THEN radio_number_of_fractions END) AS pre_operative_radio_number_of_fractions,
-            MAX(CASE WHEN treatment_setting = 'pre-operative' THEN radio_treatment_completed_as_planned END) AS pre_operative_radio_treatment_completed_as_planned,
-            MAX(CASE WHEN treatment_setting = 'pre-operative' THEN intraoperative_radio END) AS pre_operative_radio_intraoperative_radio,
+            MAX(CASE WHEN treatment_setting = 'pre-operative' AND radiotherapy_row_number_desc = 1 THEN radio_start_date END) AS pre_operative_radio_start_date,
+            MAX(CASE WHEN treatment_setting = 'pre-operative' AND radiotherapy_row_number_desc = 1 THEN radio_end_date END) AS pre_operative_radio_end_date,
+            MAX(CASE WHEN treatment_setting = 'pre-operative' AND radiotherapy_row_number_desc = 1 THEN radio_hospital END) AS pre_operative_radio_hospital,
+            MAX(CASE WHEN treatment_setting = 'pre-operative' AND radiotherapy_row_number_desc = 1 THEN radio_setting END) AS pre_operative_radio_setting,
+            MAX(CASE WHEN treatment_setting = 'pre-operative' AND radiotherapy_row_number_desc = 1 THEN radio_intent END) AS pre_operative_radio_intent,
+            MAX(CASE WHEN treatment_setting = 'pre-operative' AND radiotherapy_row_number_desc = 1 THEN radio_total_dose_gy END) AS pre_operative_radio_total_dose_gy,
+            MAX(CASE WHEN treatment_setting = 'pre-operative' AND radiotherapy_row_number_desc = 1 THEN radio_number_of_fractions END) AS pre_operative_radio_number_of_fractions,
+            MAX(CASE WHEN treatment_setting = 'pre-operative' AND radiotherapy_row_number_desc = 1 THEN radio_treatment_completed_as_planned END) AS pre_operative_radio_treatment_completed_as_planned,
+            MAX(CASE WHEN treatment_setting = 'pre-operative' AND radiotherapy_row_number_desc = 1 THEN intraoperative_radio END) AS pre_operative_radio_intraoperative_radio,
             {% if is_head_and_neck %}
-            MAX(CASE WHEN treatment_setting = 'pre-operative' THEN radio_beam_quality END) AS pre_operative_radio_beam_quality,
-            MAX(CASE WHEN treatment_setting = 'pre-operative' THEN radio_total_high_dose END) AS pre_operative_radio_total_high_dose,
-            MAX(CASE WHEN treatment_setting = 'pre-operative' THEN radio_treatment_site_distant_metastasis END) AS pre_operative_radio_treatment_site_distant_metastasis,
+            MAX(CASE WHEN treatment_setting = 'pre-operative' AND radiotherapy_row_number_desc = 1 THEN radio_beam_quality END) AS pre_operative_radio_beam_quality,
+            MAX(CASE WHEN treatment_setting = 'pre-operative' AND radiotherapy_row_number_desc = 1 THEN radio_total_high_dose END) AS pre_operative_radio_total_high_dose,
+            MAX(CASE WHEN treatment_setting = 'pre-operative' AND radiotherapy_row_number_desc = 1 THEN radio_treatment_site_distant_metastasis END) AS pre_operative_radio_treatment_site_distant_metastasis,
             {% endif %}
 
             -- Post-operative radiotherapy 1
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 1 THEN radio_start_date END) AS post_operative_radio_1_start_date,
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 1 THEN radio_end_date END) AS post_operative_radio_1_end_date,
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 1 THEN radio_hospital END) AS post_operative_radio_1_hospital,
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 1 THEN radio_setting END) AS post_operative_radio_1_setting,
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 1 THEN radio_intent END) AS post_operative_radio_1_intent,
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 1 THEN radio_total_dose_gy END) AS post_operative_radio_1_total_dose_gy,
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 1 THEN radio_number_of_fractions END) AS post_operative_radio_1_number_of_fractions,
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 1 THEN radio_treatment_completed_as_planned END) AS post_operative_radio_1_treatment_completed_as_planned,
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 1 THEN intraoperative_radio END) AS post_operative_radio_1_intraoperative_radio,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number_asc = 1 THEN radio_start_date END) AS post_operative_radio_1_start_date,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number_asc = 1 THEN radio_end_date END) AS post_operative_radio_1_end_date,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number_asc = 1 THEN radio_hospital END) AS post_operative_radio_1_hospital,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number_asc = 1 THEN radio_setting END) AS post_operative_radio_1_setting,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number_asc = 1 THEN radio_intent END) AS post_operative_radio_1_intent,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number_asc = 1 THEN radio_total_dose_gy END) AS post_operative_radio_1_total_dose_gy,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number_asc = 1 THEN radio_number_of_fractions END) AS post_operative_radio_1_number_of_fractions,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number_asc = 1 THEN radio_treatment_completed_as_planned END) AS post_operative_radio_1_treatment_completed_as_planned,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number_asc = 1 THEN intraoperative_radio END) AS post_operative_radio_1_intraoperative_radio,
             {% if is_head_and_neck %}
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 1 THEN radio_beam_quality END) AS post_operative_radio_1_beam_quality,
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 1 THEN radio_total_high_dose END) AS post_operative_radio_1_total_high_dose,
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 1 THEN radio_treatment_site_distant_metastasis END) AS post_operative_radio_1_treatment_site_distant_metastasis,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number_asc = 1 THEN radio_beam_quality END) AS post_operative_radio_1_beam_quality,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number_asc = 1 THEN radio_total_high_dose END) AS post_operative_radio_1_total_high_dose,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number_asc = 1 THEN radio_treatment_site_distant_metastasis END) AS post_operative_radio_1_treatment_site_distant_metastasis,
             {% endif %}
 
             -- Post-operative radiotherapy 2
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 2 THEN radio_start_date END) AS post_operative_radio_2_start_date,
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 2 THEN radio_end_date END) AS post_operative_radio_2_end_date,
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 2 THEN radio_hospital END) AS post_operative_radio_2_hospital,
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 2 THEN radio_setting END) AS post_operative_radio_2_setting,
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 2 THEN radio_intent END) AS post_operative_radio_2_intent,
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 2 THEN radio_total_dose_gy END) AS post_operative_radio_2_total_dose_gy,
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 2 THEN radio_number_of_fractions END) AS post_operative_radio_2_number_of_fractions,
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 2 THEN radio_treatment_completed_as_planned END) AS post_operative_radio_2_treatment_completed_as_planned,
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 2 THEN intraoperative_radio END) AS post_operative_radio_2_intraoperative_radio,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number_asc = 2 THEN radio_start_date END) AS post_operative_radio_2_start_date,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number_asc = 2 THEN radio_end_date END) AS post_operative_radio_2_end_date,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number_asc = 2 THEN radio_hospital END) AS post_operative_radio_2_hospital,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number_asc = 2 THEN radio_setting END) AS post_operative_radio_2_setting,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number_asc = 2 THEN radio_intent END) AS post_operative_radio_2_intent,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number_asc = 2 THEN radio_total_dose_gy END) AS post_operative_radio_2_total_dose_gy,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number_asc = 2 THEN radio_number_of_fractions END) AS post_operative_radio_2_number_of_fractions,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number_asc = 2 THEN radio_treatment_completed_as_planned END) AS post_operative_radio_2_treatment_completed_as_planned,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number_asc = 2 THEN intraoperative_radio END) AS post_operative_radio_2_intraoperative_radio,
             {% if is_head_and_neck %}
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 2 THEN radio_beam_quality END) AS post_operative_radio_2_beam_quality,
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 2 THEN radio_total_high_dose END) AS post_operative_radio_2_total_high_dose,
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number = 2 THEN radio_treatment_site_distant_metastasis END) AS post_operative_radio_2_treatment_site_distant_metastasis,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number_asc = 2 THEN radio_beam_quality END) AS post_operative_radio_2_beam_quality,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number_asc = 2 THEN radio_total_high_dose END) AS post_operative_radio_2_total_high_dose,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number_asc = 2 THEN radio_treatment_site_distant_metastasis END) AS post_operative_radio_2_treatment_site_distant_metastasis,
             {% endif %}
 
             -- Recurrence radiotherapy 1
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 1 THEN radio_start_date END) AS recurrence_radio_1_start_date,
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 1 THEN radio_end_date END) AS recurrence_radio_1_end_date,
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 1 THEN radio_hospital END) AS recurrence_radio_1_hospital,
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 1 THEN radio_setting END) AS recurrence_radio_1_setting,
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 1 THEN radio_intent END) AS recurrence_radio_1_intent,
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 1 THEN radio_total_dose_gy END) AS recurrence_radio_1_total_dose_gy,
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 1 THEN radio_number_of_fractions END) AS recurrence_radio_1_number_of_fractions,
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 1 THEN radio_treatment_completed_as_planned END) AS recurrence_radio_1_treatment_completed_as_planned,
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 1 THEN intraoperative_radio END) AS recurrence_radio_1_intraoperative_radio,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number_asc = 1 THEN radio_start_date END) AS recurrence_radio_1_start_date,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number_asc = 1 THEN radio_end_date END) AS recurrence_radio_1_end_date,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number_asc = 1 THEN radio_hospital END) AS recurrence_radio_1_hospital,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number_asc = 1 THEN radio_setting END) AS recurrence_radio_1_setting,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number_asc = 1 THEN radio_intent END) AS recurrence_radio_1_intent,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number_asc = 1 THEN radio_total_dose_gy END) AS recurrence_radio_1_total_dose_gy,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number_asc = 1 THEN radio_number_of_fractions END) AS recurrence_radio_1_number_of_fractions,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number_asc = 1 THEN radio_treatment_completed_as_planned END) AS recurrence_radio_1_treatment_completed_as_planned,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number_asc = 1 THEN intraoperative_radio END) AS recurrence_radio_1_intraoperative_radio,
             {% if is_head_and_neck %}
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 1 THEN radio_beam_quality END) AS recurrence_radio_1_beam_quality,
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 1 THEN radio_total_high_dose END) AS recurrence_radio_1_total_high_dose,
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 1 THEN radio_treatment_site_distant_metastasis END) AS recurrence_radio_1_treatment_site_distant_metastasis,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number_asc = 1 THEN radio_beam_quality END) AS recurrence_radio_1_beam_quality,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number_asc = 1 THEN radio_total_high_dose END) AS recurrence_radio_1_total_high_dose,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number_asc = 1 THEN radio_treatment_site_distant_metastasis END) AS recurrence_radio_1_treatment_site_distant_metastasis,
             {% endif %}            
 
             -- Recurrence radiotherapy 2
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 2 THEN radio_start_date END) AS recurrence_radio_2_start_date,
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 2 THEN radio_end_date END) AS recurrence_radio_2_end_date,
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 2 THEN radio_hospital END) AS recurrence_radio_2_hospital,
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 2 THEN radio_setting END) AS recurrence_radio_2_setting,
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 2 THEN radio_intent END) AS recurrence_radio_2_intent,
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 2 THEN radio_total_dose_gy END) AS recurrence_radio_2_total_dose_gy,
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 2 THEN radio_number_of_fractions END) AS recurrence_radio_2_number_of_fractions,
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 2 THEN radio_treatment_completed_as_planned END) AS recurrence_radio_2_treatment_completed_as_planned,
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 2 THEN intraoperative_radio END) AS recurrence_radio_2_intraoperative_radio,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number_asc = 2 THEN radio_start_date END) AS recurrence_radio_2_start_date,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number_asc = 2 THEN radio_end_date END) AS recurrence_radio_2_end_date,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number_asc = 2 THEN radio_hospital END) AS recurrence_radio_2_hospital,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number_asc = 2 THEN radio_setting END) AS recurrence_radio_2_setting,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number_asc = 2 THEN radio_intent END) AS recurrence_radio_2_intent,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number_asc = 2 THEN radio_total_dose_gy END) AS recurrence_radio_2_total_dose_gy,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number_asc = 2 THEN radio_number_of_fractions END) AS recurrence_radio_2_number_of_fractions,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number_asc = 2 THEN radio_treatment_completed_as_planned END) AS recurrence_radio_2_treatment_completed_as_planned,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number_asc = 2 THEN intraoperative_radio END) AS recurrence_radio_2_intraoperative_radio,
             {% if is_head_and_neck %}
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 2 THEN radio_beam_quality END) AS recurrence_radio_2_beam_quality,
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 2 THEN radio_total_high_dose END) AS recurrence_radio_2_total_high_dose,
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number = 2 THEN radio_treatment_site_distant_metastasis END) AS recurrence_radio_2_treatment_site_distant_metastasis,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number_asc = 2 THEN radio_beam_quality END) AS recurrence_radio_2_beam_quality,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number_asc = 2 THEN radio_total_high_dose END) AS recurrence_radio_2_total_high_dose,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number_asc = 2 THEN radio_treatment_site_distant_metastasis END) AS recurrence_radio_2_treatment_site_distant_metastasis,
             {% endif %}
 
             -- List of radiotherapy start/end dates
@@ -1189,6 +1204,20 @@ WITH
                 PARTITION BY stewi.person_id
                 ORDER BY stewi.systemic_treatment_start_date
             ) AS systemic_treatment_row_number,
+
+            ROW_NUMBER() OVER (
+                PARTITION BY 
+                    stewi.person_id,
+                    stewi.systemic_setting
+                ORDER BY stewi.systemic_treatment_start_date DESC
+            ) AS systemic_setting_row_number_desc,
+
+            ROW_NUMBER() OVER (
+                PARTITION BY 
+                    stewi.person_id,
+                    stewi.systemic_setting
+                ORDER BY stewi.systemic_treatment_start_date
+            ) AS systemic_setting_row_number_asc,
             
             ROW_NUMBER() OVER (
                 PARTITION BY 
@@ -1206,58 +1235,58 @@ WITH
             person_id,
 
             -- Pre-operative systemic therapy
-            MAX(CASE WHEN treatment_setting = 'pre-operative' THEN systemic_treatment_start_date END) AS pre_operative_systemic_treatment_start_date,
-            MAX(CASE WHEN treatment_setting = 'pre-operative' THEN systemic_treatment_end_date END) AS pre_operative_systemic_treatment_end_date,
-            MAX(CASE WHEN treatment_setting = 'pre-operative' THEN systemic_treatment_regimen END) AS pre_operative_systemic_treatment_regimen,
-            MAX(CASE WHEN treatment_setting = 'pre-operative' THEN systemic_setting END) AS pre_operative_systemic_treatment_setting,
-            MAX(CASE WHEN treatment_setting = 'pre-operative' THEN systemic_treatment_type END) AS pre_operative_systemic_treatment_type,
-            MAX(CASE WHEN treatment_setting = 'pre-operative' THEN systemic_treatment_reason_for_end_of_treatment END) AS pre_operative_systemic_treatment_reason_for_end_of_treatment,
+            MAX(CASE WHEN treatment_setting = 'pre-operative' AND systemic_setting_row_number_desc = 1 THEN systemic_treatment_start_date END) AS pre_operative_systemic_treatment_start_date,
+            MAX(CASE WHEN treatment_setting = 'pre-operative' AND systemic_setting_row_number_desc = 1 THEN systemic_treatment_end_date END) AS pre_operative_systemic_treatment_end_date,
+            MAX(CASE WHEN treatment_setting = 'pre-operative' AND systemic_setting_row_number_desc = 1 THEN systemic_treatment_regimen END) AS pre_operative_systemic_treatment_regimen,
+            MAX(CASE WHEN treatment_setting = 'pre-operative' AND systemic_setting_row_number_desc = 1 THEN systemic_setting END) AS pre_operative_systemic_treatment_setting,
+            MAX(CASE WHEN treatment_setting = 'pre-operative' AND systemic_setting_row_number_desc = 1 THEN systemic_treatment_type END) AS pre_operative_systemic_treatment_type,
+            MAX(CASE WHEN treatment_setting = 'pre-operative' AND systemic_setting_row_number_desc = 1 THEN systemic_treatment_reason_for_end_of_treatment END) AS pre_operative_systemic_treatment_reason_for_end_of_treatment,
             {% if is_head_and_neck %}
-            MAX(CASE WHEN treatment_setting = 'pre-operative' THEN systemic_treatment_intent END) AS pre_operative_systemic_treatment_intent,
+            MAX(CASE WHEN treatment_setting = 'pre-operative' AND systemic_setting_row_number_desc = 1 THEN systemic_treatment_intent END) AS pre_operative_systemic_treatment_intent,
             {% endif %}
 
             -- Post-operative systemic therapy 1
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 1 THEN systemic_treatment_start_date END) AS post_operative_systemic_treatment_1_start_date,
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 1 THEN systemic_treatment_end_date END) AS post_operative_systemic_treatment_1_end_date,
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 1 THEN systemic_treatment_regimen END) AS post_operative_systemic_treatment_1_regimen,
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 1 THEN systemic_setting END) AS post_operative_systemic_treatment_1_setting,
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 1 THEN systemic_treatment_type END) AS post_operative_systemic_treatment_1_type,
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 1 THEN systemic_treatment_reason_for_end_of_treatment END) AS post_operative_systemic_treatment_1_reason_for_end_of_treatment,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_setting_row_number_asc = 1 THEN systemic_treatment_start_date END) AS post_operative_systemic_treatment_1_start_date,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_setting_row_number_asc = 1 THEN systemic_treatment_end_date END) AS post_operative_systemic_treatment_1_end_date,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_setting_row_number_asc = 1 THEN systemic_treatment_regimen END) AS post_operative_systemic_treatment_1_regimen,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_setting_row_number_asc = 1 THEN systemic_setting END) AS post_operative_systemic_treatment_1_setting,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_setting_row_number_asc = 1 THEN systemic_treatment_type END) AS post_operative_systemic_treatment_1_type,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_setting_row_number_asc = 1 THEN systemic_treatment_reason_for_end_of_treatment END) AS post_operative_systemic_treatment_1_reason_for_end_of_treatment,
             {% if is_head_and_neck %}
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 1 THEN systemic_treatment_intent END) AS post_operative_systemic_treatment_1_intent,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_setting_row_number_asc = 1 THEN systemic_treatment_intent END) AS post_operative_systemic_treatment_1_intent,
             {% endif %}
 
             -- Post-operative systemic therapy 2
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 2 THEN systemic_treatment_start_date END) AS post_operative_systemic_treatment_2_start_date,
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 2 THEN systemic_treatment_end_date END) AS post_operative_systemic_treatment_2_end_date,
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 2 THEN systemic_treatment_regimen END) AS post_operative_systemic_treatment_2_regimen,
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 2 THEN systemic_setting END) AS post_operative_systemic_treatment_2_setting,
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 2 THEN systemic_treatment_type END) AS post_operative_systemic_treatment_2_type,
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 2 THEN systemic_treatment_reason_for_end_of_treatment END) AS post_operative_systemic_treatment_2_reason_for_end_of_treatment,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_setting_row_number_asc = 2 THEN systemic_treatment_start_date END) AS post_operative_systemic_treatment_2_start_date,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_setting_row_number_asc = 2 THEN systemic_treatment_end_date END) AS post_operative_systemic_treatment_2_end_date,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_setting_row_number_asc = 2 THEN systemic_treatment_regimen END) AS post_operative_systemic_treatment_2_regimen,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_setting_row_number_asc = 2 THEN systemic_setting END) AS post_operative_systemic_treatment_2_setting,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_setting_row_number_asc = 2 THEN systemic_treatment_type END) AS post_operative_systemic_treatment_2_type,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_setting_row_number_asc = 2 THEN systemic_treatment_reason_for_end_of_treatment END) AS post_operative_systemic_treatment_2_reason_for_end_of_treatment,
             {% if is_head_and_neck %}
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_treatment_row_number = 2 THEN systemic_treatment_intent END) AS post_operative_systemic_treatment_2_intent,
+            MAX(CASE WHEN treatment_setting = 'post-operative' AND systemic_setting_row_number_asc = 2 THEN systemic_treatment_intent END) AS post_operative_systemic_treatment_2_intent,
             {% endif %}
 
             -- Recurrence systemic therapy 1
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 1 THEN systemic_treatment_start_date END) AS recurrence_systemic_treatment_1_start_date,
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 1 THEN systemic_treatment_end_date END) AS recurrence_systemic_treatment_1_end_date,
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 1 THEN systemic_treatment_regimen END) AS recurrence_systemic_treatment_1_regimen,
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 1 THEN systemic_setting END) AS recurrence_systemic_treatment_1_setting,
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 1 THEN systemic_treatment_type END) AS recurrence_systemic_treatment_1_type,
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 1 THEN systemic_treatment_reason_for_end_of_treatment END) AS recurrence_systemic_treatment_1_reason_for_end_of_treatment,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_setting_row_number_asc = 1 THEN systemic_treatment_start_date END) AS recurrence_systemic_treatment_1_start_date,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_setting_row_number_asc = 1 THEN systemic_treatment_end_date END) AS recurrence_systemic_treatment_1_end_date,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_setting_row_number_asc = 1 THEN systemic_treatment_regimen END) AS recurrence_systemic_treatment_1_regimen,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_setting_row_number_asc = 1 THEN systemic_setting END) AS recurrence_systemic_treatment_1_setting,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_setting_row_number_asc = 1 THEN systemic_treatment_type END) AS recurrence_systemic_treatment_1_type,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_setting_row_number_asc = 1 THEN systemic_treatment_reason_for_end_of_treatment END) AS recurrence_systemic_treatment_1_reason_for_end_of_treatment,
             {% if is_head_and_neck %}
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 1 THEN systemic_treatment_intent END) AS recurrence_systemic_treatment_1_intent,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_setting_row_number_asc = 1 THEN systemic_treatment_intent END) AS recurrence_systemic_treatment_1_intent,
             {% endif %}
 
             -- Recurrence systemic therapy 2
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 2 THEN systemic_treatment_start_date END) AS recurrence_systemic_treatment_2_start_date,
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 2 THEN systemic_treatment_end_date END) AS recurrence_systemic_treatment_2_end_date,
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 2 THEN systemic_treatment_regimen END) AS recurrence_systemic_treatment_2_regimen,
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 2 THEN systemic_setting END) AS recurrence_systemic_treatment_2_setting,
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 2 THEN systemic_treatment_type END) AS recurrence_systemic_treatment_2_type,
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 2 THEN systemic_treatment_reason_for_end_of_treatment END) AS recurrence_systemic_treatment_2_reason_for_end_of_treatment,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_setting_row_number_asc = 2 THEN systemic_treatment_start_date END) AS recurrence_systemic_treatment_2_start_date,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_setting_row_number_asc = 2 THEN systemic_treatment_end_date END) AS recurrence_systemic_treatment_2_end_date,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_setting_row_number_asc = 2 THEN systemic_treatment_regimen END) AS recurrence_systemic_treatment_2_regimen,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_setting_row_number_asc = 2 THEN systemic_setting END) AS recurrence_systemic_treatment_2_setting,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_setting_row_number_asc = 2 THEN systemic_treatment_type END) AS recurrence_systemic_treatment_2_type,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_setting_row_number_asc = 2 THEN systemic_treatment_reason_for_end_of_treatment END) AS recurrence_systemic_treatment_2_reason_for_end_of_treatment,
             {% if is_head_and_neck %}
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_treatment_row_number = 2 THEN systemic_treatment_intent END) AS recurrence_systemic_treatment_2_intent,
+            MAX(CASE WHEN treatment_setting = 'recurrence' AND systemic_setting_row_number_asc = 2 THEN systemic_treatment_intent END) AS recurrence_systemic_treatment_2_intent,
             {% endif %}
 
             -- List of systemic therapy dates: chemo / immuno / targeted
@@ -1386,12 +1415,13 @@ WITH
             pid.person_id,
 
             response_concept.concept_name AS overall_treatment_response_response,
+            response_concept.concept_id AS overall_treatment_response_concept_id,
             {{ cohort_safe_date('episode.episode_start_date') }} AS overall_treatment_response_date,
 
             ROW_NUMBER() OVER (
                 PARTITION BY pid.person_id
-                ORDER BY episode.episode_start_date ASC
-            ) AS rn
+                ORDER BY episode.episode_start_date DESC, response_concept.concept_id
+            ) AS date_rn
 
         FROM patient_id_list pid
         LEFT JOIN {{ cdm_schema }}.episode episode
@@ -1422,8 +1452,19 @@ WITH
             person_id,
             overall_treatment_response_response,
             overall_treatment_response_date
-        FROM overall_treatment_response
-        WHERE rn = 1
+        
+        FROM (
+                SELECT
+                    *,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY person_id
+                        ORDER BY overall_treatment_response_concept_id
+                    ) AS concept_rn
+                FROM overall_treatment_response
+                WHERE date_rn <= 2
+            ) x
+
+        WHERE concept_rn = 1
     ),
 
     -- Drugs
@@ -1432,6 +1473,7 @@ WITH
             str.person_id,
             str.episode_id,
             str.systemic_treatment_row_number,
+            str.systemic_setting_row_number_asc,
             str.treatment_setting,
             
             de.drug_exposure_id,
@@ -1459,6 +1501,7 @@ WITH
         WHERE de.drug_concept_id IS NOT NULL
     ),
 
+
     drugs_wide AS (
         SELECT
             person_id,
@@ -1476,7 +1519,7 @@ WITH
                 {% for j in range(1, 11) %}
                     MAX(CASE 
                         WHEN treatment_setting = '{{ setting }}'
-                        AND systemic_treatment_row_number = {{ i }}
+                        AND systemic_setting_row_number_asc = {{ i }}
                         AND drug_row_number = {{ j }}
                         THEN drug_name
                     END) AS {{ prefix }}_systemic_treatment_{{ i }}_drugs_for_treatments_{{ j }},
@@ -1486,7 +1529,7 @@ WITH
                 -- Drug count for treatment {{ i }}
                 COUNT(DISTINCT CASE 
                     WHEN treatment_setting = '{{ setting }}'
-                    AND systemic_treatment_row_number = {{ i }}
+                    AND systemic_setting_row_number_asc = {{ i }}
                     THEN drug_row_number
                 END) AS {{ prefix }}_systemic_treatment_{{ i }}_drugs_for_treatments_count{% if not (loop.last and setting == 'recurrence') %},{% endif %}
 
