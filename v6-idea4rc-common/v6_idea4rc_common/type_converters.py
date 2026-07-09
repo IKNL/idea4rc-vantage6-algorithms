@@ -2,6 +2,8 @@ import math
 
 import pandas as pd
 
+from .type_guards import Idea4rcDType, classify_idea4rc_dtype
+
 
 def to_datetime(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
     """Convert columns to UTC datetime and strip time-of-day."""
@@ -49,4 +51,18 @@ def to_boolean(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
     """Convert columns to nullable boolean dtype."""
     for column in columns:
         df[column] = df[column].astype("boolean")
+    return df
+
+
+def boolean_to_labeled_category(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
+    """Convert boolean columns to self-labeled categorical columns.
+
+    Each value becomes '{col}=true', '{col}=false', or '{col}=N/A' (missing),
+    then the column is cast to categorical. Non-boolean columns are left
+    untouched, so the caller can safely pass a mixed list of columns.
+    """
+    for column in columns:
+        if classify_idea4rc_dtype(df[column]) == Idea4rcDType.BOOLEAN:
+            labeled = df[column].map({True: f"{column}=true", False: f"{column}=false"})
+            df[column] = labeled.fillna(f"{column}=N/A").astype("category")
     return df

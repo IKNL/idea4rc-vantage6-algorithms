@@ -14,6 +14,7 @@ from v6_idea4rc_common.type_guards import (
     Idea4rcDType,
     assert_columns_dtype_in,
 )
+from v6_idea4rc_common.type_converters import boolean_to_labeled_category
 from .utils import create_child_task
 
 @federated
@@ -419,9 +420,9 @@ def _partial_crosstab(
     assert_columns_dtype_in(
         df,
         [results_col] + list(group_cols),
-        allowed=[Idea4rcDType.CATEGORY],
+        allowed=[Idea4rcDType.CATEGORY, Idea4rcDType.BOOLEAN],
         algorithm="crosstab",
-        expected_kind="categorical (pandas 'category')",
+        expected_kind="categorical (pandas 'category') or boolean (pandas 'boolean')",
     )
 
     # get environment variables with privacy settings
@@ -448,6 +449,9 @@ def _partial_crosstab(
 
     # Fill empty (categorical) values with "N/A"
     df[categorical_columns] = df[categorical_columns].fillna("N/A")
+
+    # Convert boolean columns to labeled categoricals (col=true / col=false / col=N/A)
+    df = boolean_to_labeled_category(df, [results_col] + list(group_cols))
 
     # Create contingency table
     info("Creating contingency table...")
