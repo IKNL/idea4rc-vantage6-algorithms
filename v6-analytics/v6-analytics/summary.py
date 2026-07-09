@@ -189,6 +189,8 @@ def _aggregate_partial_summaries(results: list[dict], lookup_organizations) -> d
    
     is_first = True
     zero_patient_nodes: list[tuple[str, dict]] = []
+    # pristine per-node snapshots, captured before any aggregation mutation
+    partials: list[dict] = []
 
     def _merge_numeric_bound(
         current_value: Any,
@@ -248,6 +250,8 @@ def _aggregate_partial_summaries(results: list[dict], lookup_organizations) -> d
 
         organization_name = lookup_organizations[str(result["organization_id"])]
         result["date"] = _normalize_date_summary(result.get("date"))
+        # snapshot this node's pristine partial before it is mutated below
+        partials.append(copy.deepcopy(result))
         if is_first:
             if result["num_rows_per_node"] == 0:
                 # skip zero-patient nodes as the aggregate seed; defer their row counts
@@ -256,7 +260,7 @@ def _aggregate_partial_summaries(results: list[dict], lookup_organizations) -> d
 
             # copy results. Only convert num complete rows per node to a list so that
             # we can add the other nodes to it later
-            aggregate = result
+            aggregate = copy.deepcopy(result)
             aggregate["num_complete_rows_per_node"] = {
                 organization_name: result["num_complete_rows_per_node"]
             }
@@ -284,10 +288,6 @@ def _aggregate_partial_summaries(results: list[dict], lookup_organizations) -> d
 
             is_first = False
             continue
-
-        # add the partial results to the aggregate, which is ofc not really an 
-        # aggregation, but it is needed for the API. of RAVEN.
-        aggregate["partials"] = copy.deepcopy(results)
 
         # aggregate data for numeric columns
         for column in result["numeric"]:
@@ -369,7 +369,7 @@ def _aggregate_partial_summaries(results: list[dict], lookup_organizations) -> d
             return {
                 "numeric": {}, "categorical": {}, "date": {},
                 "num_complete_rows_per_node": {}, "num_rows_per_node": {},
-                "counts_unique_values": {}, "num_rows": 0,
+                "counts_unique_values": {}, "num_rows": 0, "partials": partials,
             }
         first_org_name, first_result = zero_patient_nodes[0]
         aggregate = first_result
@@ -402,7 +402,8 @@ def _aggregate_partial_summaries(results: list[dict], lookup_organizations) -> d
         else:
             aggregated_dict["mean"] = 0  # TODO this is terrible, we should not do this
 
-    
+    # attach the pristine per-node partials once, for the RAVEN API
+    aggregate["partials"] = partials
 
     return aggregate
 
