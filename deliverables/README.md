@@ -613,12 +613,14 @@ The input parameters are as follows:
 The crosstabs algorithm computes the contingency table of two or more categorical
 variables. I suggest to have a brief look at the swimlane diagram in the [Security and Privacy documentation](./security-and-privacy/Security%20&%20Privacy%20Crosstab.pdf).
 
+Both `categorical` and `boolean` variables are accepted for `results_col` and `groups_col`. A `boolean` variable is automatically expanded into self-labeled categories of the form `variable=true`, `variable=false` and (for missing values) `variable=N/A`. For example a boolean variable `alive` produces the categories `alive=true` and `alive=false`.
+
 The input parameters are as follows:
 
 |Argument|Required|Display as argument|Type|Description|
 |---|---|---|---|---|
-|`results_col`| ✅ |✅| `str` | The variable for which counts are calculated. **The variable should be of type `categorical`**.
-| `groups_col` | ✅ |✅| `list[str]` | List of variables to group the data by. **Each of the variables in the list should be of type `categorical`**
+|`results_col`| ✅ |✅| `str` | The variable for which counts are calculated. **The variable should be of type `categorical` or `boolean`**. A `boolean` is labeled as `variable=true`/`variable=false`.
+| `groups_col` | ✅ |✅| `list[str]` | List of variables to group the data by. **Each of the variables in the list should be of type `categorical` or `boolean`**. A `boolean` is labeled as `variable=true`/`variable=false`.
 | `organizations_to_include` |No|No| `list[int]` | List of vantage6 organization IDs that need to be included in the analysis|
 | `include_chi2` | No |No| `bool` | Do not supply as this is by default `True` | 
 | `include_totals` | No |No| `bool` | Do no supply as this is by default `True` | 
