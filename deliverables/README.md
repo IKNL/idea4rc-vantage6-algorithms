@@ -13,6 +13,8 @@ This folder contains all documentation required for the vantage6 components to b
   - [Basic variables](#basic-variables)
   - [Head and Neck](#head-and-neck-variables)
   - [Sarcoma](#sarcoma-variables)
+- [Custom Mappings](#custom-mappings)
+  - [Stage](#stage)
 - [Authentication](#authentication)
 - [Analytics Algorithms](#analytics-algorithms)
   - [Summary & Table1](#summary-and-table1) - [Notebook Data Preparation](./raven-api-documentation/3-data-preparation.ipynb) - [Notebook Table1](./raven-api-documentation/5-analytics-table1.ipynb)
@@ -366,6 +368,32 @@ Variable|Type|Status|Notes
 
 ** Assuming that `date_of_surgery` refers to the date of the surgery performed at the primary tumor stage (first surgery), excluding any procedures related to recurrences.
 
+## Custom Mappings
+In addition to the data extraction job that collects data from the OMOP source we compute several derivative variables from the extracted ones.
+
+### Stage
+For head and neck patients in case the `clinical_stage` is present, the `stage` variable is set to the `clinical_stage`. Otherwise the `stage` variable is set to the `pathelogical_stage`.
+
+### Stage Grouping
+#### Head and Neck
+For head and neck a `stage_group` variable is created, which divides patients into 4 groups: `localized`, `locally advanced`, `metastatic` and `missing`.
+
+|Rule|Category|
+|`stage=0`|`localized`|
+|`stage=1`|`localized`|
+|`stage=2`|`localized`|
+|`stage=3`|`locally advanced`|
+|`stage=4`|`locally advanced`|
+|`stage=4a`|`locally advanced`|
+|`stage=4b & site != Nasopharynx`|`locally advanced`|
+|`stage=4b & site == Nasopharynx`|`metastatic`|
+|`stage=4C`|`metastatic`|
+|`stage=N/A`|`missing`|
+
+#### Sarcoma
+TODO
+
+
 ## Authentication
 Vantage6 uses its own Keycloak instance which is linked to the CERTH keycloak instance. Authentication process will be as follows (handled by RAVEN and the keycloak instances):
 
@@ -540,9 +568,9 @@ The input parameters are as follows:
 
 Classifies each patient into 20 mutually-independent boolean treatment pattern flags based on their treatment timeline relative to the diagnosis date. A patient can match multiple rules simultaneously; the `other` column is `True` when none of rules 1–19 match.
 
-All output columns are named `{prefix}{suffix}` where `prefix` defaults to `"trt_pattern_"`.
+All output columns are named `{prefix}{suffix}` where `prefix` defaults to `"trt_pattern_"`. Then there is a final column (variable) that is called `{prefix}_most_important_treatment_line` that contains the most important treatment as defined in the table bellow.
 
-| Suffix | Pattern |
+| Suffix | Pattern
 |---|---|
 | `only_surgery` | Surgery only (within `general_rule_days` of diagnosis) |
 | `only_radio` | Radiotherapy only |
@@ -564,6 +592,34 @@ All output columns are named `{prefix}{suffix}` where `prefix` defaults to `"trt
 | `neoadj_chemo_concomi_chemo_radio_adj_chemo` | Neoadj chemo → concomitant chemo-radio → adjuvant chemo |
 | `neoadj_chemo_radio_adj_chemo` | Neoadj chemo → radio → adjuvant chemo |
 | `other` | None of the above patterns matched |
+
+Order of importance of the treatment lines for the `{prefix}_most_important_treatment_line` variable:
+
+> [!INFO]
+> I am aware that by definition of some rules (especiialy the `general rule`) some variables can never compete. However for simplicity of the logic that we applied I ordered them nonetheless.
+
+|importance|suffix|
+|0 (least)| `other`|
+|1|`only_surgery`|
+|2|`only_radio`|
+|3|`only_chemo`|
+|4|`only_immuno`|
+|5|`only_target`|
+|6|`concomitant_systemic_radio`|
+|7|`surgery_postop_radio`|
+|8|`surgery_adj_chemo`|
+|9|`radio_adj_chemo`|
+|10|`concomi_chemo_radio_adj_chemo`|
+|11|`chemo_immuno`|
+|12|`chemo_target`|
+|13|`immuno_target`|
+|14|`neoadj_chemo_radio`|
+|15|`neoadj_chemo_surgery`|
+|16|`neoadj_chemo_concomi_chemo_radio`|
+|17|`surgery_postop_radio_concomi_chemo`|
+|18|`neoadj_chemo_concomi_chemo_radio_adj_chemo`|
+|19|`neoadj_chemo_radio_adj_chemo`|
+|20 (most)|`only_radio`|
 
 The input parameters are as follows:
 
@@ -590,6 +646,8 @@ The input parameters are as follows:
 |`neoadj_concomi_adj_to_next`|No|`int`|`90`|Max days from max(chemo2\_end, radio\_end) to chemo3\_start (rule 18).|
 |`neoadj_radio_adj_chemo1_to_radio`|No|`int`|`90`|Max days from chemo1 end to radio start (rule 19).|
 |`neoadj_radio_adj_chemo2_to_chemo`|No|`int`|`90`|Max days from radio end to chemo2 start (rule 19).|
+
+
 
 ## Analytics Algorithms 
 
