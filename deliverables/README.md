@@ -605,29 +605,35 @@ Order of importance of the treatment lines for the `{prefix}_most_important_trea
 > [!INFO]
 > I am aware that by definition of some rules (especiialy the `general rule`) some variables can never compete. However for simplicity of the logic that we applied I ordered them nonetheless.
 
-| Importance | Suffix |
-|--|--|
-| 0 (least) | `other` |
-| 1 | `only_surgery` |
-| 2 | `only_radio` |
-| 3 | `only_chemo` |
-| 4 | `only_immuno` |
-| 5 | `only_target` |
-| 6 | `concomitant_systemic_radio` |
-| 7 | `surgery_postop_radio` |
-| 8 | `surgery_adj_chemo` |
-| 9 | `radio_adj_chemo` |
-| 10 | `concomi_chemo_radio_adj_chemo` |
-| 11 | `chemo_immuno` |
-| 12 | `chemo_target` |
-| 13 | `immuno_target` |
-| 14 | `neoadj_chemo_radio` |
-| 15 | `neoadj_chemo_surgery` |
-| 16 | `neoadj_chemo_concomi_chemo_radio` |
-| 17 | `surgery_postop_radio_concomi_chemo` |
-| 18 | `neoadj_chemo_concomi_chemo_radio_adj_chemo` |
-| 19 | `neoadj_chemo_radio_adj_chemo` |
-| 20 (most) | `only_radio` |
+The ordering follows the number of treatments a patient receives: the more treatments, the more important the rule. A concomitant chemo-radiotherapy block counts as **two** treatments. Rules with an equal treatment count are ordered arbitrarily.
+
+| Importance | Suffix | Treatments |
+|--|--|--|
+| 0 (least) | `other` | 0 |
+| 1 | `only_surgery` | 1 |
+| 2 | `only_radio` | 1 |
+| 3 | `only_chemo` | 1 |
+| 4 | `only_immuno` | 1 |
+| 5 | `only_target` | 1 |
+| 6 | `concomitant_systemic_radio` | 2 |
+| 7 | `surgery_postop_radio` | 2 |
+| 8 | `surgery_adj_chemo` | 2 |
+| 9 | `radio_adj_chemo` | 2 |
+| 10 | `chemo_immuno` | 2 |
+| 11 | `chemo_target` | 2 |
+| 12 | `immuno_target` | 2 |
+| 13 | `neoadj_chemo_radio` | 2 |
+| 14 | `neoadj_chemo_surgery` | 2 |
+| 15 | `concomi_chemo_radio_adj_chemo` | 3 |
+| 16 | `neoadj_chemo_concomi_chemo_radio` | 3 |
+| 17 | `surgery_postop_radio_concomi_chemo` | 3 |
+| 18 | `neoadj_chemo_radio_adj_chemo` | 3 |
+| 19 | `neoadj_chemo_surgery_radio` | 3 |
+| 20 | `neoadj_chemo_radio_surgery` | 3 |
+| 21 | `surgery_adj_chemo_radio` | 3 |
+| 22 | `neoadj_chemo_concomi_chemo_radio_adj_chemo` | 4 |
+| 23 | `surgery_adj_chemo_concomi_chemo_radio` | 4 |
+| 24 (most) | `neoadj_chemo_surgery_concomi_chemo_radio` | 4 |
 
 The input parameters are as follows:
 
