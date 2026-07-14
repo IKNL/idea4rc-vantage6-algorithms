@@ -105,6 +105,45 @@ class Rule19Params:
     neoadj_radio_adj_chemo2_to_chemo: int = 90
 
 
+@dataclass
+class Rule20Params:
+    general_rule_days: int = 90
+    neoadj_chemo_to_surgery: int = 90
+    surgery_postop_radio_days: int = 120
+
+
+@dataclass
+class Rule21Params:
+    general_rule_days: int = 90
+    surgery_adjuvant_chemo_days: int = 120
+    adj_chemo_to_concomi_chemo: int = 90
+    concomitant_start_gap: int = 14
+    concomitant_end_gap: int = 14
+
+
+@dataclass
+class Rule22Params:
+    general_rule_days: int = 90
+    neoadj_chemo_to_surgery: int = 90
+    surgery_adjuvant_chemo_days: int = 120
+    concomitant_start_gap: int = 14
+    concomitant_end_gap: int = 14
+
+
+@dataclass
+class Rule23Params:
+    general_rule_days: int = 90
+    neoadj_chemo_to_radio: int = 90
+    radio_to_surgery: int = 90
+
+
+@dataclass
+class Rule24Params:
+    general_rule_days: int = 90
+    surgery_adjuvant_chemo_days: int = 120
+    adj_chemo_to_radio: int = 90
+
+
 # ---------------------------------------------------------------------------
 # Rules 1–5: single modality only
 # ---------------------------------------------------------------------------
@@ -485,7 +524,144 @@ def rule_neoadj_chemo_radio_adj_chemo(df: pd.DataFrame, p: Rule19Params) -> pd.S
 
 
 # ---------------------------------------------------------------------------
-# Rule 20: other (none of rules 1–19)
+# Rules 20–24: surgery + radio + (neo)adjuvant chemo sequences
+# ---------------------------------------------------------------------------
+
+def rule_neoadj_chemo_surgery_radio(df: pd.DataFrame, p: Rule20Params) -> pd.Series:
+    """Neoadjuvant chemo → surgery → post-op radio (1 chemo line)."""
+    diag = df["diagnosis_date"]
+    chemo_start = first_start(df, "chemo")
+    chemo_end = last_end(df, "chemo")
+    surg = first_start(df, "surgery")
+    radio_start = first_start(df, "radio")
+
+    return (
+        has_treatment(df, "surgery")
+        & has_treatment(df, "radio")
+        & (count_treatments(df, "chemo") == 1)
+        & ~has_treatment(df, "immuno")
+        & ~has_treatment(df, "targeted")
+        & within_days_after(chemo_start, diag, p.general_rule_days)
+        & chemo_start.notna() & surg.notna() & (chemo_start < surg)
+        & within_days_after(surg, chemo_end, p.neoadj_chemo_to_surgery)
+        & radio_start.notna() & (radio_start > surg)
+        & within_days_after(radio_start, surg, p.surgery_postop_radio_days)
+    ).astype("boolean")
+
+
+def rule_surgery_adj_chemo_concomi_chemo_radio(df: pd.DataFrame, p: Rule21Params) -> pd.Series:
+    """Surgery → adjuvant chemo (line 1) → concomitant chemo-radio (chemo line 2)."""
+    diag = df["diagnosis_date"]
+    surg = first_start(df, "surgery")
+    chemo1_start = nth_start(df, "chemo", 1)
+    chemo1_end = nth_end(df, "chemo", 1)
+    chemo2_start = nth_start(df, "chemo", 2)
+    chemo2_end = nth_end(df, "chemo", 2)
+    radio_start = first_start(df, "radio")
+    radio_end = last_end(df, "radio")
+
+    # concomitant phase starts at the earlier of the chemo2 / radio start dates
+    phase2_start = pd.concat(
+        [chemo2_start.rename("c2s"), radio_start.rename("rs")], axis=1
+    ).min(axis=1)
+
+    return (
+        has_treatment(df, "surgery")
+        & has_treatment(df, "radio")
+        & (count_treatments(df, "chemo") == 2)
+        & ~has_treatment(df, "immuno")
+        & ~has_treatment(df, "targeted")
+        & within_days_after(surg, diag, p.general_rule_days)
+        & chemo1_start.notna() & surg.notna() & (chemo1_start > surg)
+        & within_days_after(chemo1_start, surg, p.surgery_adjuvant_chemo_days)
+        & dates_overlap(chemo2_start, chemo2_end, radio_start, radio_end)
+        & within_symmetric_gap(chemo2_start, radio_start, p.concomitant_start_gap)
+        & within_symmetric_gap(chemo2_end, radio_end, p.concomitant_end_gap)
+        & phase2_start.notna() & chemo1_end.notna() & (phase2_start > chemo1_end)
+        & within_days_after(phase2_start, chemo1_end, p.adj_chemo_to_concomi_chemo)
+    ).astype("boolean")
+
+
+def rule_neoadj_chemo_surgery_concomi_chemo_radio(df: pd.DataFrame, p: Rule22Params) -> pd.Series:
+    """Neoadjuvant chemo (line 1) → surgery → concomitant chemo-radio (chemo line 2)."""
+    diag = df["diagnosis_date"]
+    surg = first_start(df, "surgery")
+    chemo1_start = nth_start(df, "chemo", 1)
+    chemo1_end = nth_end(df, "chemo", 1)
+    chemo2_start = nth_start(df, "chemo", 2)
+    chemo2_end = nth_end(df, "chemo", 2)
+    radio_start = first_start(df, "radio")
+    radio_end = last_end(df, "radio")
+
+    # concomitant phase starts at the earlier of the chemo2 / radio start dates
+    phase2_start = pd.concat(
+        [chemo2_start.rename("c2s"), radio_start.rename("rs")], axis=1
+    ).min(axis=1)
+
+    return (
+        has_treatment(df, "surgery")
+        & has_treatment(df, "radio")
+        & (count_treatments(df, "chemo") == 2)
+        & ~has_treatment(df, "immuno")
+        & ~has_treatment(df, "targeted")
+        & within_days_after(chemo1_start, diag, p.general_rule_days)
+        & chemo1_start.notna() & surg.notna() & (chemo1_start < surg)
+        & within_days_after(surg, chemo1_end, p.neoadj_chemo_to_surgery)
+        & dates_overlap(chemo2_start, chemo2_end, radio_start, radio_end)
+        & within_symmetric_gap(chemo2_start, radio_start, p.concomitant_start_gap)
+        & within_symmetric_gap(chemo2_end, radio_end, p.concomitant_end_gap)
+        & phase2_start.notna() & (phase2_start > surg)
+        & within_days_after(phase2_start, surg, p.surgery_adjuvant_chemo_days)
+    ).astype("boolean")
+
+
+def rule_neoadj_chemo_radio_surgery(df: pd.DataFrame, p: Rule23Params) -> pd.Series:
+    """Neoadjuvant chemo → radio → surgery (1 chemo line)."""
+    diag = df["diagnosis_date"]
+    chemo_start = first_start(df, "chemo")
+    chemo_end = last_end(df, "chemo")
+    radio_start = first_start(df, "radio")
+    radio_end = last_end(df, "radio")
+    surg = first_start(df, "surgery")
+
+    return (
+        has_treatment(df, "surgery")
+        & has_treatment(df, "radio")
+        & (count_treatments(df, "chemo") == 1)
+        & ~has_treatment(df, "immuno")
+        & ~has_treatment(df, "targeted")
+        & within_days_after(chemo_start, diag, p.general_rule_days)
+        & chemo_start.notna() & radio_start.notna() & (chemo_start < radio_start)
+        & within_days_after(radio_start, chemo_end, p.neoadj_chemo_to_radio)
+        & surg.notna() & radio_end.notna() & (surg > radio_end)
+        & within_days_after(surg, radio_end, p.radio_to_surgery)
+    ).astype("boolean")
+
+
+def rule_surgery_adj_chemo_radio(df: pd.DataFrame, p: Rule24Params) -> pd.Series:
+    """Surgery → adjuvant chemo → radio (1 chemo line)."""
+    diag = df["diagnosis_date"]
+    surg = first_start(df, "surgery")
+    chemo_start = first_start(df, "chemo")
+    chemo_end = last_end(df, "chemo")
+    radio_start = first_start(df, "radio")
+
+    return (
+        has_treatment(df, "surgery")
+        & has_treatment(df, "radio")
+        & (count_treatments(df, "chemo") == 1)
+        & ~has_treatment(df, "immuno")
+        & ~has_treatment(df, "targeted")
+        & within_days_after(surg, diag, p.general_rule_days)
+        & chemo_start.notna() & surg.notna() & (chemo_start > surg)
+        & within_days_after(chemo_start, surg, p.surgery_adjuvant_chemo_days)
+        & radio_start.notna() & chemo_end.notna() & (radio_start > chemo_end)
+        & within_days_after(radio_start, chemo_end, p.adj_chemo_to_radio)
+    ).astype("boolean")
+
+
+# ---------------------------------------------------------------------------
+# Rule 25: other (none of rules 1–24)
 # ---------------------------------------------------------------------------
 
 def rule_other(rule_results: list[pd.Series]) -> pd.Series:

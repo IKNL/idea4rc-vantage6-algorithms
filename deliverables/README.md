@@ -15,6 +15,7 @@ This folder contains all documentation required for the vantage6 components to b
   - [Sarcoma](#sarcoma-variables)
 - [Custom Mappings](#custom-mappings)
   - [Stage](#stage)
+  - [Stage Grouping](#stage-grouping)
 - [Authentication](#authentication)
 - [Analytics Algorithms](#analytics-algorithms)
   - [Summary & Table1](#summary-and-table1) - [Notebook Data Preparation](./raven-api-documentation/3-data-preparation.ipynb) - [Notebook Table1](./raven-api-documentation/5-analytics-table1.ipynb)
@@ -567,7 +568,7 @@ The input parameters are as follows:
 
 [API documentation Notebook](./raven-api-documentation/17-preprocessing-annotate-treatment-patterns.ipynb)
 
-Classifies each patient into 20 mutually-independent boolean treatment pattern flags based on their treatment timeline relative to the diagnosis date. A patient can match multiple rules simultaneously; the `other` column is `True` when none of rules 1–19 match.
+Classifies each patient into 25 mutually-independent boolean treatment pattern flags based on their treatment timeline relative to the diagnosis date. A patient can match multiple rules simultaneously; the `other` column is `True` when none of rules 1–24 match.
 
 All output columns are named `{prefix}{suffix}` where `prefix` defaults to `"trt_pattern_"`. Then there is a final column (variable) that is called `{prefix}_most_important_treatment_line` that contains the most important treatment as defined in the table bellow.
 
@@ -592,6 +593,11 @@ All output columns are named `{prefix}{suffix}` where `prefix` defaults to `"trt
 | `neoadj_chemo_concomi_chemo_radio` | Neoadj chemo → concomitant chemo-radio |
 | `neoadj_chemo_concomi_chemo_radio_adj_chemo` | Neoadj chemo → concomitant chemo-radio → adjuvant chemo |
 | `neoadj_chemo_radio_adj_chemo` | Neoadj chemo → radio → adjuvant chemo |
+| `neoadj_chemo_surgery_radio` | Neoadjuvant chemo → surgery → post-op radiotherapy |
+| `surgery_adj_chemo_concomi_chemo_radio` | Surgery → adjuvant chemo → concomitant chemo-radio |
+| `neoadj_chemo_surgery_concomi_chemo_radio` | Neoadjuvant chemo → surgery → concomitant chemo-radio |
+| `neoadj_chemo_radio_surgery` | Neoadjuvant chemo → radiotherapy → surgery |
+| `surgery_adj_chemo_radio` | Surgery → adjuvant chemo → radiotherapy |
 | `other` | None of the above patterns matched |
 
 Order of importance of the treatment lines for the `{prefix}_most_important_treatment_line` variable:
@@ -627,7 +633,7 @@ The input parameters are as follows:
 
 |Argument|Required|Type|Default|Description|
 |---|---|---|---|---|
-|`prefix`|No|`str`|`"trt_pattern_"`|Prefix for all 20 output column names.|
+|`prefix`|No|`str`|`"trt_pattern_"`|Prefix for all 25 output column names.|
 |`general_rule_days`|No|`int`|`90`|Max days from diagnosis to first treatment for single-modality rules (1–5) and as a shared upper bound in most other rules.|
 |`concomitant_start_gap`|No|`int`|`14`|Max \|systemic\_start − radio\_start\| in days (rule 6).|
 |`concomitant_end_gap`|No|`int`|`14`|Max \|systemic\_end − radio\_end\| in days (rule 6).|
@@ -648,6 +654,9 @@ The input parameters are as follows:
 |`neoadj_concomi_adj_to_next`|No|`int`|`90`|Max days from max(chemo2\_end, radio\_end) to chemo3\_start (rule 18).|
 |`neoadj_radio_adj_chemo1_to_radio`|No|`int`|`90`|Max days from chemo1 end to radio start (rule 19).|
 |`neoadj_radio_adj_chemo2_to_chemo`|No|`int`|`90`|Max days from radio end to chemo2 start (rule 19).|
+|`adj_chemo_to_concomi_chemo`|No|`int`|`90`|Max days from adjuvant-chemo end to the earlier of the concomitant chemo/radio start dates (rule 21).|
+|`radio_to_surgery`|No|`int`|`90`|Max days from radio end to surgery (rule 23).|
+|`adj_chemo_to_radio`|No|`int`|`90`|Max days from adjuvant-chemo end to radio start (rule 24).|
 
 
 

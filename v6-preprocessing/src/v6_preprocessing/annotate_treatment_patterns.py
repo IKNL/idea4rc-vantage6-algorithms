@@ -16,6 +16,11 @@ from v6_preprocessing._treatment_patterns.rules import (
     Rule17Params,
     Rule18Params,
     Rule19Params,
+    Rule20Params,
+    Rule21Params,
+    Rule22Params,
+    Rule23Params,
+    Rule24Params,
     rule_only_surgery,
     rule_only_radio,
     rule_only_chemo,
@@ -35,6 +40,11 @@ from v6_preprocessing._treatment_patterns.rules import (
     rule_neoadj_chemo_concomi_chemo_radio,
     rule_neoadj_chemo_concomi_chemo_radio_adj_chemo,
     rule_neoadj_chemo_radio_adj_chemo,
+    rule_neoadj_chemo_surgery_radio,
+    rule_surgery_adj_chemo_concomi_chemo_radio,
+    rule_neoadj_chemo_surgery_concomi_chemo_radio,
+    rule_neoadj_chemo_radio_surgery,
+    rule_surgery_adj_chemo_radio,
     rule_other,
 )
 
@@ -58,6 +68,11 @@ _SUFFIXES = [
     "neoadj_chemo_concomi_chemo_radio",
     "neoadj_chemo_concomi_chemo_radio_adj_chemo",
     "neoadj_chemo_radio_adj_chemo",
+    "neoadj_chemo_surgery_radio",
+    "surgery_adj_chemo_concomi_chemo_radio",
+    "neoadj_chemo_surgery_concomi_chemo_radio",
+    "neoadj_chemo_radio_surgery",
+    "surgery_adj_chemo_radio",
     "other",
 ]
 
@@ -86,6 +101,9 @@ def annotate_treatment_patterns(
     neoadj_concomi_adj_to_next: int = 90,
     neoadj_radio_adj_chemo1_to_radio: int = 90,
     neoadj_radio_adj_chemo2_to_chemo: int = 90,
+    adj_chemo_to_concomi_chemo: int = 90,
+    radio_to_surgery: int = 90,
+    adj_chemo_to_radio: int = 90,
 ) -> pd.DataFrame:
 
     old_df = df.copy()
@@ -156,6 +174,35 @@ def annotate_treatment_patterns(
                 general_rule_days=general_rule_days,
                 neoadj_radio_adj_chemo1_to_radio=neoadj_radio_adj_chemo1_to_radio,
                 neoadj_radio_adj_chemo2_to_chemo=neoadj_radio_adj_chemo2_to_chemo,
+            )),
+            rule_neoadj_chemo_surgery_radio(df, Rule20Params(
+                general_rule_days=general_rule_days,
+                neoadj_chemo_to_surgery=neoadj_chemo_to_surgery,
+                surgery_postop_radio_days=surgery_postop_radio_days,
+            )),
+            rule_surgery_adj_chemo_concomi_chemo_radio(df, Rule21Params(
+                general_rule_days=general_rule_days,
+                surgery_adjuvant_chemo_days=surgery_adjuvant_chemo_days,
+                adj_chemo_to_concomi_chemo=adj_chemo_to_concomi_chemo,
+                concomitant_start_gap=concomitant_start_gap,
+                concomitant_end_gap=concomitant_end_gap,
+            )),
+            rule_neoadj_chemo_surgery_concomi_chemo_radio(df, Rule22Params(
+                general_rule_days=general_rule_days,
+                neoadj_chemo_to_surgery=neoadj_chemo_to_surgery,
+                surgery_adjuvant_chemo_days=surgery_adjuvant_chemo_days,
+                concomitant_start_gap=concomitant_start_gap,
+                concomitant_end_gap=concomitant_end_gap,
+            )),
+            rule_neoadj_chemo_radio_surgery(df, Rule23Params(
+                general_rule_days=general_rule_days,
+                neoadj_chemo_to_radio=neoadj_chemo_to_radio,
+                radio_to_surgery=radio_to_surgery,
+            )),
+            rule_surgery_adj_chemo_radio(df, Rule24Params(
+                general_rule_days=general_rule_days,
+                surgery_adjuvant_chemo_days=surgery_adjuvant_chemo_days,
+                adj_chemo_to_radio=adj_chemo_to_radio,
             )),
         ]
 
