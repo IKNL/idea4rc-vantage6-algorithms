@@ -378,17 +378,18 @@ For head and neck patients in case the `clinical_stage` is present, the `stage` 
 #### Head and Neck
 For head and neck a `stage_group` variable is created, which divides patients into 4 groups: `localized`, `locally advanced`, `metastatic` and `missing`.
 
-|Rule|Category|
-|`stage=0`|`localized`|
-|`stage=1`|`localized`|
-|`stage=2`|`localized`|
-|`stage=3`|`locally advanced`|
-|`stage=4`|`locally advanced`|
-|`stage=4a`|`locally advanced`|
-|`stage=4b & site != Nasopharynx`|`locally advanced`|
-|`stage=4b & site == Nasopharynx`|`metastatic`|
-|`stage=4C`|`metastatic`|
-|`stage=N/A`|`missing`|
+| Rule | Category |
+| -- | -- |
+| `stage=0`| `localized` |
+| `stage=1`| `localized` |
+| `stage=2`| `localized` |
+| `stage=3`| `locally advanced` |
+| `stage=4`| `locally advanced` |
+| `stage=4a`| `locally advanced` |
+| `stage=4b & site != Nasopharynx`| `locally advanced` |
+| `stage=4b & site == Nasopharynx`| `metastatic` |
+| `stage=4C`| `metastatic` |
+| `stage=N/A`| `missing` |
 
 #### Sarcoma
 TODO
@@ -598,28 +599,29 @@ Order of importance of the treatment lines for the `{prefix}_most_important_trea
 > [!INFO]
 > I am aware that by definition of some rules (especiialy the `general rule`) some variables can never compete. However for simplicity of the logic that we applied I ordered them nonetheless.
 
-|importance|suffix|
-|0 (least)| `other`|
-|1|`only_surgery`|
-|2|`only_radio`|
-|3|`only_chemo`|
-|4|`only_immuno`|
-|5|`only_target`|
-|6|`concomitant_systemic_radio`|
-|7|`surgery_postop_radio`|
-|8|`surgery_adj_chemo`|
-|9|`radio_adj_chemo`|
-|10|`concomi_chemo_radio_adj_chemo`|
-|11|`chemo_immuno`|
-|12|`chemo_target`|
-|13|`immuno_target`|
-|14|`neoadj_chemo_radio`|
-|15|`neoadj_chemo_surgery`|
-|16|`neoadj_chemo_concomi_chemo_radio`|
-|17|`surgery_postop_radio_concomi_chemo`|
-|18|`neoadj_chemo_concomi_chemo_radio_adj_chemo`|
-|19|`neoadj_chemo_radio_adj_chemo`|
-|20 (most)|`only_radio`|
+| Importance | Suffix |
+|--|--|
+| 0 (least) | `other` |
+| 1 | `only_surgery` |
+| 2 | `only_radio` |
+| 3 | `only_chemo` |
+| 4 | `only_immuno` |
+| 5 | `only_target` |
+| 6 | `concomitant_systemic_radio` |
+| 7 | `surgery_postop_radio` |
+| 8 | `surgery_adj_chemo` |
+| 9 | `radio_adj_chemo` |
+| 10 | `concomi_chemo_radio_adj_chemo` |
+| 11 | `chemo_immuno` |
+| 12 | `chemo_target` |
+| 13 | `immuno_target` |
+| 14 | `neoadj_chemo_radio` |
+| 15 | `neoadj_chemo_surgery` |
+| 16 | `neoadj_chemo_concomi_chemo_radio` |
+| 17 | `surgery_postop_radio_concomi_chemo` |
+| 18 | `neoadj_chemo_concomi_chemo_radio_adj_chemo` |
+| 19 | `neoadj_chemo_radio_adj_chemo` |
+| 20 (most) | `only_radio` |
 
 The input parameters are as follows:
 
