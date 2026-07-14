@@ -602,7 +602,7 @@ All output columns are named `{prefix}{suffix}` where `prefix` defaults to `"trt
 
 Order of importance of the treatment lines for the `{prefix}_most_important_treatment_line` variable:
 
-> [!INFO]
+> [!TIP]
 > I am aware that by definition of some rules (especiialy the `general rule`) some variables can never compete. However for simplicity of the logic that we applied I ordered them nonetheless.
 
 The ordering follows the number of treatments a patient receives: the more treatments, the more important the rule. A concomitant chemo-radiotherapy block counts as **two** treatments. Rules with an equal treatment count are ordered arbitrarily.
