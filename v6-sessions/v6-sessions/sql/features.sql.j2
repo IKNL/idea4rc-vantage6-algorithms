@@ -2269,6 +2269,8 @@ SELECT
     COALESCE(clinical_staging_cm.stage, 'N/A')                                          as clinical_stage_cm,
     COALESCE(clinical_staging_ene.clinical_stage_extra_nodal_extension, 'N/A')          as clinical_stage_extra_nodal_extension,
 
+    COALESCE(clinical_staging.stage, pathological_staging.stage, 'N/A')                  as stage,
+
     COALESCE(surgeries_wide.surgery_1_extra_nodal_extension, 'N/A') as surgery_1_extra_nodal_extension,
     COALESCE(surgeries_wide.surgery_2_extra_nodal_extension, 'N/A') as surgery_2_extra_nodal_extension,
     COALESCE(surgeries_wide.surgery_3_extra_nodal_extension, 'N/A') as surgery_3_extra_nodal_extension,
