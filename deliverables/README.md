@@ -570,7 +570,7 @@ The input parameters are as follows:
 
 Classifies each patient into 25 mutually-independent boolean treatment pattern flags based on their treatment timeline relative to the diagnosis date. A patient can match multiple rules simultaneously; the `other` column is `True` when none of rules 1–24 match.
 
-All output columns are named `{prefix}{suffix}` where `prefix` defaults to `"trt_pattern_"`. Then there is a final column (variable) that is called `{prefix}_most_important_treatment_line` that contains the most important treatment as defined in the table bellow.
+All output columns are named `{prefix}{suffix}` where `prefix` defaults to `"trt_pattern_"`. Then there is a final column (variable) that is called `{prefix}most_important_treatment_line` that contains the most important treatment as defined in the table bellow.
 
 | Suffix | Pattern
 |---|---|
@@ -600,7 +600,7 @@ All output columns are named `{prefix}{suffix}` where `prefix` defaults to `"trt
 | `surgery_adj_chemo_radio` | Surgery → adjuvant chemo → radiotherapy |
 | `other` | None of the above patterns matched |
 
-Order of importance of the treatment lines for the `{prefix}_most_important_treatment_line` variable:
+Order of importance of the treatment lines for the `{prefix}most_important_treatment_line` variable:
 
 > [!TIP]
 > I am aware that by definition of some rules (especiialy the `general rule`) some variables can never compete. However for simplicity of the logic that we applied I ordered them nonetheless.

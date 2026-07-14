@@ -2,6 +2,7 @@ import pandas as pd
 
 from vantage6.algorithm.decorator.action import preprocessing
 from vantage6.algorithm.tools.util import info, error
+from v6_idea4rc_common.type_converters import to_category
 
 from v6_preprocessing._treatment_patterns.rules import (
     GeneralParams,
@@ -74,6 +75,39 @@ _SUFFIXES = [
     "neoadj_chemo_radio_surgery",
     "surgery_adj_chemo_radio",
     "other",
+]
+
+# Treatment-line importance, ordered least → most important. A patient can match
+# several rules; the `most_important_treatment_line` column reports the highest-ranked
+# match. The ranking follows the number of treatments received (more treatments = more
+# important, a concomitant chemo-radio block counting as two). Kept in sync with the
+# importance table in deliverables/README.md.
+_IMPORTANCE_ORDER = [
+    "other",
+    "only_surgery",
+    "only_radio",
+    "only_chemo",
+    "only_immuno",
+    "only_target",
+    "concomitant_systemic_radio",
+    "surgery_postop_radio",
+    "surgery_adj_chemo",
+    "radio_adj_chemo",
+    "chemo_immuno",
+    "chemo_target",
+    "immuno_target",
+    "neoadj_chemo_radio",
+    "neoadj_chemo_surgery",
+    "concomi_chemo_radio_adj_chemo",
+    "neoadj_chemo_concomi_chemo_radio",
+    "surgery_postop_radio_concomi_chemo",
+    "neoadj_chemo_radio_adj_chemo",
+    "neoadj_chemo_surgery_radio",
+    "neoadj_chemo_radio_surgery",
+    "surgery_adj_chemo_radio",
+    "neoadj_chemo_concomi_chemo_radio_adj_chemo",
+    "surgery_adj_chemo_concomi_chemo_radio",
+    "neoadj_chemo_surgery_concomi_chemo_radio",
 ]
 
 
@@ -213,6 +247,18 @@ def annotate_treatment_patterns(
             df[col] = series
             n = int(series.sum())
             info(f"{col}: {n} patients match")
+
+        # Reduce the boolean flags to a single categorical column holding the most
+        # important treatment line per patient. Iterating from least to most important
+        # lets more important matches overwrite less important ones. Every patient
+        # matches at least `other`, so the column is never missing.
+        most_important_col = f"{prefix}most_important_treatment_line"
+        df[most_important_col] = pd.NA
+        for suffix in _IMPORTANCE_ORDER:
+            mask = df[f"{prefix}{suffix}"].fillna(False).astype(bool)
+            df.loc[mask, most_important_col] = suffix
+        df = to_category(df, [most_important_col])
+        info(f"{most_important_col}: {df[most_important_col].nunique()} distinct lines")
 
         return df
 
