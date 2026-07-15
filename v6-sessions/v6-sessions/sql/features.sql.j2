@@ -2269,6 +2269,29 @@ SELECT
     COALESCE(clinical_staging_cm.stage, 'N/A')                                          as clinical_stage_cm,
     COALESCE(clinical_staging_ene.clinical_stage_extra_nodal_extension, 'N/A')          as clinical_stage_extra_nodal_extension,
 
+    COALESCE(clinical_staging.stage, pathological_staging.stage, 'N/A')                  as stage,
+
+    -- Coarse stage grouping for analysis, derived from `stage` (clinical or pathological, any
+    -- AJCC/UICC edition) and topography. The stage level is the token after "Stage " in the
+    -- concept name (e.g. "4A"). Stage 4B counts as metastatic for nasopharynx (C11.x) sites
+    -- but as locally advanced elsewhere. Anything without a recognised stage level is missing.
+    CASE UPPER(split_part(COALESCE(clinical_staging.stage, pathological_staging.stage, 'N/A'), 'Stage ', 2))
+        WHEN '0'  THEN 'localized'
+        WHEN '1'  THEN 'localized'
+        WHEN '2'  THEN 'localized'
+        WHEN '3'  THEN 'locally advanced'
+        WHEN '4'  THEN 'locally advanced'
+        WHEN '4A' THEN 'locally advanced'
+        WHEN '4B' THEN
+            CASE
+                WHEN primary_tumor.topography IN ('C11.0', 'C11.1', 'C11.2', 'C11.3', 'C11.8', 'C11.9')
+                    THEN 'metastatic'
+                ELSE 'locally advanced'
+            END
+        WHEN '4C' THEN 'metastatic'
+        ELSE 'missing'
+    END                                                                                 as stage_group,
+
     COALESCE(surgeries_wide.surgery_1_extra_nodal_extension, 'N/A') as surgery_1_extra_nodal_extension,
     COALESCE(surgeries_wide.surgery_2_extra_nodal_extension, 'N/A') as surgery_2_extra_nodal_extension,
     COALESCE(surgeries_wide.surgery_3_extra_nodal_extension, 'N/A') as surgery_3_extra_nodal_extension,

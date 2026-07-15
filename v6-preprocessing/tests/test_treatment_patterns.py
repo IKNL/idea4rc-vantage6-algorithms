@@ -32,7 +32,12 @@ Row → expected rule
 16  neoadj_chemo_concomi_chemo_radio
 17  neoadj_chemo_concomi_chemo_radio_adj_chemo
 18  neoadj_chemo_radio_adj_chemo
-19  other  (no rule 1–19 fires)
+19  neoadj_chemo_surgery_radio
+20  surgery_adj_chemo_concomi_chemo_radio
+21  neoadj_chemo_surgery_concomi_chemo_radio
+22  neoadj_chemo_radio_surgery
+23  surgery_adj_chemo_radio
+24  other  (no rule 1–24 fires)
 """
 
 import pytest
@@ -51,6 +56,11 @@ from v6_preprocessing._treatment_patterns.rules import (
     Rule17Params,
     Rule18Params,
     Rule19Params,
+    Rule20Params,
+    Rule21Params,
+    Rule22Params,
+    Rule23Params,
+    Rule24Params,
     rule_only_surgery,
     rule_only_radio,
     rule_only_chemo,
@@ -70,6 +80,11 @@ from v6_preprocessing._treatment_patterns.rules import (
     rule_neoadj_chemo_concomi_chemo_radio,
     rule_neoadj_chemo_concomi_chemo_radio_adj_chemo,
     rule_neoadj_chemo_radio_adj_chemo,
+    rule_neoadj_chemo_surgery_radio,
+    rule_surgery_adj_chemo_concomi_chemo_radio,
+    rule_neoadj_chemo_surgery_concomi_chemo_radio,
+    rule_neoadj_chemo_radio_surgery,
+    rule_surgery_adj_chemo_radio,
     rule_other,
 )
 
@@ -229,7 +244,49 @@ def patients() -> pd.DataFrame:
         "chemo_2_start_date": ts("2020-07-15"), "chemo_2_end_date": ts("2020-09-15"),
     })
 
-    # 19 — other: surgery + chemo both outside the 90-day diagnosis window
+    # 19 — neoadj_chemo_surgery_radio
+    # chemo (neoadj) → surgery → post-op radio
+    rows.append({**_base(),
+        "chemo_1_start_date": ts("2020-02-01"), "chemo_1_end_date": ts("2020-03-01"),
+        "surgery_1_date": ts("2020-04-01"),
+        "radio_1_start_date": ts("2020-05-01"), "radio_1_end_date": ts("2020-06-01"),
+    })
+
+    # 20 — surgery_adj_chemo_concomi_chemo_radio
+    # surgery → adjuvant chemo1 → concomitant chemo2+radio
+    rows.append({**_base(),
+        "surgery_1_date": ts("2020-02-01"),
+        "chemo_1_start_date": ts("2020-03-01"), "chemo_1_end_date": ts("2020-04-01"),
+        "radio_1_start_date": ts("2020-05-01"), "radio_1_end_date": ts("2020-06-15"),
+        "chemo_2_start_date": ts("2020-05-05"), "chemo_2_end_date": ts("2020-06-20"),
+    })
+
+    # 21 — neoadj_chemo_surgery_concomi_chemo_radio
+    # neoadj chemo1 → surgery → concomitant chemo2+radio
+    rows.append({**_base(),
+        "chemo_1_start_date": ts("2020-02-01"), "chemo_1_end_date": ts("2020-03-01"),
+        "surgery_1_date": ts("2020-04-01"),
+        "radio_1_start_date": ts("2020-05-01"), "radio_1_end_date": ts("2020-06-15"),
+        "chemo_2_start_date": ts("2020-05-05"), "chemo_2_end_date": ts("2020-06-20"),
+    })
+
+    # 22 — neoadj_chemo_radio_surgery
+    # chemo (neoadj) → radio → surgery
+    rows.append({**_base(),
+        "chemo_1_start_date": ts("2020-02-01"), "chemo_1_end_date": ts("2020-03-01"),
+        "radio_1_start_date": ts("2020-04-01"), "radio_1_end_date": ts("2020-05-01"),
+        "surgery_1_date": ts("2020-06-01"),
+    })
+
+    # 23 — surgery_adj_chemo_radio
+    # surgery → adjuvant chemo → radio
+    rows.append({**_base(),
+        "surgery_1_date": ts("2020-02-01"),
+        "chemo_1_start_date": ts("2020-03-01"), "chemo_1_end_date": ts("2020-04-01"),
+        "radio_1_start_date": ts("2020-05-01"), "radio_1_end_date": ts("2020-06-01"),
+    })
+
+    # 24 — other: surgery + chemo both outside the 90-day diagnosis window
     rows.append({**_base(),
         "surgery_1_date": ts("2020-08-01"),          # +212d > 90
         "chemo_1_start_date": ts("2020-09-01"),       # +244d > 90
@@ -266,6 +323,11 @@ def rule_results(patients) -> dict[str, pd.Series]:
         rule_neoadj_chemo_concomi_chemo_radio(patients, Rule17Params()),
         rule_neoadj_chemo_concomi_chemo_radio_adj_chemo(patients, Rule18Params()),
         rule_neoadj_chemo_radio_adj_chemo(patients, Rule19Params()),
+        rule_neoadj_chemo_surgery_radio(patients, Rule20Params()),
+        rule_surgery_adj_chemo_concomi_chemo_radio(patients, Rule21Params()),
+        rule_neoadj_chemo_surgery_concomi_chemo_radio(patients, Rule22Params()),
+        rule_neoadj_chemo_radio_surgery(patients, Rule23Params()),
+        rule_surgery_adj_chemo_radio(patients, Rule24Params()),
     ]
     results_list.append(rule_other(results_list))
 
@@ -289,6 +351,11 @@ def rule_results(patients) -> dict[str, pd.Series]:
         "neoadj_chemo_concomi_chemo_radio",
         "neoadj_chemo_concomi_chemo_radio_adj_chemo",
         "neoadj_chemo_radio_adj_chemo",
+        "neoadj_chemo_surgery_radio",
+        "surgery_adj_chemo_concomi_chemo_radio",
+        "neoadj_chemo_surgery_concomi_chemo_radio",
+        "neoadj_chemo_radio_surgery",
+        "surgery_adj_chemo_radio",
         "other",
     ]
     return dict(zip(names, results_list))
@@ -318,7 +385,12 @@ RULE_TO_ROW = [
     ("neoadj_chemo_concomi_chemo_radio",         16),
     ("neoadj_chemo_concomi_chemo_radio_adj_chemo", 17),
     ("neoadj_chemo_radio_adj_chemo",             18),
-    ("other",                                    19),
+    ("neoadj_chemo_surgery_radio",               19),
+    ("surgery_adj_chemo_concomi_chemo_radio",    20),
+    ("neoadj_chemo_surgery_concomi_chemo_radio", 21),
+    ("neoadj_chemo_radio_surgery",               22),
+    ("surgery_adj_chemo_radio",                  23),
+    ("other",                                    24),
 ]
 
 

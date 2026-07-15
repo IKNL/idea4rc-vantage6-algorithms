@@ -664,6 +664,8 @@ def convert_head_neck_columns(df: pd.DataFrame) -> pd.DataFrame:
         [
             "pathological_stage",
             "clinical_stage",
+            "stage",
+            "stage_group",
             "pathological_stage_pt",
             "pathological_stage_pn",
             "pathological_stage_pm",
