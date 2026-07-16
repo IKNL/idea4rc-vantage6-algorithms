@@ -87,6 +87,53 @@ WITH
             episode.episode_concept_id = 32533 -- Disease Episode
     ),
 
+    -- Recurrences
+    recurrences_base_and_ranked AS (
+        SELECT *
+        FROM (
+            SELECT
+                pid.person_id,
+                episode.episode_id,
+                {{ cohort_safe_date('episode.episode_start_date') }} AS date_of_progression_or_recurrence,
+                ROW_NUMBER() OVER (
+                    PARTITION BY pid.person_id
+                    ORDER BY episode.episode_start_date ASC
+                ) AS progression_or_recurrence_id
+            FROM
+                patient_id_list pid
+            LEFT JOIN {{ cdm_schema }}.episode episode
+                ON pid.person_id = episode.person_id
+            LEFT JOIN primary_tumor
+                ON pid.person_id = primary_tumor.person_id
+            WHERE
+                episode_concept_id IN (32949, 2000100002) -- Progression or recurrence episodes
+                AND episode.episode_start_date >= {{ COHORT_DATE_MIN }}
+                AND episode.episode_start_date < {{ COHORT_DATE_MAX }}
+                AND episode.episode_start_date >= primary_tumor.diagnosis_date
+        ) s
+    ),
+
+    recurrences_wide AS (
+    SELECT
+        person_id,
+
+        MAX(CASE WHEN progression_or_recurrence_id = 1 THEN date_of_progression_or_recurrence END)                  AS progression_or_recurrence_1_date,
+        MAX(CASE WHEN progression_or_recurrence_id = 2 THEN date_of_progression_or_recurrence END)                  AS progression_or_recurrence_2_date,
+        MAX(CASE WHEN progression_or_recurrence_id = 3 THEN date_of_progression_or_recurrence END)                  AS progression_or_recurrence_3_date,
+        MAX(CASE WHEN progression_or_recurrence_id = 4 THEN date_of_progression_or_recurrence END)                  AS progression_or_recurrence_4_date,
+        MAX(CASE WHEN progression_or_recurrence_id = 5 THEN date_of_progression_or_recurrence END)                  AS progression_or_recurrence_5_date,
+        MAX(CASE WHEN progression_or_recurrence_id = 6 THEN date_of_progression_or_recurrence END)                  AS progression_or_recurrence_6_date,
+        MAX(CASE WHEN progression_or_recurrence_id = 7 THEN date_of_progression_or_recurrence END)                  AS progression_or_recurrence_7_date,
+        MAX(CASE WHEN progression_or_recurrence_id = 8 THEN date_of_progression_or_recurrence END)                  AS progression_or_recurrence_8_date,
+        MAX(CASE WHEN progression_or_recurrence_id = 9 THEN date_of_progression_or_recurrence END)                  AS progression_or_recurrence_9_date,
+        MAX(CASE WHEN progression_or_recurrence_id = 10 THEN date_of_progression_or_recurrence END)                 AS progression_or_recurrence_10_date,
+        
+        COUNT(progression_or_recurrence_id)                                                                         AS progression_or_recurrence_count
+
+    FROM recurrences_base_and_ranked
+    GROUP BY person_id
+    ),
+
     -- Surgeries table
     -- - only surgeries on/after diagnosis_date
     -- - ordered by date per patient
@@ -109,11 +156,14 @@ WITH
                 ON pid.person_id = episode.person_id
             LEFT JOIN primary_tumor
                 ON pid.person_id = primary_tumor.person_id
+            LEFT JOIN recurrences_wide
+                ON pid.person_id = recurrences_wide.person_id
             WHERE
                 episode.episode_concept_id = 32939 -- Surgery Episode
                 AND episode.episode_start_date >= {{ COHORT_DATE_MIN }}
                 AND episode.episode_start_date < {{ COHORT_DATE_MAX }}
                 AND episode.episode_start_date >= primary_tumor.diagnosis_date
+                AND episode.episode_start_date < recurrences_wide.progression_or_recurrence_1_date
         ) s
         -- WHERE surgery_id <= 10
     ),
@@ -764,53 +814,6 @@ WITH
             pid.person_id
     ),
 
-    -- Recurrences
-    recurrences_base_and_ranked AS (
-        SELECT *
-        FROM (
-            SELECT
-                pid.person_id,
-                episode.episode_id,
-                {{ cohort_safe_date('episode.episode_start_date') }} AS date_of_progression_or_recurrence,
-                ROW_NUMBER() OVER (
-                    PARTITION BY pid.person_id
-                    ORDER BY episode.episode_start_date ASC
-                ) AS progression_or_recurrence_id
-            FROM
-                patient_id_list pid
-            LEFT JOIN {{ cdm_schema }}.episode episode
-                ON pid.person_id = episode.person_id
-            LEFT JOIN primary_tumor
-                ON pid.person_id = primary_tumor.person_id
-            WHERE
-                episode_concept_id IN (32949, 2000100002) -- Progression or recurrence episodes
-                AND episode.episode_start_date >= {{ COHORT_DATE_MIN }}
-                AND episode.episode_start_date < {{ COHORT_DATE_MAX }}
-                AND episode.episode_start_date >= primary_tumor.diagnosis_date
-        ) s
-    ),
-
-    recurrences_wide AS (
-    SELECT
-        person_id,
-
-        MAX(CASE WHEN progression_or_recurrence_id = 1 THEN date_of_progression_or_recurrence END)                  AS progression_or_recurrence_1_date,
-        MAX(CASE WHEN progression_or_recurrence_id = 2 THEN date_of_progression_or_recurrence END)                  AS progression_or_recurrence_2_date,
-        MAX(CASE WHEN progression_or_recurrence_id = 3 THEN date_of_progression_or_recurrence END)                  AS progression_or_recurrence_3_date,
-        MAX(CASE WHEN progression_or_recurrence_id = 4 THEN date_of_progression_or_recurrence END)                  AS progression_or_recurrence_4_date,
-        MAX(CASE WHEN progression_or_recurrence_id = 5 THEN date_of_progression_or_recurrence END)                  AS progression_or_recurrence_5_date,
-        MAX(CASE WHEN progression_or_recurrence_id = 6 THEN date_of_progression_or_recurrence END)                  AS progression_or_recurrence_6_date,
-        MAX(CASE WHEN progression_or_recurrence_id = 7 THEN date_of_progression_or_recurrence END)                  AS progression_or_recurrence_7_date,
-        MAX(CASE WHEN progression_or_recurrence_id = 8 THEN date_of_progression_or_recurrence END)                  AS progression_or_recurrence_8_date,
-        MAX(CASE WHEN progression_or_recurrence_id = 9 THEN date_of_progression_or_recurrence END)                  AS progression_or_recurrence_9_date,
-        MAX(CASE WHEN progression_or_recurrence_id = 10 THEN date_of_progression_or_recurrence END)                 AS progression_or_recurrence_10_date,
-        
-        COUNT(progression_or_recurrence_id)                                                                         AS progression_or_recurrence_count
-
-    FROM recurrences_base_and_ranked
-    GROUP BY person_id
-    ),
-
     
     -- Radiotherapies
     radiotherapy_base AS (
@@ -1372,6 +1375,14 @@ WITH
     ),
 
     -- Overall treatment response
+    first_recurrence AS (
+        SELECT
+            person_id,
+            MIN(date_of_progression_or_recurrence) AS first_recurrence_date
+        FROM recurrences_base_and_ranked
+        GROUP BY person_id
+    ),
+
     last_treatment_date AS (
         SELECT
             person_id,
@@ -1384,29 +1395,30 @@ WITH
 
         FROM (
             -- Systemic
-            SELECT person_id, systemic_treatment_end_date, NULL::date AS radio_end_date, NULL::date AS date_of_surgery
+            SELECT systemic_therapy_base.person_id, systemic_treatment_end_date, NULL::date AS radio_end_date, NULL::date AS date_of_surgery
             FROM systemic_therapy_base
+            LEFT JOIN first_recurrence
+            ON systemic_therapy_base.person_id = first_recurrence.person_id
+            WHERE (systemic_therapy_base.systemic_treatment_end_date < first_recurrence.first_recurrence_date OR first_recurrence.first_recurrence_date is null)
 
             UNION ALL
 
             -- Radiotherapy
-            SELECT person_id, NULL::date, radio_end_date, NULL::date
+            SELECT radiotherapy_base.person_id, NULL::date, radio_end_date, NULL::date
             FROM radiotherapy_base
+            LEFT JOIN first_recurrence
+            ON radiotherapy_base.person_id = first_recurrence.person_id
+            WHERE (radiotherapy_base.radio_end_date < first_recurrence.first_recurrence_date OR first_recurrence.first_recurrence_date is null)
 
             UNION ALL
 
             -- Surgery
-            SELECT person_id, NULL::date, NULL::date, date_of_surgery
+            SELECT surgeries.person_id, NULL::date, NULL::date, date_of_surgery
             FROM surgeries
+            LEFT JOIN first_recurrence
+            ON surgeries.person_id = first_recurrence.person_id
+            WHERE (surgeries.date_of_surgery < first_recurrence.first_recurrence_date OR first_recurrence.first_recurrence_date is null)
         ) t
-        GROUP BY person_id
-    ),
-
-    first_recurrence AS (
-        SELECT
-            person_id,
-            MIN(date_of_progression_or_recurrence) AS first_recurrence_date
-        FROM recurrences_base_and_ranked
         GROUP BY person_id
     ),
 
@@ -1688,8 +1700,12 @@ WITH
         LEFT JOIN
             {{ cdm_schema }}.concept measurement_concept
             ON measurement.measurement_concept_id = measurement_concept.concept_id
+        LEFT JOIN
+            surgeries_wide
+            ON pid.person_id = surgeries_wide.person_id
         WHERE
             measurement.measurement_concept_id IN (36769946, 36770618)
+            AND measurement.measurement_date = surgeries_wide.surgery_1_date
     ),
 
     clinical_staging AS (
@@ -1796,8 +1812,11 @@ WITH
         LEFT JOIN
             {{ cdm_schema }}.concept measurement_concept
             ON measurement.measurement_concept_id = measurement_concept.concept_id
+        LEFT JOIN primary_tumor
+            ON pid.person_id = primary_tumor.person_id
         WHERE
             measurement.measurement_concept_id IN (36769946, 36770618)
+            AND measurement.measurement_date = primary_tumor.diagnosis_date
     )
 
 {% endif %}
