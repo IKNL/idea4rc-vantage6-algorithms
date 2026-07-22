@@ -1393,6 +1393,18 @@ WITH
         GROUP BY person_id
     ),
 
+    other_procedures AS (
+        SELECT
+            pid.person_id,
+            po.procedure_date as other_procedure_date
+        FROM patient_id_list pid
+        JOIN {{ cdm_schema }}.procedure_occurrence po
+            ON pid.person_id = po.person_id
+        WHERE po.procedure_concept_id IN (4019656, 4302161) # Isolated limb perfusion and Hyperthermia treatment of cancer
+        AND po.procedure_date >= {{ COHORT_DATE_MIN }}
+        AND po.procedure_date < {{ COHORT_DATE_MAX }}
+    ),
+
     last_treatment_date AS (
         SELECT
             person_id,
@@ -1400,12 +1412,13 @@ WITH
             GREATEST(
                 MAX(systemic_treatment_end_date),
                 MAX(radio_end_date),
-                MAX(date_of_surgery)
+                MAX(date_of_surgery),
+                MAX(other_procedure_date)
             ) AS last_treatment_end_date
 
         FROM (
             -- Systemic
-            SELECT systemic_therapy_base.person_id, systemic_treatment_end_date, NULL::date AS radio_end_date, NULL::date AS date_of_surgery
+            SELECT systemic_therapy_base.person_id, systemic_treatment_end_date, NULL::date AS radio_end_date, NULL::date AS date_of_surgery, NULL::date AS other_procedure_date
             FROM systemic_therapy_base
             LEFT JOIN first_recurrence
             ON systemic_therapy_base.person_id = first_recurrence.person_id
@@ -1414,7 +1427,7 @@ WITH
             UNION ALL
 
             -- Radiotherapy
-            SELECT radiotherapy_base.person_id, NULL::date, radio_end_date, NULL::date
+            SELECT radiotherapy_base.person_id, NULL::date, radio_end_date, NULL::date, NULL::date
             FROM radiotherapy_base
             LEFT JOIN first_recurrence
             ON radiotherapy_base.person_id = first_recurrence.person_id
@@ -1423,11 +1436,23 @@ WITH
             UNION ALL
 
             -- Surgery
-            SELECT surgeries.person_id, NULL::date, NULL::date, date_of_surgery
+            SELECT surgeries.person_id, NULL::date, NULL::date, date_of_surgery, NULL::date
             FROM surgeries
             LEFT JOIN first_recurrence
             ON surgeries.person_id = first_recurrence.person_id
             WHERE (surgeries.date_of_surgery < first_recurrence.first_recurrence_date OR first_recurrence.first_recurrence_date is null)
+
+            UNION ALL
+
+            -- Additional procedures
+            SELECT other_procedures.person_id, NULL::date, NULL::date, NULL::date, other_procedure_date
+            FROM other_procedures
+            LEFT JOIN first_recurrence
+                ON other_procedures.person_id = first_recurrence.person_id
+            WHERE (
+                other_procedures.other_procedure_date < first_recurrence.first_recurrence_date
+                OR first_recurrence.first_recurrence_date IS NULL
+            )
         ) t
         GROUP BY person_id
     ),
