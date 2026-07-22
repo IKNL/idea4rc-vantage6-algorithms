@@ -651,6 +651,7 @@ def convert_base_columns(df: pd.DataFrame) -> pd.DataFrame:
             "surgery_3_intraoperative_radio",
             "surgery_4_intraoperative_radio",
             "surgery_5_intraoperative_radio",
+            "surgery_1_primary_surgery",
         ],
     )
 
