@@ -168,6 +168,22 @@ WITH
         -- WHERE surgery_id <= 10
     ),
 
+    intraoperative_radio AS (
+        SELECT DISTINCT
+            s.episode_id,
+            TRUE AS intraoperative_radio
+        FROM surgeries s
+        JOIN {{ cdm_schema }}.episode episode
+            ON s.person_id = episode.person_id
+        JOIN {{ cdm_schema }}.episode_event ee
+            ON episode.episode_id = ee.episode_id
+        JOIN {{ cdm_schema }}.procedure_occurrence po
+            ON ee.event_id = po.procedure_occurrence_id
+        WHERE episode.episode_concept_id = 32940
+        AND episode.episode_start_date = s.date_of_surgery
+        AND episode.episode_end_date = s.date_of_surgery
+        AND po.procedure_date = s.date_of_surgery
+    ),
 
     -- Assumption: first surgery intent is the relevant one
     surgery_intent AS (
@@ -340,7 +356,8 @@ WITH
             surgeries.date_of_surgery,
             surgeries.surgery_id,
             surgery_intent.surgery_intent,
-            margins_after_surgery.margins_after_surgery
+            margins_after_surgery.margins_after_surgery,
+            COALESCE(intraoperative_radio.intraoperative_radio, FALSE) AS intraoperative_radio
             {% if is_head_and_neck %},
             surgery_extra_nodal_extension.surgery_extra_nodal_extension,
             surgery_laterality_of_the_dissection.laterality_of_the_dissection,
@@ -352,7 +369,10 @@ WITH
         LEFT JOIN surgery_intent surgery_intent
             ON surgeries.episode_id = surgery_intent.episode_id
         LEFT JOIN margins_after_surgery margins_after_surgery
-            ON surgeries.episode_id = margins_after_surgery.episode_id
+            ON surgeries.episode_id = margins_after_surgery.episode_id        
+        LEFT JOIN intraoperative_radio intraoperative_radio
+            ON surgeries.episode_id = intraoperative_radio.episode_id
+
         {% if is_head_and_neck %}
         LEFT JOIN surgery_extra_nodal_extension surgery_extra_nodal_extension
             ON surgeries.episode_id = surgery_extra_nodal_extension.episode_id
@@ -871,18 +891,6 @@ WITH
             total_dose_measurement.value_as_number AS radio_total_dose_gy,
             number_of_fractions_measurement.value_as_number AS radio_number_of_fractions,
             treatment_completed_concept.concept_name AS radio_treatment_completed_as_planned,
-            CASE
-                WHEN rtb.radio_start_date IN (
-                    SELECT procedure_date
-                    FROM {{ cdm_schema }}.procedure_occurrence po
-                    JOIN {{ cdm_schema }}.episode_event ee
-                        ON po.procedure_occurrence_id = ee.event_id
-                    JOIN {{ cdm_schema }}.episode episode
-                        ON ee.episode_id = episode.episode_id
-                    WHERE episode.episode_concept_id = 32940 -- Radiotherapy episode
-                ) THEN 1
-                ELSE 0
-            END AS intraoperative_radio
         FROM
             radiotherapy_base rtb
         LEFT JOIN {{ cdm_schema }}.episode episode
@@ -990,7 +998,6 @@ WITH
             MAX(CASE WHEN treatment_setting = 'pre-operative' AND radiotherapy_row_number_desc = 1 THEN radio_total_dose_gy END) AS pre_operative_radio_total_dose_gy,
             MAX(CASE WHEN treatment_setting = 'pre-operative' AND radiotherapy_row_number_desc = 1 THEN radio_number_of_fractions END) AS pre_operative_radio_number_of_fractions,
             MAX(CASE WHEN treatment_setting = 'pre-operative' AND radiotherapy_row_number_desc = 1 THEN radio_treatment_completed_as_planned END) AS pre_operative_radio_treatment_completed_as_planned,
-            MAX(CASE WHEN treatment_setting = 'pre-operative' AND radiotherapy_row_number_desc = 1 THEN intraoperative_radio END) AS pre_operative_radio_intraoperative_radio,
             {% if is_head_and_neck %}
             MAX(CASE WHEN treatment_setting = 'pre-operative' AND radiotherapy_row_number_desc = 1 THEN radio_beam_quality END) AS pre_operative_radio_beam_quality,
             MAX(CASE WHEN treatment_setting = 'pre-operative' AND radiotherapy_row_number_desc = 1 THEN radio_total_high_dose END) AS pre_operative_radio_total_high_dose,
@@ -1006,7 +1013,6 @@ WITH
             MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number_asc = 1 THEN radio_total_dose_gy END) AS post_operative_radio_1_total_dose_gy,
             MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number_asc = 1 THEN radio_number_of_fractions END) AS post_operative_radio_1_number_of_fractions,
             MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number_asc = 1 THEN radio_treatment_completed_as_planned END) AS post_operative_radio_1_treatment_completed_as_planned,
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number_asc = 1 THEN intraoperative_radio END) AS post_operative_radio_1_intraoperative_radio,
             {% if is_head_and_neck %}
             MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number_asc = 1 THEN radio_beam_quality END) AS post_operative_radio_1_beam_quality,
             MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number_asc = 1 THEN radio_total_high_dose END) AS post_operative_radio_1_total_high_dose,
@@ -1022,7 +1028,6 @@ WITH
             MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number_asc = 2 THEN radio_total_dose_gy END) AS post_operative_radio_2_total_dose_gy,
             MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number_asc = 2 THEN radio_number_of_fractions END) AS post_operative_radio_2_number_of_fractions,
             MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number_asc = 2 THEN radio_treatment_completed_as_planned END) AS post_operative_radio_2_treatment_completed_as_planned,
-            MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number_asc = 2 THEN intraoperative_radio END) AS post_operative_radio_2_intraoperative_radio,
             {% if is_head_and_neck %}
             MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number_asc = 2 THEN radio_beam_quality END) AS post_operative_radio_2_beam_quality,
             MAX(CASE WHEN treatment_setting = 'post-operative' AND radiotherapy_row_number_asc = 2 THEN radio_total_high_dose END) AS post_operative_radio_2_total_high_dose,
@@ -1038,7 +1043,6 @@ WITH
             MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number_asc = 1 THEN radio_total_dose_gy END) AS recurrence_radio_1_total_dose_gy,
             MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number_asc = 1 THEN radio_number_of_fractions END) AS recurrence_radio_1_number_of_fractions,
             MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number_asc = 1 THEN radio_treatment_completed_as_planned END) AS recurrence_radio_1_treatment_completed_as_planned,
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number_asc = 1 THEN intraoperative_radio END) AS recurrence_radio_1_intraoperative_radio,
             {% if is_head_and_neck %}
             MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number_asc = 1 THEN radio_beam_quality END) AS recurrence_radio_1_beam_quality,
             MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number_asc = 1 THEN radio_total_high_dose END) AS recurrence_radio_1_total_high_dose,
@@ -1054,7 +1058,6 @@ WITH
             MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number_asc = 2 THEN radio_total_dose_gy END) AS recurrence_radio_2_total_dose_gy,
             MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number_asc = 2 THEN radio_number_of_fractions END) AS recurrence_radio_2_number_of_fractions,
             MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number_asc = 2 THEN radio_treatment_completed_as_planned END) AS recurrence_radio_2_treatment_completed_as_planned,
-            MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number_asc = 2 THEN intraoperative_radio END) AS recurrence_radio_2_intraoperative_radio,
             {% if is_head_and_neck %}
             MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number_asc = 2 THEN radio_beam_quality END) AS recurrence_radio_2_beam_quality,
             MAX(CASE WHEN treatment_setting = 'recurrence' AND radiotherapy_row_number_asc = 2 THEN radio_total_high_dose END) AS recurrence_radio_2_total_high_dose,
@@ -2171,7 +2174,6 @@ SELECT
     radiotherapy_wide.pre_operative_radio_total_dose_gy                                         as pre_operative_radio_total_dose_gy,
     radiotherapy_wide.pre_operative_radio_number_of_fractions                                   as pre_operative_radio_number_of_fractions,
     COALESCE(radiotherapy_wide.pre_operative_radio_treatment_completed_as_planned, 'N/A')       as pre_operative_radio_treatment_completed_as_planned,
-    radiotherapy_wide.pre_operative_radio_intraoperative_radio                                  as pre_operative_radio_intraoperative_radio,
 
     radiotherapy_wide.post_operative_radio_1_start_date                                         as post_operative_radio_1_start_date,
     radiotherapy_wide.post_operative_radio_1_end_date                                           as post_operative_radio_1_end_date,
@@ -2181,7 +2183,6 @@ SELECT
     radiotherapy_wide.post_operative_radio_1_total_dose_gy                                      as post_operative_radio_1_total_dose_gy,
     radiotherapy_wide.post_operative_radio_1_number_of_fractions                                as post_operative_radio_1_number_of_fractions,
     COALESCE(radiotherapy_wide.post_operative_radio_1_treatment_completed_as_planned, 'N/A')    as post_operative_radio_1_treatment_completed_as_planned,
-    radiotherapy_wide.post_operative_radio_1_intraoperative_radio                               as post_operative_radio_1_intraoperative_radio,
 
     radiotherapy_wide.post_operative_radio_2_start_date                                         as post_operative_radio_2_start_date,
     radiotherapy_wide.post_operative_radio_2_end_date                                           as post_operative_radio_2_end_date,
@@ -2191,7 +2192,6 @@ SELECT
     radiotherapy_wide.post_operative_radio_2_total_dose_gy                                      as post_operative_radio_2_total_dose_gy,
     radiotherapy_wide.post_operative_radio_2_number_of_fractions                                as post_operative_radio_2_number_of_fractions,
     COALESCE(radiotherapy_wide.post_operative_radio_2_treatment_completed_as_planned, 'N/A')    as post_operative_radio_2_treatment_completed_as_planned,
-    radiotherapy_wide.post_operative_radio_2_intraoperative_radio                               as post_operative_radio_2_intraoperative_radio,
 
     radiotherapy_wide.recurrence_radio_1_start_date                                             as recurrence_radio_1_start_date,
     radiotherapy_wide.recurrence_radio_1_end_date                                               as recurrence_radio_1_end_date,
@@ -2201,7 +2201,6 @@ SELECT
     radiotherapy_wide.recurrence_radio_1_total_dose_gy                                          as recurrence_radio_1_total_dose_gy,
     radiotherapy_wide.recurrence_radio_1_number_of_fractions                                    as recurrence_radio_1_number_of_fractions,
     COALESCE(radiotherapy_wide.recurrence_radio_1_treatment_completed_as_planned, 'N/A')        as recurrence_radio_1_treatment_completed_as_planned,
-    radiotherapy_wide.recurrence_radio_1_intraoperative_radio                                   as recurrence_radio_1_intraoperative_radio,
 
     radiotherapy_wide.recurrence_radio_2_start_date                                             as recurrence_radio_2_start_date,
     radiotherapy_wide.recurrence_radio_2_end_date                                               as recurrence_radio_2_end_date,
@@ -2211,7 +2210,6 @@ SELECT
     radiotherapy_wide.recurrence_radio_2_total_dose_gy                                          as recurrence_radio_2_total_dose_gy,
     radiotherapy_wide.recurrence_radio_2_number_of_fractions                                    as recurrence_radio_2_number_of_fractions,
     COALESCE(radiotherapy_wide.recurrence_radio_2_treatment_completed_as_planned, 'N/A')        as recurrence_radio_2_treatment_completed_as_planned,
-    radiotherapy_wide.recurrence_radio_2_intraoperative_radio                                   as recurrence_radio_2_intraoperative_radio,
 
     radiotherapy_wide.radio_1_start_date                                                        as radio_1_start_date,
     radiotherapy_wide.radio_2_start_date                                                        as radio_2_start_date,
