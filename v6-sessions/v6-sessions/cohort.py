@@ -646,11 +646,11 @@ def convert_base_columns(df: pd.DataFrame) -> pd.DataFrame:
             "pathological_brain",
             "pathological_other_viscera",
             "pathological_unknown",
-            "pre_operative_radio_intraoperative_radio",
-            "post_operative_radio_1_intraoperative_radio",
-            "post_operative_radio_2_intraoperative_radio",
-            "recurrence_radio_1_intraoperative_radio",
-            "recurrence_radio_2_intraoperative_radio",
+            "surgery_1_intraoperative_radio",
+            "surgery_2_intraoperative_radio",
+            "surgery_3_intraoperative_radio",
+            "surgery_4_intraoperative_radio",
+            "surgery_5_intraoperative_radio",
         ],
     )
 

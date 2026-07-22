@@ -393,6 +393,7 @@ WITH
         MAX(CASE WHEN surgery_id = 1 THEN date_of_surgery END)                  AS surgery_1_date,
         MAX(CASE WHEN surgery_id = 1 THEN surgery_intent END)                   AS surgery_1_intent,
         MAX(CASE WHEN surgery_id = 1 THEN margins_after_surgery END)            AS surgery_1_margins_after_surgery,
+        MAX(CASE WHEN surgery_id = 1 THEN intraoperative_radio END)             AS surgery_1_intraoperative_radio,
 
             {% if is_head_and_neck %}
         MAX(CASE WHEN surgery_id = 1 THEN surgery_extra_nodal_extension END)    AS surgery_1_extra_nodal_extension,
@@ -406,6 +407,7 @@ WITH
         MAX(CASE WHEN surgery_id = 2 THEN date_of_surgery END)                  AS surgery_2_date,
         MAX(CASE WHEN surgery_id = 2 THEN surgery_intent END)                   AS surgery_2_intent,
         MAX(CASE WHEN surgery_id = 2 THEN margins_after_surgery END)            AS surgery_2_margins_after_surgery,
+        MAX(CASE WHEN surgery_id = 2 THEN intraoperative_radio END)             AS surgery_2_intraoperative_radio,
             
             {% if is_head_and_neck %}
         MAX(CASE WHEN surgery_id = 2 THEN surgery_extra_nodal_extension END)    AS surgery_2_extra_nodal_extension,
@@ -419,6 +421,7 @@ WITH
         MAX(CASE WHEN surgery_id = 3 THEN date_of_surgery END)                  AS surgery_3_date,
         MAX(CASE WHEN surgery_id = 3 THEN surgery_intent END)                   AS surgery_3_intent,
         MAX(CASE WHEN surgery_id = 3 THEN margins_after_surgery END)            AS surgery_3_margins_after_surgery,
+        MAX(CASE WHEN surgery_id = 3 THEN intraoperative_radio END)             AS surgery_3_intraoperative_radio,
 
             {% if is_head_and_neck %}
         MAX(CASE WHEN surgery_id = 3 THEN surgery_extra_nodal_extension END)    AS surgery_3_extra_nodal_extension,
@@ -432,6 +435,8 @@ WITH
         MAX(CASE WHEN surgery_id = 4 THEN date_of_surgery END)                  AS surgery_4_date,
         MAX(CASE WHEN surgery_id = 4 THEN surgery_intent END)                   AS surgery_4_intent,
         MAX(CASE WHEN surgery_id = 4 THEN margins_after_surgery END)            AS surgery_4_margins_after_surgery,
+        MAX(CASE WHEN surgery_id = 4 THEN intraoperative_radio END)             AS surgery_4_intraoperative_radio,
+
             {% if is_head_and_neck %}
         MAX(CASE WHEN surgery_id = 4 THEN surgery_extra_nodal_extension END)    AS surgery_4_extra_nodal_extension,
         MAX(CASE WHEN surgery_id = 4 THEN laterality_of_the_dissection END)     AS surgery_4_laterality_of_the_dissection,
@@ -444,6 +449,8 @@ WITH
         MAX(CASE WHEN surgery_id = 5 THEN date_of_surgery END)                  AS surgery_5_date,
         MAX(CASE WHEN surgery_id = 5 THEN surgery_intent END)                   AS surgery_5_intent,
         MAX(CASE WHEN surgery_id = 5 THEN margins_after_surgery END)            AS surgery_5_margins_after_surgery,
+        MAX(CASE WHEN surgery_id = 5 THEN intraoperative_radio END)             AS surgery_5_intraoperative_radio,
+
             {% if is_head_and_neck %}
         MAX(CASE WHEN surgery_id = 5 THEN surgery_extra_nodal_extension END)    AS surgery_5_extra_nodal_extension,
         MAX(CASE WHEN surgery_id = 5 THEN laterality_of_the_dissection END)     AS surgery_5_laterality_of_the_dissection,
@@ -2017,18 +2024,23 @@ SELECT
     surgeries_wide.surgery_1_date                                   as surgery_1_date,
     COALESCE(surgeries_wide.surgery_1_intent, 'N/A')                as surgery_1_intent,
     COALESCE(surgeries_wide.surgery_1_margins_after_surgery, 'N/A') as surgery_1_margins_after_surgery,
+    surgeries_wide.surgery_1_intraoperative_radio                   as surgery_1_intraoperative_radio,
     surgeries_wide.surgery_2_date                                   as surgery_2_date,
     COALESCE(surgeries_wide.surgery_2_intent, 'N/A')                as surgery_2_intent,
     COALESCE(surgeries_wide.surgery_2_margins_after_surgery, 'N/A') as surgery_2_margins_after_surgery,
+    surgeries_wide.surgery_2_intraoperative_radio                   as surgery_2_intraoperative_radio,
     surgeries_wide.surgery_3_date                                   as surgery_3_date,
     COALESCE(surgeries_wide.surgery_3_intent, 'N/A')                as surgery_3_intent,
     COALESCE(surgeries_wide.surgery_3_margins_after_surgery, 'N/A') as surgery_3_margins_after_surgery,
+    surgeries_wide.surgery_3_intraoperative_radio                   as surgery_3_intraoperative_radio,
     surgeries_wide.surgery_4_date                                   as surgery_4_date,
     COALESCE(surgeries_wide.surgery_4_intent, 'N/A')                as surgery_4_intent,
     COALESCE(surgeries_wide.surgery_4_margins_after_surgery, 'N/A') as surgery_4_margins_after_surgery,
+    surgeries_wide.surgery_4_intraoperative_radio                   as surgery_4_intraoperative_radio,
     surgeries_wide.surgery_5_date                                   as surgery_5_date,
     COALESCE(surgeries_wide.surgery_5_intent, 'N/A')                as surgery_5_intent,
     COALESCE(surgeries_wide.surgery_5_margins_after_surgery, 'N/A') as surgery_5_margins_after_surgery,
+    surgeries_wide.surgery_5_intraoperative_radio                   as surgery_5_intraoperative_radio,
 
     surgeries_wide.surgery_6_date                                   as surgery_6_date,
     surgeries_wide.surgery_7_date                                   as surgery_7_date,
