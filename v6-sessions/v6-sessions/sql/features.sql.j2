@@ -169,7 +169,8 @@ WITH
         FROM surgeries
         LEFT JOIN recurrences_wide
             ON surgeries.person_id = recurrences_wide.person_id
-        WHERE surgeries.date_of_surgery < recurrences_wide.progression_or_recurrence_1_date
+        WHERE surgeries.date_of_surgery < recurrences_wide.progression_or_recurrence_1_date 
+        OR recurrences_wide.progression_or_recurrence_1_date is null
     ),
 
     intraoperative_radio AS (
