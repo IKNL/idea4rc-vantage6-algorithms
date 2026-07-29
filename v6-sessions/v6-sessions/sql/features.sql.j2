@@ -362,7 +362,7 @@ WITH
             surgeries.surgery_id,
             surgery_intent.surgery_intent,
             margins_after_surgery.margins_after_surgery,
-            COALESCE(intraoperative_radio.intraoperative_radio, 0) AS intraoperative_radio
+            COALESCE(intraoperative_radio.intraoperative_radio, 0) AS intraoperative_radio,
             COALESCE(surgery_before_first_recurrence.before_first_recurrence, 0) AS before_first_recurrence
             {% if is_head_and_neck %},
             surgery_extra_nodal_extension.surgery_extra_nodal_extension,
