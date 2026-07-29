@@ -20,6 +20,7 @@ from v6_idea4rc_common import (
     to_category as _to_category,
     to_datetime as _to_datetime,
     to_int64 as _to_int64,
+    to_float64 as _to_float64,
 )
 from vantage6.algorithm.decorator import data_extraction
 from vantage6.algorithm.tools.util import error, get_env_var, info
@@ -470,15 +471,10 @@ def convert_base_columns(df: pd.DataFrame) -> pd.DataFrame:
         [
             "year_of_birth",
             "age_at_diagnosis",
-            "pre_operative_radio_total_dose_gy",
             "pre_operative_radio_number_of_fractions",
-            "post_operative_radio_1_total_dose_gy",
             "post_operative_radio_1_number_of_fractions",
-            "post_operative_radio_2_total_dose_gy",
             "post_operative_radio_2_number_of_fractions",
-            "recurrence_radio_1_total_dose_gy",
             "recurrence_radio_1_number_of_fractions",
-            "recurrence_radio_2_total_dose_gy",
             "recurrence_radio_2_number_of_fractions",
             "surgery_count",
             "radio_count",
@@ -489,6 +485,17 @@ def convert_base_columns(df: pd.DataFrame) -> pd.DataFrame:
         ]
         + generate_drug_count_columns(),
     )
+
+    df = _to_float64(
+            df,
+            [
+                "pre_operative_radio_total_dose_gy",
+                "post_operative_radio_1_total_dose_gy",
+                "post_operative_radio_2_total_dose_gy",
+                "recurrence_radio_1_total_dose_gy",
+                "recurrence_radio_2_total_dose_gy",
+            ],
+        )
 
     df = _to_datetime(
         df,
@@ -703,7 +710,7 @@ def convert_head_neck_columns(df: pd.DataFrame) -> pd.DataFrame:
         ],
     )
 
-    df = _to_int64(
+    df = _to_float64(
         df,
         [
             "pre_operative_radio_total_high_dose",
